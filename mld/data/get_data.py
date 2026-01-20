@@ -3,6 +3,7 @@ from os.path import join as pjoin
 import numpy as np
 from .humanml.utils.word_vectorizer import WordVectorizer
 from .HumanML3D import HumanML3DDataModule
+from .HumanML3D import CombinedDatasetDataModule
 from .Kit import KitDataModule
 from .Humanact12 import Humanact12DataModule
 from .Uestc import UestcDataModule
@@ -20,7 +21,7 @@ def get_mean_std(phase, cfg, dataset_name):
     #     std = np.load(pjoin(opt.data_root, 'Std.npy'))
 
     # todo: use different mean and val for phases
-    name = "t2m" if dataset_name == "humanml3d" else dataset_name
+    name = "t2m" if dataset_name == "humanml3d" or dataset_name == "combined_dataset" else dataset_name
     assert name in ["t2m", "kit"]
     # if phase in ["train", "val", "test"]:
     if phase in ["val"]:
@@ -36,15 +37,20 @@ def get_mean_std(phase, cfg, dataset_name):
         std = np.load(pjoin(data_root, "std.npy"))
     else:
         data_root = eval(f"cfg.DATASET.{dataset_name.upper()}.ROOT")
-        mean = np.load(pjoin(data_root, "Mean.npy"))
-        std = np.load(pjoin(data_root, "Std.npy"))
+        if dataset_name.lower() in ["combined_dataset"]:
+            used_datasets = eval(f"cfg.DATASET.{dataset_name.upper()}.DATASET_NAME")
+            mean = np.load(pjoin(data_root, "mean_std_txt", used_datasets, "Mean.npy"))
+            std = np.load(pjoin(data_root, "mean_std_txt", used_datasets, "Std.npy"))
+        else:
+            mean = np.load(pjoin(data_root, "Mean.npy"))
+            std = np.load(pjoin(data_root, "Std.npy"))
 
     return mean, std
 
 
 def get_WordVectorizer(cfg, phase, dataset_name):
     if phase not in ["text_only"]:
-        if dataset_name.lower() in ["humanml3d", "kit"]:
+        if dataset_name.lower() in ["humanml3d", "kit", "combined_dataset"]:
             return WordVectorizer(cfg.DATASET.WORD_VERTILIZER_PATH, "our_vab")
         else:
             raise ValueError("Only support WordVectorizer for HumanML3D")
@@ -53,7 +59,7 @@ def get_WordVectorizer(cfg, phase, dataset_name):
 
 
 def get_collate_fn(name, phase="train"):
-    if name.lower() in ["humanml3d", "kit"]:
+    if name.lower() in ["humanml3d", "kit", "combined_dataset"]:
         return mld_collate
     elif name.lower() in ["humanact12", 'uestc']:
         return a2m_collate
@@ -70,8 +76,9 @@ dataset_module_map = {
     "kit": KitDataModule,
     "humanact12": Humanact12DataModule,
     "uestc": UestcDataModule,
+    "combined_dataset": CombinedDatasetDataModule,
 }
-motion_subdir = {"humanml3d": "new_joint_vecs", "kit": "new_joint_vecs"}
+motion_subdir = {"humanml3d": "new_joint_vecs", "kit": "new_joint_vecs", "combined_dataset": "new_joint_vecs"}
 
 
 def get_datasets(cfg, logger=None, phase="train"):
@@ -79,7 +86,7 @@ def get_datasets(cfg, logger=None, phase="train"):
     dataset_names = eval(f"cfg.{phase.upper()}.DATASETS")
     datasets = []
     for dataset_name in dataset_names:
-        if dataset_name.lower() in ["humanml3d", "kit"]:
+        if dataset_name.lower() in ["humanml3d", "kit", "combined_dataset"]:
             data_root = eval(f"cfg.DATASET.{dataset_name.upper()}.ROOT")
             # get mean and std corresponding to dataset
             mean, std = get_mean_std(phase, cfg, dataset_name)

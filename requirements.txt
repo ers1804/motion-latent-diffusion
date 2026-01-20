@@ -22,3 +22,5 @@ scikit-image
 spacy
 diffusers
 ftfy
+tensorboard
+tensorboardX
