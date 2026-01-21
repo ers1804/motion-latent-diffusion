@@ -6,6 +6,7 @@ from .HumanML3D import HumanML3DDataModule
 from .Kit import KitDataModule
 from .Humanact12 import Humanact12DataModule
 from .Uestc import UestcDataModule
+from .EgoMotion import EgoMotionDataModule, ego_motion_collate
 from .utils import *
 
 
@@ -57,6 +58,8 @@ def get_collate_fn(name, phase="train"):
         return mld_collate
     elif name.lower() in ["humanact12", 'uestc']:
         return a2m_collate
+    elif name.lower() in ["egomotion"]:
+        return ego_motion_collate
     # else:
     #     return all_collate
     # if phase == "test":
@@ -70,6 +73,7 @@ dataset_module_map = {
     "kit": KitDataModule,
     "humanact12": Humanact12DataModule,
     "uestc": UestcDataModule,
+    "egomotion": EgoMotionDataModule,
 }
 motion_subdir = {"humanml3d": "new_joint_vecs", "kit": "new_joint_vecs"}
 
@@ -131,6 +135,41 @@ def get_datasets(cfg, logger=None, phase="train"):
                 glob=cfg.DATASET.HUMANACT12.GLOB,
                 translation=cfg.DATASET.HUMANACT12.TRANSLATION)
             cfg.DATASET.NCLASSES = dataset.nclasses
+            datasets.append(dataset)
+        elif dataset_name.lower() in ["egomotion"]:
+            # Ego-conditioned motion dataset
+            # get collate_fn
+            collate_fn = get_collate_fn(dataset_name, phase)
+            
+            # Load mean/std for motion normalization
+            # IMPORTANT: Must match what VAE was trained with!
+            motion_mean, motion_std = None, None
+            if hasattr(cfg.DATASET.EGOMOTION, 'MEAN_STD_PATH') and cfg.DATASET.EGOMOTION.MEAN_STD_PATH:
+                # Use custom mean/std from config
+                mean_std_path = cfg.DATASET.EGOMOTION.MEAN_STD_PATH
+                motion_mean = np.load(pjoin(mean_std_path, "Mean.npy"))
+                motion_std = np.load(pjoin(mean_std_path, "Std.npy"))
+                print(f"[EgoMotion] Loaded mean/std from {mean_std_path}")
+            elif hasattr(cfg.DATASET, 'HUMANML3D') and hasattr(cfg.DATASET.HUMANML3D, 'ROOT'):
+                # Fallback: use HumanML3D mean/std (for testing with HumanML3D VAE)
+                humanml_root = cfg.DATASET.HUMANML3D.ROOT
+                motion_mean = np.load(pjoin(humanml_root, "Mean.npy"))
+                motion_std = np.load(pjoin(humanml_root, "Std.npy"))
+                print(f"[EgoMotion] Using HumanML3D mean/std from {humanml_root}")
+            else:
+                print("[EgoMotion] WARNING: No mean/std provided! Motion will NOT be normalized.")
+                print("            This will cause issues with pretrained VAE!")
+            
+            # get dataset module
+            dataset = dataset_module_map[dataset_name.lower()](
+                cfg=cfg,
+                batch_size=cfg.TRAIN.BATCH_SIZE,
+                num_workers=cfg.TRAIN.NUM_WORKERS,
+                collate_fn=collate_fn,
+                mean=motion_mean,
+                std=motion_std,
+                debug=cfg.DEBUG,
+            )
             datasets.append(dataset)
         elif dataset_name.lower() in ["amass"]:
             # todo: add amass dataset

@@ -75,6 +75,20 @@ class MldDenoiser(nn.Module):
                                         self.latent_dim,
                                         guidance_scale=guidance_scale,
                                         guidance_uncodp=guidance_uncondp)
+        elif self.condition in ['ego']:
+            # Ego trajectory conditioning
+            # ego_encoder already outputs latent_dim (256), so we use that
+            self.time_proj = Timesteps(self.latent_dim, flip_sin_to_cos,
+                                       freq_shift)
+            self.time_embedding = TimestepEmbedding(self.latent_dim,
+                                                    self.latent_dim)
+            # Project ego embedding to latent dim (optional, for flexibility)
+            # text_encoded_dim here is actually ego_encoded_dim from config
+            if text_encoded_dim != self.latent_dim:
+                self.emb_proj = nn.Sequential(
+                    nn.ReLU(), nn.Linear(text_encoded_dim, self.latent_dim))
+            else:
+                self.emb_proj = nn.Identity()
         else:
             raise TypeError(f"condition type {self.condition} not supported")
 
@@ -175,6 +189,19 @@ class MldDenoiser(nn.Module):
                 emb_latent = action_emb + time_emb
             else:
                 emb_latent = torch.cat((time_emb, action_emb), 0)
+        elif self.condition in ['ego']:
+            # Ego conditioning
+            # encoder_hidden_states: (B, T_ego, latent_dim) from ego encoder
+            # Permute to (T_ego, B, latent_dim) for transformer
+            ego_emb = encoder_hidden_states.permute(1, 0, 2)
+            # Project if dimensions don't match
+            ego_emb_latent = self.emb_proj(ego_emb)
+            if self.abl_plus:
+                # Sum with time embedding (broadcast over sequence)
+                emb_latent = ego_emb_latent + time_emb
+            else:
+                # Concatenate time embedding with ego sequence
+                emb_latent = torch.cat((time_emb, ego_emb_latent), 0)
         else:
             raise TypeError(f"condition type {self.condition} not supported")
 

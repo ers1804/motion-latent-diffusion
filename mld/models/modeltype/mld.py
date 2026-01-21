@@ -53,7 +53,11 @@ class MLD(BaseModel):
             self.vae_type = cfg.model.motion_vae.target.split(
                 ".")[-1].lower().replace("vae", "")
 
-        self.text_encoder = instantiate_from_config(cfg.model.text_encoder)
+        # Initialize condition encoder based on condition type
+        if self.condition in ["text", "text_uncond"]:
+            self.text_encoder = instantiate_from_config(cfg.model.text_encoder)
+        elif self.condition in ["ego"]:
+            self.ego_encoder = instantiate_from_config(cfg.model.ego_encoder)
 
         if self.vae_type != "no":
             self.vae = instantiate_from_config(cfg.model.motion_vae)
@@ -115,6 +119,9 @@ class MLD(BaseModel):
         self.do_classifier_free_guidance = self.guidance_scale > 1.0
         if self.condition in ['text', 'text_uncond']:
             self.feats2joints = datamodule.feats2joints
+        elif self.condition == 'ego':
+            # Use datamodule's feats2joints if available, else identity
+            self.feats2joints = getattr(datamodule, 'feats2joints', lambda x: x)
         elif self.condition == 'action':
             self.rot2xyz = Rotation2xyz(smpl_path=cfg.DATASET.SMPL_PATH)
             self.feats2joints_eval = lambda sample, mask: self.rot2xyz(
@@ -214,22 +221,32 @@ class MLD(BaseModel):
         return z
 
     def forward(self, batch):
-        texts = batch["text"]
         lengths = batch["length"]
         if self.cfg.TEST.COUNT_TIME:
             self.starttime = time.time()
 
         if self.stage in ['diffusion', 'vae_diffusion']:
             # diffusion reverse
-            if self.do_classifier_free_guidance:
-                uncond_tokens = [""] * len(texts)
-                if self.condition == 'text':
-                    uncond_tokens.extend(texts)
-                elif self.condition == 'text_uncond':
-                    uncond_tokens.extend(uncond_tokens)
-                texts = uncond_tokens
-            text_emb = self.text_encoder(texts)
-            z = self._diffusion_reverse(text_emb, lengths)
+            if self.condition in ["text", "text_uncond"]:
+                texts = batch["text"]
+                if self.do_classifier_free_guidance:
+                    uncond_tokens = [""] * len(texts)
+                    if self.condition == 'text':
+                        uncond_tokens.extend(texts)
+                    elif self.condition == 'text_uncond':
+                        uncond_tokens.extend(uncond_tokens)
+                    texts = uncond_tokens
+                cond_emb = self.text_encoder(texts)
+            elif self.condition == "ego":
+                ego = batch["ego"]
+                if self.do_classifier_free_guidance:
+                    # Create uncond (zeros) and concat with real ego
+                    uncond_ego = torch.zeros_like(ego)
+                    ego = torch.cat([uncond_ego, ego], dim=0)
+                cond_emb = self.ego_encoder(ego)
+            else:
+                raise TypeError(f"condition type {self.condition} not supported in forward")
+            z = self._diffusion_reverse(cond_emb, lengths)
         elif self.stage in ['vae']:
             motions = batch['motion']
             z, dist_m = self.vae.encode(motions, lengths)
@@ -487,7 +504,7 @@ class MLD(BaseModel):
         recons_z, dist_rm = self.vae.encode(feats_rst, lengths)
 
         # joints recover
-        if self.condition == "text":
+        if self.condition in ["text", "ego"]:
             joints_rst = self.feats2joints(feats_rst)
             joints_ref = self.feats2joints(feats_ref)
         elif self.condition == "action":
@@ -544,6 +561,18 @@ class MLD(BaseModel):
             action = batch['action']
             # text encode
             cond_emb = action
+        elif self.condition in ['ego']:
+            ego = batch["ego"]  # (B, T_ego, 2)
+            
+            # Classifier-free guidance: randomly drop ego conditioning
+            if np.random.rand(1) < self.guidance_uncodp:
+                # Use zeros as "unconditional" embedding
+                cond_emb = torch.zeros(
+                    ego.shape[0], ego.shape[1], self.latent_dim[-1],
+                    device=ego.device, dtype=ego.dtype
+                )
+            else:
+                cond_emb = self.ego_encoder(ego)
         else:
             raise TypeError(f"condition type {self.condition} not supported")
 
@@ -572,6 +601,13 @@ class MLD(BaseModel):
                     cond_emb,
                     torch.zeros_like(batch['action'],
                                      dtype=batch['action'].dtype))
+        elif self.condition in ['ego']:
+            ego = batch["ego"]  # (B, T_ego, 2)
+            if self.do_classifier_free_guidance:
+                # Create uncond (zeros) and concat with real ego
+                uncond_ego = torch.zeros_like(ego)
+                ego = torch.cat([uncond_ego, ego], dim=0)
+            cond_emb = self.ego_encoder(ego)
         else:
             raise TypeError(f"condition type {self.condition} not supported")
 
@@ -844,6 +880,9 @@ class MLD(BaseModel):
             elif self.condition == 'action':
                 # use a2m evaluators
                 rs_set = self.a2m_eval(batch)
+            elif self.condition == 'ego':
+                # use test_diffusion_forward for ego evaluation
+                rs_set = self.test_diffusion_forward(batch)
             # MultiModality evaluation sperately
             if self.trainer.datamodule.is_mm:
                 metrics_dicts = ['MMMetrics']
@@ -853,14 +892,11 @@ class MLD(BaseModel):
             for metric in metrics_dicts:
                 if metric == "TemosMetric":
                     phase = split if split != "val" else "eval"
-                    if eval(f"self.cfg.{phase.upper()}.DATASETS")[0].lower(
-                    ) not in [
-                            "humanml3d",
-                            "kit",
-                    ]:
-                        raise TypeError(
-                            "APE and AVE metrics only support humanml3d and kit datasets now"
-                        )
+                    dataset_name = eval(f"self.cfg.{phase.upper()}.DATASETS")[0].lower()
+                    if dataset_name not in ["humanml3d", "kit"]:
+                        # Skip TemosMetric for non-HumanML3D datasets (e.g., egomotion)
+                        # APE and AVE metrics only support humanml3d and kit datasets
+                        continue
 
                     getattr(self, metric).update(rs_set["joints_rst"],
                                                  rs_set["joints_ref"],
