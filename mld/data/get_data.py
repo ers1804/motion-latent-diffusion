@@ -26,10 +26,10 @@ def get_mean_std(phase, cfg, dataset_name):
     # if phase in ["train", "val", "test"]:
     if phase in ["val"]:
         if name == 't2m':
-            data_root = pjoin(cfg.model.t2m_path, name, "Comp_v6_KLD01",
+            data_root = pjoin(cfg.model.t2m_path, name, "t2m/Comp_v6_KLD01",
                               "meta")
         elif name == 'kit':
-            data_root = pjoin(cfg.model.t2m_path, name, "Comp_v6_KLD005",
+            data_root = pjoin(cfg.model.t2m_path, name, "kit/Comp_v6_KLD005",
                               "meta")
         else:
             raise ValueError("Only support t2m and kit")
