@@ -119,6 +119,7 @@ def main():
     # callbacks
     callbacks = [
         pl.callbacks.RichProgressBar(),
+        #pl.callbacks.TQDMProgressBar(),
         ProgressLogger(metric_monitor=metric_monitor),
         # ModelCheckpoint(dirpath=os.path.join(cfg.FOLDER_EXP,'checkpoints'),filename='latest-{epoch}',every_n_epochs=1,save_top_k=1,save_last=True,save_on_train_epoch_end=True),
         ModelCheckpoint(

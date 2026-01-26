@@ -535,6 +535,24 @@ class MLD(BaseModel):
             "dist_ref": dist_ref,
         }
         return rs_set
+    
+    def _compute_diffusion_loss(self, rs_set):
+        """Compute diffusion training loss directly (bypasses torchmetrics)."""
+        import torch.nn.functional as F
+        
+        if self.predict_epsilon:
+            # Predict noise (your case)
+            loss = F.mse_loss(rs_set['noise_pred'], rs_set['noise'])
+        else:
+            # Predict x
+            loss = F.mse_loss(rs_set['pred'], rs_set['latent'])
+        
+        # Add prior loss if configured (yours is 0.0, so this won't run)
+        if self.cfg.LOSS.LAMBDA_PRIOR != 0.0:
+            prior_loss = F.mse_loss(rs_set['noise_pred_prior'], rs_set['noise_prior'])
+            loss = loss + self.cfg.LOSS.LAMBDA_PRIOR * prior_loss
+    
+        return loss
 
     def train_diffusion_forward(self, batch):
         feats_ref = batch["motion"]
@@ -561,18 +579,31 @@ class MLD(BaseModel):
             action = batch['action']
             # text encode
             cond_emb = action
+        # elif self.condition in ['ego']:
+        #     ego = batch["ego"]  # (B, T_ego, 2)
+            
+        #     # Classifier-free guidance: randomly drop ego conditioning
+        #     if np.random.rand(1) < self.guidance_uncodp:
+        #         # Use zeros as "unconditional" embedding
+        #         cond_emb = torch.zeros(
+        #             ego.shape[0], ego.shape[1], self.latent_dim[-1],
+        #             device=ego.device, dtype=ego.dtype
+        #         )
+        #     else:
+        #         cond_emb = self.ego_encoder(ego)
         elif self.condition in ['ego']:
             ego = batch["ego"]  # (B, T_ego, 2)
             
-            # Classifier-free guidance: randomly drop ego conditioning
-            if np.random.rand(1) < self.guidance_uncodp:
-                # Use zeros as "unconditional" embedding
-                cond_emb = torch.zeros(
-                    ego.shape[0], ego.shape[1], self.latent_dim[-1],
-                    device=ego.device, dtype=ego.dtype
-                )
-            else:
-                cond_emb = self.ego_encoder(ego)
+            # Classifier-free guidance: randomly drop ego conditioning PER SAMPLE
+            if self.training:
+                B = ego.shape[0]
+                drop_mask = torch.rand(B, device=ego.device) < self.guidance_uncodp  # (B,)
+                # Zero input for dropped samples (matches inference unconditional)
+                ego = ego.clone()
+                ego[drop_mask] = 0.0
+            
+            # Encode (zeros become unconditional embedding)
+            cond_emb = self.ego_encoder(ego)  # (B, T_ego, 256)
         else:
             raise TypeError(f"condition type {self.condition} not supported")
 
@@ -867,10 +898,23 @@ class MLD(BaseModel):
             else:
                 raise ValueError(f"Not support this stage {self.stage}!")
 
-            loss = self.losses[split].update(rs_set)
-            if loss is None:
-                raise ValueError(
-                    "Loss is None, this happend with torchmetrics > 0.7")
+            # loss = self.losses[split].update(rs_set)
+            # if loss is None:
+            #     raise ValueError(
+            #         "Loss is None, this happend with torchmetrics > 0.7")
+            
+            # Compute loss directly for backprop (bypasses torchmetrics issues)
+            if self.stage == "diffusion":
+                loss = self._compute_diffusion_loss(rs_set)
+            else:
+                # For vae or vae_diffusion stages, use original method
+                loss = self.losses[split].update(rs_set)
+                if loss is None:
+                    raise ValueError("Loss is None, this happened with torchmetrics > 0.7")
+
+            # Still update metrics for logging (but don't use return value)
+            if self.stage == "diffusion":
+                self.losses[split].update(rs_set)
 
         # Compute the metrics - currently evaluate results from text to motion
         if split in ["val", "test"]:

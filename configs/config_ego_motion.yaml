@@ -22,7 +22,7 @@ TRAIN:
   END_EPOCH: 2000
 
   RESUME: ''
-  PRETRAINED_VAE: ''  # Set this to your VAE checkpoint path
+  PRETRAINED_VAE: '/home/mohan/nas_drive/methods/diffusion_gen/models/vae/1222_PELearn_VAE_MEncDec49_MdiffEnc49_bs64_clip_uncond75_01/checkpoints/epoch=3199.ckpt'  # Set this to your VAE checkpoint path
   PRETRAINED: ''
   
   OPTIM:
@@ -76,12 +76,12 @@ DATASET:
     
     # Multiple datasets (train on all):
     ROOT: 
-      - 'data/diffusion/waymo'
-      - 'data/diffusion/nuscenes'
-      - 'data/diffusion/ava'
+      - '/home/mohan/nas_drive/methods/diffusion_gen/data/diffusion/waymo'
+      - '/home/mohan/nas_drive/methods/diffusion_gen/data/diffusion/nuscenes'
+      - '/home/mohan/nas_drive/methods/diffusion_gen/data/diffusion/ava'
       # - 'data/diffusion/HumanML3D'  # Add if has ego data
     
-    MAX_EGO_LEN: 100              # Max ego trajectory length
+    MAX_EGO_LEN: 200              # Max ego trajectory length
     FPS: 20                        # Your data FPS
     EGO_SCALE: 50.0               # Ego normalization: divide by this (meters)
     
@@ -90,7 +90,7 @@ DATASET:
     #           Leave MEAN_STD_PATH empty, will auto-use HUMANML3D.ROOT
     # Option 2: Use your own mean/std (for your own VAE)
     #           Set MEAN_STD_PATH to directory containing Mean.npy, Std.npy
-    MEAN_STD_PATH: ''             # Empty = use HUMANML3D.ROOT, or set your path
+    MEAN_STD_PATH: '/home/mohan/nas_drive/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
   
   SAMPLER:
     MAX_LEN: 196                   # Max motion length
