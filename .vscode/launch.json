@@ -20,6 +20,7 @@
             "console": "integratedTerminal",
             "cwd": "${workspaceFolder}",
             "python": "/home/erik/anaconda3/envs/mld/bin/python",
+            "justMyCode": false,
             "args": [
                 "--cfg",
                 "configs/config_vae_combined_dataset.yaml",

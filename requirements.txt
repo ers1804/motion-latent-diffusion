@@ -1,4 +1,4 @@
-pytorch_lightning 
+pytorch_lightning==1.9.5 
 torchmetrics==0.7
 omegaconf
 shortuuid
@@ -6,7 +6,7 @@ tqdm
 pandas
 # sklearn
 chumpy
-transformers
+transformers==4.31.0
 psutil
 einops
 yacs
@@ -24,3 +24,4 @@ diffusers
 ftfy
 tensorboard
 tensorboardX
+numpy==1.26.4

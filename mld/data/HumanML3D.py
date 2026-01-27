@@ -96,8 +96,8 @@ class CombinedDatasetDataModule(BASEDataModule):
             self.Dataset = Text2MotionDatasetV2
         self.cfg = cfg
         sample_overrides = {
-            "split": "val",
-            "tiny": True,
+            "split": "train",
+            "tiny": False,
             "progress_bar": False
         }
         self._sample_set = self.get_sample_set(overrides=sample_overrides)

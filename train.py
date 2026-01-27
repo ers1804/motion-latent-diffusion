@@ -7,6 +7,7 @@ from omegaconf import OmegaConf
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint
 # from pytorch_lightning.strategies.ddp import DDPStrategy
+from pytorch_lightning.callbacks import TQDMProgressBar
 
 from mld.callback import ProgressLogger
 from mld.config import parse_args
@@ -118,7 +119,7 @@ def main():
 
     # callbacks
     callbacks = [
-        pl.callbacks.RichProgressBar(),
+        TQDMProgressBar(refresh_rate=20),
         ProgressLogger(metric_monitor=metric_monitor),
         # ModelCheckpoint(dirpath=os.path.join(cfg.FOLDER_EXP,'checkpoints'),filename='latest-{epoch}',every_n_epochs=1,save_top_k=1,save_last=True,save_on_train_epoch_end=True),
         ModelCheckpoint(
@@ -134,11 +135,11 @@ def main():
     ]
     logger.info("Callbacks initialized")
 
-    if len(cfg.DEVICE) > 1:
+    if len(cfg.DEVICE) > 0:
         # ddp_strategy = DDPStrategy(find_unused_parameters=False)
         ddp_strategy = "ddp"
     else:
-        ddp_strategy = None
+        ddp_strategy = 'auto'
 
     # trainer
     trainer = pl.Trainer(
@@ -197,7 +198,8 @@ def main():
                     datamodule=datasets[0],
                     ckpt_path=cfg.TRAIN.PRETRAINED)
     else:
-        trainer.fit(model, datamodule=datasets[0])
+        dataset = datasets[0]
+        trainer.fit(model, datamodule=dataset)
 
     # checkpoint
     checkpoint_folder = trainer.checkpoint_callback.dirpath

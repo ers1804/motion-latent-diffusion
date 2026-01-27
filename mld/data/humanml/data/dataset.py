@@ -298,9 +298,9 @@ class Text2MotionDatasetV2(data.Dataset):
             if count > maxdata:
                 break
             if "diffusion_gen" in motion_dir:
-                motion_path = pjoin(motion_dir, dataset_sublists[name[0]], "new_joint_vecs", name + ".npy")
+                first_letter = name[0]
+                motion_path = pjoin(motion_dir, dataset_sublists[first_letter], "new_joint_vecs", name + ".npy")
                 motion = np.load(motion_path)
-                
             else:
                 motion = np.load(pjoin(motion_dir, name + ".npy"))
             if (len(motion)) < self.min_motion_length or (len(motion) >=
@@ -308,7 +308,7 @@ class Text2MotionDatasetV2(data.Dataset):
                 bad_count += 1
                 continue
             text_data = []
-            flag = False
+            flag = True
             # with cs.open(pjoin(text_dir, name + ".txt")) as f:
             #     for line in f.readlines():
             #         text_dict = {}
@@ -395,8 +395,10 @@ class Text2MotionDatasetV2(data.Dataset):
         motion, m_length, text_list = data["motion"], data["length"], data[
             "text"]
         # Randomly select a caption
-        text_data = random.choice(text_list)
-        caption, tokens = text_data["caption"], text_data["tokens"]
+        # text_data = random.choice(text_list)
+        # caption, tokens = text_data["caption"], text_data["tokens"]
+        caption = "placeholder"
+        tokens = []
 
         if len(tokens) < self.max_text_len:
             # pad with "unk"
