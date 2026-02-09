@@ -160,6 +160,15 @@ def get_datasets(cfg, logger=None, phase="train"):
                 print("[EgoMotion] WARNING: No mean/std provided! Motion will NOT be normalized.")
                 print("            This will cause issues with pretrained VAE!")
             
+            # ego motion mean and std loading
+            if hasattr(cfg.DATASET.EGOMOTION, 'EGO_MEAN_STD_PATH') and cfg.DATASET.EGOMOTION.EGO_MEAN_STD_PATH:
+                ego_mean_std_path = cfg.DATASET.EGOMOTION.EGO_MEAN_STD_PATH
+                ego_mean = np.load(pjoin(ego_mean_std_path, "Ego_Mean.npy"))
+                ego_std = np.load(pjoin(ego_mean_std_path, "Ego_Std.npy"))
+                print(f"[EgoMotion] Loaded ego mean/std from {ego_mean_std_path}")
+            else:
+                ego_mean, ego_std = None, None
+                print("[EgoMotion] WARNING: No ego mean/std provided! Ego motion will NOT be normalized and scaling will be used instead.")
             # get dataset module
             dataset = dataset_module_map[dataset_name.lower()](
                 cfg=cfg,
@@ -168,6 +177,8 @@ def get_datasets(cfg, logger=None, phase="train"):
                 collate_fn=collate_fn,
                 mean=motion_mean,
                 std=motion_std,
+                ego_mean=ego_mean,
+                ego_std=ego_std,
                 debug=cfg.DEBUG,
             )
             datasets.append(dataset)

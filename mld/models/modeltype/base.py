@@ -95,6 +95,8 @@ class BaseModel(LightningModule):
 
     def on_save_checkpoint(self, checkpoint):
         # don't save clip to checkpoint
+        if not hasattr(self, 'text_encoder'):
+            return
         state_dict = checkpoint['state_dict']
         clip_k = []
         for k, v in state_dict.items():
@@ -105,6 +107,8 @@ class BaseModel(LightningModule):
 
     def on_load_checkpoint(self, checkpoint):
         # restore clip state_dict to checkpoint
+        if not hasattr(self, 'text_encoder'):
+            return
         clip_state_dict = self.text_encoder.state_dict()
         new_state_dict = OrderedDict()
         for k, v in clip_state_dict.items():
@@ -116,6 +120,9 @@ class BaseModel(LightningModule):
 
     def load_state_dict(self, state_dict, strict=True):
         # load clip state_dict to checkpoint
+        if not hasattr(self, 'text_encoder'):
+            super().load_state_dict(state_dict, strict)
+            return    
         clip_state_dict = self.text_encoder.state_dict()
         new_state_dict = OrderedDict()
         for k, v in clip_state_dict.items():
