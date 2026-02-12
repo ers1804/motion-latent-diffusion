@@ -52,7 +52,7 @@ def load_model(cfg, checkpoint_path, device):
     return model, dataset
 
 
-def load_ego_from_json(json_path, max_ego_len=100, ego_scale=50.0):
+def load_ego_from_json(json_path, max_ego_len=196, ego_scale=50.0, ego_mean=None, ego_std=None):
     """Load ego trajectory from a JSON file."""
     with open(json_path, "r") as f:
         data = json.load(f)
@@ -60,9 +60,12 @@ def load_ego_from_json(json_path, max_ego_len=100, ego_scale=50.0):
     # Extract ego: (T, 3) -> (T, 2) using x, z
     ego_3d = np.array(data["ego_in_ped_frame"], dtype=np.float32)
     ego_2d = ego_3d[:, [0, 2]]  # x, z only
+
+    if ego_mean is None:
+        ego_mean = np.array([0.03992962314720422, 5.138034295405447], dtype=np.float32)
+    if ego_std is None:
+        ego_std = np.array([13.274100607793672, 15.879450116636379], dtype=np.float32)
     
-    ego_mean = np.array([0.03992962314720422, 5.138034295405447], dtype=np.float32)
-    ego_std = np.array([13.274100607793672, 15.879450116636379], dtype=np.float32)
     # Normalize
     ego_2d = (ego_2d - ego_mean) / (ego_std + 1e-8)
     # Pad/crop to max_ego_len
@@ -191,7 +194,7 @@ def main():
                         help="Number of samples to generate from data_dir")
     parser.add_argument("--output_dir", type=str, default="outputs/ego_demo",
                         help="Output directory for generated motions")
-    parser.add_argument("--motion_length", type=int, default=100,
+    parser.add_argument("--motion_length", type=int, default=196,
                         help="Desired output motion length in frames")
     parser.add_argument("--device", type=str, default="cuda",
                         help="Device to use (cuda or cpu)")
@@ -232,6 +235,19 @@ def main():
     # Get ego parameters from config
     max_ego_len = cfg.DATASET.EGOMOTION.MAX_EGO_LEN
     ego_scale = cfg.DATASET.EGOMOTION.EGO_SCALE
+    ego_mean_std_path = getattr(cfg.DATASET.EGOMOTION, 'EGO_MEAN_STD_PATH', None)
+    if ego_mean_std_path:
+        ego_mean_file = os.path.join(ego_mean_std_path, "Ego_Mean.npy")
+        ego_std_file = os.path.join(ego_mean_std_path, "Ego_Std.npy")
+        if os.path.exists(ego_mean_file) and os.path.exists(ego_std_file):
+            ego_mean = np.load(ego_mean_file)
+            ego_std = np.load(ego_std_file)
+            print(f"Loaded ego mean/std from {ego_mean_std_path}")
+        else:
+            print(f"Warning: Ego Mean/Std not found at {ego_mean_std_path}")
+            ego_mean, ego_std = None, None
+    else:
+        ego_mean, ego_std = None, None
     
     # Collect input files
     json_files = []
@@ -253,7 +269,7 @@ def main():
         
         # Load ego trajectory
         ego, ego_len, gt_motion, scene_id, object_id = load_ego_from_json(
-            json_path, max_ego_len, ego_scale
+            json_path, max_ego_len, ego_scale, ego_mean, ego_std
         )
         print(f"  Ego length: {ego_len} frames")
         if gt_motion is not None:
@@ -277,7 +293,7 @@ def main():
                 f"{sample_name}{rep_suffix}",
                 features,
                 joints,
-                ego * ego_scale,  # Denormalize ego for saving
+                ego * ego_std + ego_mean,  # Denormalize ego for saving
                 gt_motion
             )
     

@@ -4,6 +4,12 @@ import shutil
 import sys
 from pathlib import Path
 
+# Add user site-packages for Blender's Python to find pip-installed packages
+import site
+user_site = site.getusersitepackages()
+if user_site not in sys.path:
+    sys.path.append(user_site)
+
 import natsort
 
 try:
@@ -75,8 +81,27 @@ def render_cli() -> None:
     from mld.render.blender import render
     from mld.render.blender.tools import mesh_detect
     from mld.render.video import Video
+
+    # Load ego motion data if provided
+    ego_motion_data = None
+    ego_motion_paths = []
+    if hasattr(cfg.RENDER, 'EGO_MOTION') and cfg.RENDER.EGO_MOTION is not None:
+        ego_motion_path = cfg.RENDER.EGO_MOTION
+        if os.path.isfile(ego_motion_path) and ego_motion_path.endswith('.npy'):
+            # Single npy file
+            ego_motion_data = np.load(ego_motion_path)
+            ego_motion_data = np.pad(ego_motion_data, ((0, 0), (0, 1)), mode='constant', constant_values=0)
+            ego_motion_data = ego_motion_data[..., [0, 2, 1]]
+            print(f"Loaded ego motion trajectory with shape {ego_motion_data.shape}")
+        elif os.path.isdir(ego_motion_path):
+            # Folder containing npy files - load them to match with pose paths
+            ego_files = natsort.natsorted([f for f in os.listdir(ego_motion_path) if f.endswith('.npy')])
+            for ef in ego_files:
+                ego_motion_paths.append(os.path.join(ego_motion_path, ef))
+            print(f"Found {len(ego_motion_paths)} ego motion files in folder")
+
     init = True
-    for path in paths:
+    for path_idx, path in enumerate(paths):
         # check existed mp4 or under rendering
         if cfg.RENDER.MODE == "video":
             if os.path.exists(path.replace(".npy", ".mp4")) or os.path.exists(path.replace(".npy", "_frames")):
@@ -115,6 +140,23 @@ def render_cli() -> None:
                 output_dir, path.replace(".npy", ".png").split("/")[-1]
             )
 
+        # Determine ego motion for this specific render
+        current_ego_motion = None
+        if ego_motion_data is not None:
+            current_ego_motion = ego_motion_data
+        elif ego_motion_paths:
+            # Try to find matching ego motion file by name
+            base_name = os.path.splitext(os.path.basename(path))[0]
+            # Remove _mesh suffix if present
+            if base_name.endswith('_mesh'):
+                base_name = base_name[:-5]
+            for ego_path in ego_motion_paths:
+                ego_base = os.path.splitext(os.path.basename(ego_path))[0]
+                if ego_base == base_name or ego_base == base_name + '_ego':
+                    current_ego_motion = np.load(ego_path)
+                    print(f"Matched ego motion {ego_path} with shape {current_ego_motion.shape}")
+                    break
+
         out = render(
             data,
             frames_folder,
@@ -132,6 +174,7 @@ def render_cli() -> None:
             gt=cfg.RENDER.GT,
             accelerator=cfg.ACCELERATOR,
             device=cfg.DEVICE,
+            ego_motion=current_ego_motion,
         )
 
         init = False

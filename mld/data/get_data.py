@@ -180,6 +180,7 @@ def get_datasets(cfg, logger=None, phase="train"):
                 ego_mean=ego_mean,
                 ego_std=ego_std,
                 debug=cfg.DEBUG,
+                overfit=cfg.OVERFIT
             )
             datasets.append(dataset)
         elif dataset_name.lower() in ["amass"]:

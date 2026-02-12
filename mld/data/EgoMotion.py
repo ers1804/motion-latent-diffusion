@@ -59,6 +59,7 @@ class EgoMotionDataset(Dataset):
         max_ego_length: int = 100,
         fps: int = 20,
         debug: bool = False,
+        overfit: bool = False,
         **kwargs
     ):
         # Support both single path and list of paths
@@ -78,6 +79,7 @@ class EgoMotionDataset(Dataset):
         self.max_ego_length = max_ego_length
         self.fps = fps
         self.debug = debug
+        self.overfit = overfit
 
         # Load all sample paths from ALL data roots
         self.sample_paths = self._load_sample_paths()
@@ -85,6 +87,10 @@ class EgoMotionDataset(Dataset):
         if self.debug:
             # Use only 100 samples for debugging
             self.sample_paths = self.sample_paths[:100]
+
+        if not self.debug and self.overfit:
+            self.sample_paths = self.sample_paths[:1]
+            print(f"Overfitting to Sample {self.sample_paths[0]}.")
         
         print(f"[EgoMotionDataset] Loaded {len(self.sample_paths)} samples for {split} from {len(self.data_roots)} sources")
         for root in self.data_roots:
@@ -256,6 +262,7 @@ class EgoMotionDataModule(pl.LightningDataModule):
         ego_mean: np.ndarray = None,       # Ego mean (optional)
         ego_std: np.ndarray = None,        # Ego std (optional)
         debug: bool = False,
+        overfit: bool = False,
         **kwargs
     ):
         super().__init__()
@@ -268,6 +275,7 @@ class EgoMotionDataModule(pl.LightningDataModule):
         self.ego_mean = ego_mean
         self.ego_std = ego_std
         self.debug = debug
+        self.overfit = overfit
         self.kwargs = kwargs
 
         # Will be set by datasets
@@ -296,6 +304,7 @@ class EgoMotionDataModule(pl.LightningDataModule):
             max_ego_length=self.cfg.DATASET.EGOMOTION.MAX_EGO_LEN,
             fps=self.cfg.DATASET.EGOMOTION.FPS,
             debug=self.debug,
+            overfit=self.overfit
         )
 
         if stage == "fit" or stage is None:

@@ -116,7 +116,7 @@ def parse_args(phase="train"):
             "--cfg",
             type=str,
             required=False,
-            default="./configs/render.yaml",
+            default="./configs/render_mld.yaml",
             help="config file",
         )
         group.add_argument(
@@ -150,6 +150,13 @@ def parse_args(phase="train"):
             required=False,
             default=None,
             help="mmm or vertices for skeleton",
+        )
+        group.add_argument(
+            "--ego_motion",
+            type=str,
+            required=False,
+            default=None,
+            help="Path to .npy file or folder containing ego motion trajectory of shape [T, 3]",
         )
 
     # remove None params, and create a dictionnary
@@ -196,6 +203,7 @@ def parse_args(phase="train"):
             cfg.RENDER.INPUT_MODE = "dir"
         cfg.RENDER.JOINT_TYPE = params.joint_type
         cfg.RENDER.MODE = params.mode
+        cfg.RENDER.EGO_MOTION = params.ego_motion if hasattr(params, 'ego_motion') else None
 
     # debug mode
     if cfg.DEBUG:

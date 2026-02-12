@@ -1,5 +1,5 @@
-import moviepy.editor as mp
-import moviepy.video.fx.all as vfx
+import moviepy as mp
+# import moviepy.video.fx.all as vfx
 import os
 import imageio
 
@@ -63,5 +63,5 @@ class Video:
 
     def save(self, out_path):
         out_path = str(out_path)
-        self.video.subclip(0, self.duration).write_videofile(
+        self.video.subclipped(0, self.duration).write_videofile(
             out_path, **self._conf)

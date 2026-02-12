@@ -132,7 +132,7 @@ class MldVae(nn.Module):
         device = features.device
 
         bs, nframes, nfeats = features.shape
-        mask = lengths_to_mask(lengths, device)
+        mask = lengths_to_mask(lengths, device, max_len=nframes)
 
         x = features
         # Embed each human poses into latent vectors

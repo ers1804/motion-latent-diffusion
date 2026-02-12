@@ -3,10 +3,11 @@
 # Diffusion training config
 ####################################
 
-NAME: ego_motion_diffusion_N1
+NAME: ego_motion_diffusion_overfit_ava_2
 SEED_VALUE: 1234
 
 DEBUG: False
+OVERFIT: True
 ACCELERATOR: 'gpu'
 DEVICE: [0]
 
@@ -18,11 +19,11 @@ TRAIN:
   STAGE: diffusion
   DATASETS: ['egomotion']
   NUM_WORKERS: 4
-  BATCH_SIZE: 64
-  END_EPOCH: 3000
+  BATCH_SIZE: 1
+  END_EPOCH: 6000
 
-  RESUME: 'experiments/mld/ego_motion_diffusion_N1'
-  PRETRAINED_VAE: '/home/mohan/nas_drive/methods/diffusion_gen/models/vae/1222_PELearn_VAE_MEncDec49_MdiffEnc49_bs64_clip_uncond75_01/checkpoints/epoch=5999.ckpt'  # Set this to your VAE checkpoint path
+  RESUME: ''
+  PRETRAINED_VAE: '/home/erik/NAS/methods/diffusion_gen/models/vae/1222_PELearn_VAE_MEncDec49_MdiffEnc49_bs64_clip_uncond75_01/checkpoints/epoch=5999.ckpt'  # Set this to your VAE checkpoint path
   PRETRAINED: ''
   
   OPTIM:
@@ -79,12 +80,12 @@ DATASET:
     
     # Multiple datasets (train on all):
     ROOT: 
-      - '/home/mohan/nas_drive/methods/diffusion_gen/data/diffusion/waymo'
-      - '/home/mohan/nas_drive/methods/diffusion_gen/data/diffusion/nuscenes'
-      - '/home/mohan/nas_drive/methods/diffusion_gen/data/diffusion/ava'
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava'
+      # - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/waymo'
+      # - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/nuscenes'
       # - 'data/diffusion/HumanML3D'  # Add if has ego data
     
-    MAX_EGO_LEN: 200              # Max ego trajectory length
+    MAX_EGO_LEN: 196              # Max ego trajectory length
     FPS: 20                        # Your data FPS
     EGO_SCALE: 50.0               # Ego normalization: divide by this (meters)
     
@@ -93,8 +94,8 @@ DATASET:
     #           Leave MEAN_STD_PATH empty, will auto-use HUMANML3D.ROOT
     # Option 2: Use your own mean/std (for your own VAE)
     #           Set MEAN_STD_PATH to directory containing Mean.npy, Std.npy
-    MEAN_STD_PATH: '/home/mohan/nas_drive/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
-    EGO_MEAN_STD_PATH: '/home/mohan/nas_drive/methods/diffusion_gen/data/stats'
+    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
+    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/stats'
   SAMPLER:
     MAX_LEN: 196                   # Max motion length
     MIN_LEN: 40                    # Min motion length
