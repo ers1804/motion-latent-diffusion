@@ -122,8 +122,12 @@ class EgoMotionDataset(Dataset):
                     print(f"Warning: Neither {split_dir} nor {split_file} found")
                 continue
             
-            # Get all JSON files in split directory
-            pattern = pjoin(split_dir, "*.json")
+            # Get all JSON or npy files files in split directory
+            if 'humanml' in data_root.lower():
+                # HumanML3D has .npy files
+                pattern = pjoin(split_dir, "*.npy")
+            else:
+                pattern = pjoin(split_dir, "*.json")
             paths = glob(pattern)
             all_paths.extend(paths)
         
@@ -137,22 +141,32 @@ class EgoMotionDataset(Dataset):
             - ego: (T_ego, 2) - lateral motion (x, z)
             - motion: (T_motion, 263) - motion features
         """
-        with open(json_path, "r") as f:
-            data = json.load(f)
-        
-        # Extract ego trajectory: [[x, y, z], ...] -> (T, 2) using x, z
-        ego_3d = np.array(data["ego_in_ped_frame"], dtype=np.float32)
-        ego_2d = ego_3d[:, [0, 2]]  # Take x (index 0) and z (index 2)
-        
-        # Extract motion features: [[263], ...] -> (T, 263)
-        motion = np.array(data["vectors_263"], dtype=np.float32)
-        
-        return {
+        if json_path.endswith('.npy'):
+            motion = np.load(json_path)
+            ego_2d = np.zeros_like(motion[:, :2])  # Placeholder ego (not provided in HumanML3D)
+            return {
             "ego": ego_2d,
             "motion": motion,
-            "scene_id": data.get("scene_id", ""),
-            "object_id": data.get("object_id", ""),
+            "scene_id": "",
+            "object_id": "",
         }
+        else:
+            with open(json_path, "r") as f:
+                data = json.load(f)
+            
+            # Extract ego trajectory: [[x, y, z], ...] -> (T, 2) using x, z
+            ego_3d = np.array(data["ego_in_ped_frame"], dtype=np.float32)
+            ego_2d = ego_3d[:, [0, 2]]  # Take x (index 0) and z (index 2)
+            
+            # Extract motion features: [[263], ...] -> (T, 263)
+            motion = np.array(data["vectors_263"], dtype=np.float32)
+        
+            return {
+                "ego": ego_2d,
+                "motion": motion,
+                "scene_id": data.get("scene_id", ""),
+                "object_id": data.get("object_id", ""),
+            }
 
     def _normalize_motion(self, motion: np.ndarray) -> np.ndarray:
         """Normalize motion features using mean and std."""
@@ -199,6 +213,38 @@ class EgoMotionDataset(Dataset):
         
         return sequence, actual_length
 
+    def _pad_or_crop_ego_motion(
+        self, 
+        sequence: np.ndarray,
+        ego_sequence: np.ndarray, 
+        max_length: int
+    ) -> tuple:
+        """
+        Pad sequence to max_length or crop if too long.
+        Returns: (padded_sequence, actual_length)
+        """
+        actual_length = len(sequence)
+        actual_length_ego = len(ego_sequence)
+        
+        if actual_length >= max_length:
+            # Crop from the beginning (keep recent frames)
+            # Randomly select a subsequence of max_length
+            start_idx = np.random.randint(0, actual_length - max_length + 1)
+            sequence = sequence[start_idx:start_idx + max_length]
+            ego_sequence = ego_sequence[start_idx:start_idx + max_length]
+            # sequence = sequence[:max_length]
+            actual_length = max_length
+        else:
+            # Pad with zeros at the end
+            pad_length = max_length - actual_length
+            padding = np.zeros((pad_length, sequence.shape[-1]), dtype=sequence.dtype)
+            sequence = np.concatenate([sequence, padding], axis=0)
+            pad_length_ego = max_length - actual_length_ego
+            padding_ego = np.zeros((pad_length_ego, ego_sequence.shape[-1]), dtype=ego_sequence.dtype)
+            ego_sequence = np.concatenate([ego_sequence, padding_ego], axis=0)
+        
+        return sequence, ego_sequence, actual_length
+
     def __len__(self) -> int:
         return len(self.sample_paths)
 
@@ -232,6 +278,10 @@ class EgoMotionDataset(Dataset):
         ego, ego_length = self._pad_or_crop(ego, self.max_ego_length)
         motion, motion_length = self._pad_or_crop(motion, self.max_motion_length)
 
+        motion, ego, motion_length = self._pad_or_crop_ego_motion(
+            motion, ego, self.max_motion_length
+        )
+        ego_length = motion_length
         # Filter by length constraints
         if motion_length < self.min_motion_length:
             # Skip too-short samples
@@ -242,6 +292,7 @@ class EgoMotionDataset(Dataset):
             "motion": motion,              # (max_motion_length, 263)
             "length": motion_length,       # int
             "ego_length": ego_length,      # int
+            "text": "Placeholder",
         }
 
 
@@ -392,10 +443,12 @@ def ego_motion_collate(batch: List[Dict]) -> Dict:
     # Collect lengths (keep as list for MLD compatibility)
     lengths = [b["length"] for b in batch]
     ego_lengths = [b["ego_length"] for b in batch]
+    text = [b["text"] for b in batch]  # Placeholder text (not used for ego)
 
     return {
         "ego": ego,                 # (B, max_ego_len, 2)
         "motion": motion,           # (B, max_motion_len, 263)
         "length": lengths,          # List[int]
         "ego_length": ego_lengths,  # List[int]
+        "text": text,
     }
