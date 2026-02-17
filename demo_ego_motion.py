@@ -25,9 +25,27 @@ from glob import glob
 
 
 def load_config(config_path):
-    """Load config using OmegaConf."""
+    """Load config using OmegaConf, merging with base.yaml and module configs."""
     from omegaconf import OmegaConf
-    return OmegaConf.load(config_path)
+    from mld.config import get_module_config
+
+    base_path = os.path.join(os.path.dirname(config_path), 'base.yaml')
+    cfg = OmegaConf.load(config_path)
+    if os.path.exists(base_path):
+        cfg_base = OmegaConf.load(base_path)
+        cfg = OmegaConf.merge(cfg_base, cfg)
+
+    # Resolve module configs (adds 'target' keys etc.)
+    cfg_model = get_module_config(cfg.model, cfg.model.target if 'target' in cfg.model else 'mld.models.modeltype.mld.MLD')
+    cfg = OmegaConf.merge(cfg, cfg_model)
+
+    # Merge assets if available
+    assets_path = os.path.join(os.path.dirname(config_path), 'assets.yaml')
+    if os.path.exists(assets_path):
+        cfg_assets = OmegaConf.load(assets_path)
+        cfg = OmegaConf.merge(cfg, cfg_assets)
+
+    return cfg
 
 
 def load_model(cfg, checkpoint_path, device):
@@ -66,21 +84,21 @@ def load_ego_from_json(json_path, max_ego_len=196, ego_scale=50.0, ego_mean=None
     if ego_std is None:
         ego_std = np.array([13.274100607793672, 15.879450116636379], dtype=np.float32)
     
-    # Normalize
-    ego_2d = (ego_2d - ego_mean) / (ego_std + 1e-8)
-    # Pad/crop to max_ego_len
-    actual_len = len(ego_2d)
-    if actual_len >= max_ego_len:
-        ego_2d = ego_2d[:max_ego_len]
-        actual_len = max_ego_len
-    else:
-        padding = np.zeros((max_ego_len - actual_len, 2), dtype=np.float32)
-        ego_2d = np.concatenate([ego_2d, padding], axis=0)
-    
     # Also load ground truth motion if available (for comparison)
     gt_motion = None
     if "vectors_263" in data:
         gt_motion = np.array(data["vectors_263"], dtype=np.float32)
+    # Normalize
+    ego_2d = (ego_2d - ego_mean) / (ego_std + 1e-8)
+    # Pad/crop to max_ego_len
+    actual_len = len(ego_2d)
+    if actual_len >= len(gt_motion):
+        ego_2d = ego_2d[:len(gt_motion)]
+        actual_len = len(gt_motion)
+    else:
+        padding = np.zeros((len(gt_motion) - actual_len, 2), dtype=np.float32)
+        ego_2d = np.concatenate([ego_2d, padding], axis=0)
+    
     
     return ego_2d, actual_len, gt_motion, data.get("scene_id", ""), data.get("object_id", "")
 
@@ -194,13 +212,13 @@ def main():
                         help="Number of samples to generate from data_dir")
     parser.add_argument("--output_dir", type=str, default="outputs/ego_demo",
                         help="Output directory for generated motions")
-    parser.add_argument("--motion_length", type=int, default=196,
-                        help="Desired output motion length in frames")
+    parser.add_argument("--motion_length", type=int, default=185,
+                        help="Output motion length in frames (-1 = auto-detect from ego trajectory)")
     parser.add_argument("--device", type=str, default="cuda",
                         help="Device to use (cuda or cpu)")
     parser.add_argument("--num_repetitions", type=int, default=1,
                         help="Generate multiple motions per ego (for diversity check)")
-    parser.add_argument("--mean_std_path", type=str, default=None,
+    parser.add_argument("--mean_std_path", type=str, default="/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo",
                         help="Path to mean/std for denormalization (directory with Mean.npy, Std.npy)")
     args = parser.parse_args()
     
@@ -217,20 +235,26 @@ def main():
     print("Model loaded successfully")
     
     # Load mean/std for denormalization
+    # Try in order: --mean_std_path, config MEAN_STD_PATH, HUMANML3D.ROOT
     mean, std = None, None
-    mean_std_path = args.mean_std_path or getattr(cfg.DATASET.EGOMOTION, 'MEAN_STD_PATH', None)
-    if not mean_std_path and hasattr(cfg.DATASET, 'HUMANML3D'):
-        mean_std_path = cfg.DATASET.HUMANML3D.ROOT
-    
-    if mean_std_path:
+    candidate_paths = [
+        args.mean_std_path,
+        getattr(cfg.DATASET.EGOMOTION, 'MEAN_STD_PATH', None),
+        getattr(cfg.DATASET, 'HUMANML3D', {}).get('ROOT', None) if hasattr(cfg.DATASET, 'HUMANML3D') else None,
+    ]
+    for mean_std_path in candidate_paths:
+        if not mean_std_path:
+            continue
         mean_file = os.path.join(mean_std_path, "Mean.npy")
         std_file = os.path.join(mean_std_path, "Std.npy")
         if os.path.exists(mean_file) and os.path.exists(std_file):
             mean = np.load(mean_file)
             std = np.load(std_file)
             print(f"Loaded mean/std from {mean_std_path}")
-        else:
-            print(f"Warning: Mean/Std not found at {mean_std_path}")
+            break
+    if mean is None:
+        print("WARNING: No valid Mean.npy/Std.npy found! Features will NOT be denormalized.")
+        print("  This will produce garbage joints. Provide --mean_std_path or set MEAN_STD_PATH in config.")
     
     # Get ego parameters from config
     max_ego_len = cfg.DATASET.EGOMOTION.MAX_EGO_LEN
@@ -279,17 +303,22 @@ def main():
         for rep in range(args.num_repetitions):
             rep_suffix = f"_rep{rep}" if args.num_repetitions > 1 else ""
             
+            # Use actual ego length if --motion_length not explicitly set
+            motion_length = ego_len if args.motion_length <= 0 else args.motion_length
+            
             # Generate features (vectors_263)
-            features = generate_motion(model, ego, args.motion_length, device, mean, std)
-            print(f"  Generated features shape: {features.shape}")
+            features = generate_motion(model, ego, motion_length, device, mean, std)
+            print(f"  Generated features shape: {features.shape} (motion_length={motion_length})")
             
             # Convert to joints using recover_from_ric
             joints = features_to_joints(features, njoints=22)
             print(f"  Generated joints shape: {joints.shape}")
             
+            path_to_save = os.path.join(args.output_dir, cfg.NAME)
+            os.mkdir(path_to_save) if not os.path.exists(path_to_save) else None
             # Save results
             save_results(
-                args.output_dir,
+                path_to_save,
                 f"{sample_name}{rep_suffix}",
                 features,
                 joints,

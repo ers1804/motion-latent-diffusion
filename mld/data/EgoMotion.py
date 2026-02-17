@@ -220,32 +220,45 @@ class EgoMotionDataset(Dataset):
         max_length: int
     ) -> tuple:
         """
-        Pad sequence to max_length or crop if too long.
-        Returns: (padded_sequence, actual_length)
+        Pad/crop motion and ego together with aligned indexing.
+        Ego is first truncated/padded to match motion length so they stay aligned.
+        Returns: (padded_motion, padded_ego, actual_length)
         """
         actual_length = len(sequence)
-        actual_length_ego = len(ego_sequence)
-        
+
+        # Align ego to motion length FIRST (handles 186 vs 185 mismatch)
+        if len(ego_sequence) > actual_length:
+            ego_sequence = ego_sequence[:actual_length]
+        elif len(ego_sequence) < actual_length:
+            pad_ego = np.zeros(
+                (actual_length - len(ego_sequence), ego_sequence.shape[-1]),
+                dtype=ego_sequence.dtype,
+            )
+            ego_sequence = np.concatenate([ego_sequence, pad_ego], axis=0)
+
         if actual_length >= max_length:
-            # Crop from the beginning (keep recent frames)
-            # Randomly select a subsequence of max_length
+            # Randomly select a contiguous subsequence
             start_idx = np.random.randint(0, actual_length - max_length + 1)
             sequence = sequence[start_idx:start_idx + max_length]
             ego_sequence = ego_sequence[start_idx:start_idx + max_length]
-            # sequence = sequence[:max_length]
             actual_length = max_length
         else:
-            # Pad with zeros at the end
+            # Pad both with zeros at the end
             pad_length = max_length - actual_length
             padding = np.zeros((pad_length, sequence.shape[-1]), dtype=sequence.dtype)
             sequence = np.concatenate([sequence, padding], axis=0)
-            pad_length_ego = max_length - actual_length_ego
-            padding_ego = np.zeros((pad_length_ego, ego_sequence.shape[-1]), dtype=ego_sequence.dtype)
+            padding_ego = np.zeros((pad_length, ego_sequence.shape[-1]), dtype=ego_sequence.dtype)
             ego_sequence = np.concatenate([ego_sequence, padding_ego], axis=0)
-        
+
         return sequence, ego_sequence, actual_length
 
     def __len__(self) -> int:
+        if self.overfit:
+            # Return a larger virtual size so DataLoader can build full batches.
+            # Each batch element gets a different random (t, epsilon) during
+            # diffusion training, which is critical for gradient averaging.
+            # Without this, B=1 gradient variance prevents convergence.
+            return max(len(self.sample_paths), 256)
         return len(self.sample_paths)
 
     def __getitem__(self, idx: int) -> Dict:
@@ -258,7 +271,7 @@ class EgoMotionDataset(Dataset):
             - length: int - actual motion length
             - ego_length: int - actual ego length
         """
-        json_path = self.sample_paths[idx]
+        json_path = self.sample_paths[idx % len(self.sample_paths)]
         
         try:
             sample = self._load_sample(json_path)
@@ -275,8 +288,8 @@ class EgoMotionDataset(Dataset):
         ego = self._normalize_ego(ego)
 
         # Pad/crop sequences
-        ego, ego_length = self._pad_or_crop(ego, self.max_ego_length)
-        motion, motion_length = self._pad_or_crop(motion, self.max_motion_length)
+        # ego, ego_length = self._pad_or_crop(ego, self.max_ego_length)
+        # motion, motion_length = self._pad_or_crop(motion, self.max_motion_length)
 
         motion, ego, motion_length = self._pad_or_crop_ego_motion(
             motion, ego, self.max_motion_length

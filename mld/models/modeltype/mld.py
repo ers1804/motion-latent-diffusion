@@ -45,6 +45,7 @@ class MLD(BaseModel):
         self.latent_dim = cfg.model.latent_dim
         self.guidance_scale = cfg.model.guidance_scale
         self.guidance_uncodp = cfg.model.guidance_uncondp
+        self.deterministic_z = getattr(cfg.TRAIN, 'DETERMINISTIC_Z', False)
         self.datamodule = datamodule
 
         try:
@@ -561,6 +562,12 @@ class MLD(BaseModel):
         with torch.no_grad():
             if self.vae_type in ["mld", "vposert", "actor"]:
                 z, dist = self.vae.encode(feats_ref, lengths)
+                if self.deterministic_z:
+                    # Use posterior mean instead of sample — eliminates
+                    # the irreducible noise floor from stochastic encoding.
+                    # Useful for debugging: loss should go to ~0 on single
+                    # sample overfit if the denoiser is working correctly.
+                    z = dist.loc
             elif self.vae_type == "no":
                 z = feats_ref.permute(1, 0, 2)
             else:

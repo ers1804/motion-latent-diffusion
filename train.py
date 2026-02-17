@@ -177,6 +177,19 @@ def main():
                 vae_dict[name] = v
         model.vae.load_state_dict(vae_dict, strict=True)
 
+    # Load pretrained ego encoder (from pretrain_ego_encoder.py)
+    pretrained_ego = getattr(cfg.TRAIN, "PRETRAINED_EGO", "")
+    freeze_ego = getattr(cfg.TRAIN, "FREEZE_EGO", False)
+    if pretrained_ego and os.path.exists(pretrained_ego):
+        logger.info(f"Loading pretrained ego encoder from {pretrained_ego}")
+        ego_state = torch.load(pretrained_ego, map_location="cpu")
+        model.ego_encoder.load_state_dict(ego_state["ego_encoder"], strict=True)
+        logger.info("Ego encoder weights loaded successfully")
+    if freeze_ego:
+        logger.info("Freezing ego encoder weights")
+        for param in model.ego_encoder.parameters():
+            param.requires_grad = False
+
     if cfg.TRAIN.PRETRAINED:
         logger.info("Loading pretrain mode from {}".format(
             cfg.TRAIN.PRETRAINED))

@@ -107,11 +107,27 @@ class EgoEncoderPooled(EgoEncoder):
     """
     Ego encoder that pools to a single vector (like CLIP does for text).
     Use this if you want (B, 1, latent_dim) output instead of full sequence.
+
+    Includes a built-in projection head so that pretraining weights
+    (ego_encoder → pool → projection → VAE latent) are fully preserved
+    when the state_dict is loaded into the diffusion model.
     """
 
-    def __init__(self, pool_type: str = "mean", **kwargs):
+    def __init__(self, pool_type: str = "mean", use_projection: bool = True, **kwargs):
         super().__init__(**kwargs)
         self.pool_type = pool_type
+
+        # Built-in projection head (same arch used in pretrain_ego_encoder.py)
+        # This ensures the projection weights live inside the encoder's state_dict
+        # and are NOT discarded when loading pretrained weights.
+        if use_projection:
+            self.projection = nn.Sequential(
+                nn.Linear(self.latent_dim, self.latent_dim),
+                nn.GELU(),
+                nn.Linear(self.latent_dim, self.latent_dim),
+            )
+        else:
+            self.projection = nn.Identity()
 
     def forward(
         self, 
@@ -138,6 +154,9 @@ class EgoEncoderPooled(EgoEncoder):
                 x = x[:, -1, :]  # (B, D)
             else:
                 raise ValueError(f"Unknown pool_type: {self.pool_type}")
+
+        # Apply projection head (learned mapping to VAE latent space)
+        x = self.projection(x)  # (B, D)
 
         # Add sequence dimension back: (B, D) -> (B, 1, D)
         x = x.unsqueeze(1)
