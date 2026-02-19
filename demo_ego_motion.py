@@ -24,6 +24,30 @@ import torch
 from glob import glob
 
 
+
+def _pad_or_crop( 
+    sequence: np.ndarray, 
+    max_length: int
+) -> tuple:
+    """
+    Pad sequence to max_length or crop if too long.
+    Returns: (padded_sequence, actual_length)
+    """
+    actual_length = len(sequence)
+    
+    if actual_length >= max_length:
+        # Crop from the beginning (keep recent frames)
+        sequence = sequence[:max_length]
+        actual_length = max_length
+    else:
+        # Pad with zeros at the end
+        pad_length = max_length - actual_length
+        padding = np.zeros((pad_length, sequence.shape[-1]), dtype=sequence.dtype)
+        sequence = np.concatenate([sequence, padding], axis=0)
+    
+    return sequence, actual_length
+
+
 def load_config(config_path):
     """Load config using OmegaConf, merging with base.yaml and module configs."""
     from omegaconf import OmegaConf
@@ -212,7 +236,7 @@ def main():
                         help="Number of samples to generate from data_dir")
     parser.add_argument("--output_dir", type=str, default="outputs/ego_demo",
                         help="Output directory for generated motions")
-    parser.add_argument("--motion_length", type=int, default=185,
+    parser.add_argument("--motion_length", type=int, default=-1,
                         help="Output motion length in frames (-1 = auto-detect from ego trajectory)")
     parser.add_argument("--device", type=str, default="cuda",
                         help="Device to use (cuda or cpu)")
@@ -305,6 +329,8 @@ def main():
             
             # Use actual ego length if --motion_length not explicitly set
             motion_length = ego_len if args.motion_length <= 0 else args.motion_length
+            ego, ego_len = _pad_or_crop(ego, motion_length)
+            gt_motion, motion_length = _pad_or_crop(gt_motion, motion_length)
             
             # Generate features (vectors_263)
             features = generate_motion(model, ego, motion_length, device, mean, std)

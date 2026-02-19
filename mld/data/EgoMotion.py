@@ -86,7 +86,7 @@ class EgoMotionDataset(Dataset):
         
         if self.debug:
             # Use only 100 samples for debugging
-            self.sample_paths = self.sample_paths[:100]
+            self.sample_paths = self.sample_paths[:1000]
 
         if not self.debug and self.overfit:
             self.sample_paths = self.sample_paths[:1]
