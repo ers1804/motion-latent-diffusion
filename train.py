@@ -64,6 +64,7 @@ def main():
     loggers = []
     if cfg.LOGGER.WANDB.PROJECT:
         wandb_logger = pl_loggers.WandbLogger(
+            entity=cfg.LOGGER.WANDB.ENTITY,
             project=cfg.LOGGER.WANDB.PROJECT,
             offline=cfg.LOGGER.WANDB.OFFLINE,
             id=cfg.LOGGER.WANDB.RESUME_ID,
@@ -72,6 +73,41 @@ def main():
             name=cfg.NAME,
             anonymous=False,
             log_model=False,
+            resum='allow',
+            config={
+            "stage": cfg.TRAIN.STAGE,
+            "batch_size": cfg.TRAIN.BATCH_SIZE,
+            "end_epoch": cfg.TRAIN.END_EPOCH,
+            "lr": cfg.TRAIN.OPTIM.LR,
+            "optim_type": cfg.TRAIN.OPTIM.TYPE,
+            "datasets": cfg.TRAIN.DATASETS,
+            "freeze_ego": getattr(cfg.TRAIN, "FREEZE_EGO", False),
+            "deterministic_z": getattr(cfg.TRAIN, "DETERMINISTIC_Z", False),
+            "predict_epsilon": cfg.TRAIN.ABLATION.PREDICT_EPSILON,
+            "skip_connect": cfg.TRAIN.ABLATION.SKIP_CONNECT,
+            "condition": cfg.model.condition,
+            "latent_dim": cfg.model.latent_dim,
+            "model_type": cfg.model.model_type,
+            "num_layers": cfg.model.num_layers,
+            "num_heads": cfg.model.num_heads,
+            "ff_size": cfg.model.ff_size,
+            "dropout": cfg.model.dropout,
+            "guidance_scale": cfg.model.guidance_scale,
+            "guidance_uncondp": cfg.model.guidance_uncondp,
+            "nfeats": cfg.DATASET.NFEATS,
+            "njoints": cfg.DATASET.NJOINTS,
+            "max_ego_len": cfg.DATASET.EGOMOTION.MAX_EGO_LEN,
+            "ego_scale": cfg.DATASET.EGOMOTION.EGO_SCALE,
+            "max_len": cfg.DATASET.SAMPLER.MAX_LEN,
+            "min_len": cfg.DATASET.SAMPLER.MIN_LEN,
+            "scheduler_timesteps": cfg.model.scheduler.params.num_train_timesteps,
+            "scheduler_prediction_type": cfg.model.scheduler.params.prediction_type,
+            "num_inference_timesteps": cfg.model.scheduler.num_inference_timesteps,
+            "lambda_latent": cfg.LOSS.LAMBDA_LATENT,
+            "lambda_kl": cfg.LOSS.LAMBDA_KL,
+            "lambda_rec": cfg.LOSS.LAMBDA_REC,
+            "lambda_gen": cfg.LOSS.LAMBDA_GEN,
+            }
         )
         loggers.append(wandb_logger)
     if cfg.LOGGER.TENSORBOARD:
