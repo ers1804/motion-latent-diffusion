@@ -23,8 +23,8 @@ DATASET:
     DB_ROOT: /apdcephfs/share_1227775/shingxchen/uicap/data/vibe_db
   COMBINED_DATASET:
     ROOT: /home/erik/NAS/methods/diffusion_gen/data/vae
-    SPLIT_ROOT: /home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo
-    DATASET_NAME: ava_human_nuscenes_waymo
+    SPLIT_ROOT: /home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo
+    DATASET_NAME: ava_nuscenes_waymo
 
 model:
   bert_path: './deps/distilbert-base-uncased' # bert model path for all text encoders

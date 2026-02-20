@@ -93,10 +93,46 @@ class MLDLosses(Metric):
             if loss.split('_')[-1] == 'joints':
                 self._params[loss] = cfg.LOSS.LAMBDA_JOINT
 
-    def update(self, rs_set):
+    def compute_loss(self, rs_set):
+        """Compute loss WITH gradient tracking (outside torchmetrics' no_grad wrapper)."""
         total: float = 0.0
         # Compute the losses
         # Compute instance loss
+        if self.stage in ["vae", "vae_diffusion"]:
+            total += self._compute_weighted_loss("recons_feature", rs_set['m_rst'],
+                                                 rs_set['m_ref'])
+            total += self._compute_weighted_loss("recons_joints", rs_set['joints_rst'],
+                                                 rs_set['joints_ref'])
+            total += self._compute_weighted_loss("kl_motion", rs_set['dist_m'], rs_set['dist_ref'])
+
+        if self.stage in ["diffusion", "vae_diffusion"]:
+            # predict noise
+            if self.predict_epsilon:
+                total += self._compute_weighted_loss("inst_loss", rs_set['noise_pred'],
+                                                     rs_set['noise'])
+            # predict x
+            else:
+                total += self._compute_weighted_loss("x_loss", rs_set['pred'],
+                                                     rs_set['latent'])
+
+            if self.cfg.LOSS.LAMBDA_PRIOR != 0.0:
+                # loss - prior loss
+                total += self._compute_weighted_loss("prior_loss", rs_set['noise_prior'],
+                                                     rs_set['dist_m1'])
+
+        if self.stage in ["vae_diffusion"]:
+            # loss
+            # noise+text_emb => diff_reverse => latent => decode => motion
+            total += self._compute_weighted_loss("gen_feature", rs_set['gen_m_rst'],
+                                                 rs_set['m_ref'])
+            total += self._compute_weighted_loss("gen_joints", rs_set['gen_joints_rst'],
+                                                 rs_set['joints_ref'])
+
+        return total
+
+    def update(self, rs_set):
+        """Update metric state (called inside torchmetrics' no_grad wrapper)."""
+        total: float = 0.0
         if self.stage in ["vae", "vae_diffusion"]:
             total += self._update_loss("recons_feature", rs_set['m_rst'],
                                        rs_set['m_ref'])
@@ -105,44 +141,42 @@ class MLDLosses(Metric):
             total += self._update_loss("kl_motion", rs_set['dist_m'], rs_set['dist_ref'])
 
         if self.stage in ["diffusion", "vae_diffusion"]:
-            # predict noise
             if self.predict_epsilon:
                 total += self._update_loss("inst_loss", rs_set['noise_pred'],
                                            rs_set['noise'])
-            # predict x
             else:
                 total += self._update_loss("x_loss", rs_set['pred'],
                                            rs_set['latent'])
 
             if self.cfg.LOSS.LAMBDA_PRIOR != 0.0:
-                # loss - prior loss
                 total += self._update_loss("prior_loss", rs_set['noise_prior'],
                                            rs_set['dist_m1'])
 
         if self.stage in ["vae_diffusion"]:
-            # loss
-            # noise+text_emb => diff_reverse => latent => decode => motion
             total += self._update_loss("gen_feature", rs_set['gen_m_rst'],
                                        rs_set['m_ref'])
             total += self._update_loss("gen_joints", rs_set['gen_joints_rst'],
                                        rs_set['joints_ref'])
 
-        self.total += total.detach()
+        if isinstance(total, torch.Tensor):
+            self.total += total.detach()
         self.count += 1
-
-        return total
 
     def compute(self, split):
         count = getattr(self, "count")
         return {loss: getattr(self, loss) / count for loss in self.losses}
 
-    def _update_loss(self, loss: str, outputs, inputs):
-        # Update the loss
+    def _compute_weighted_loss(self, loss: str, outputs, inputs):
+        """Compute a single weighted loss term (with gradient tracking)."""
         val = self._losses_func[loss](outputs, inputs)
-        getattr(self, loss).__iadd__(val.detach())
-        # Return a weighted sum
         weighted_loss = self._params[loss] * val
         return weighted_loss
+
+    def _update_loss(self, loss: str, outputs, inputs):
+        """Update metric state for a single loss term (no gradient needed)."""
+        val = self._losses_func[loss](outputs, inputs)
+        getattr(self, loss).__iadd__(val.detach())
+        return val.detach()
 
     def loss2logname(self, loss: str, split: str):
         if loss == "total":

@@ -831,10 +831,13 @@ class MLD(BaseModel):
             else:
                 raise ValueError(f"Not support this stage {self.stage}!")
 
-            loss = self.losses[split].update(rs_set)
+            # Compute loss WITH gradients (outside torchmetrics' no_grad wrapper)
+            loss = self.losses[split].compute_loss(rs_set)
             if loss is None:
                 raise ValueError(
                     "Loss is None, this happend with torchmetrics > 0.7")
+            # Update metric states (inside torchmetrics' no_grad wrapper)
+            self.losses[split].update(rs_set)
 
         # Compute the metrics - currently evaluate results from text to motion
         if split in ["val", "test"]:
