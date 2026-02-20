@@ -40,8 +40,8 @@
             "console": "integratedTerminal",
             "python": "/home/erik/anaconda3/envs/mld/bin/python",
             "args": [
-                "--checkpoint", "/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/debug--ego_motion_diffusion_ava_nuscenes_1000_frozen_ego/checkpoints/epoch=2099.ckpt",
-                "--ego_json", "/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava/train/0004_20.json",
+                "--checkpoint", "/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/debug--ego_motion_diffusion_ava_nuscenes_100_frozen_ego_stochastic_z/checkpoints/epoch=4999.ckpt",
+                "--ego_json", "/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava/val/0008_37.json",
                 "--mean_std_path", "/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo"
             ]
         },
