@@ -22,6 +22,9 @@ from pathlib import Path
 import numpy as np
 import torch
 from glob import glob
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
 
 
 
@@ -222,6 +225,98 @@ def save_results(output_dir, sample_name, features, joints, ego, gt_motion=None)
         print(f"  Saved GT features: {gt_path}")
 
 
+def compute_trajectory_metrics(pred_traj, gt_traj, length):
+    """
+    Compute ADE and FDE between predicted and ground truth root trajectories.
+
+    Args:
+        pred_traj: (T, 2) predicted root positions (x, z)
+        gt_traj: (T, 2) ground truth root positions (x, z)
+        length: Number of valid frames to consider
+
+    Returns:
+        ade: Average Displacement Error (mean L2 over all valid frames)
+        fde: Final Displacement Error (L2 at last valid frame)
+    """
+    pred = pred_traj[:length]
+    gt = gt_traj[:length]
+    displacements = np.linalg.norm(pred - gt, axis=-1)  # (T,)
+    ade = float(np.mean(displacements))
+    fde = float(displacements[-1])
+    return ade, fde
+
+
+def plot_trajectories(
+    gen_joints,
+    gt_joints,
+    ego_denorm,
+    length,
+    output_path,
+    sample_name,
+    ade=None,
+    fde=None,
+):
+    """
+    Plot top-down (x, z) trajectories of generated motion, GT motion, and ego.
+
+    Args:
+        gen_joints: (T, 22, 3) generated joints
+        gt_joints: (T, 22, 3) ground truth joints (or None)
+        ego_denorm: (T, 2) denormalized ego trajectory (x, z)
+        length: Number of valid frames
+        output_path: Directory to save the plot
+        sample_name: Name for the output file
+        ade: ADE metric value (optional, displayed in legend)
+        fde: FDE metric value (optional, displayed in legend)
+    """
+    fig, ax = plt.subplots(figsize=(8, 8))
+
+    # Generated root trajectory (joint 0, x and z)
+    gen_root = gen_joints[:length, 0, [0, 2]]  # (T, 2)
+    ax.plot(gen_root[:, 0], gen_root[:, 1], '-o', color='#2196F3',
+            markersize=2, linewidth=1.5, label='Generated')
+    ax.plot(gen_root[0, 0], gen_root[0, 1], 's', color='#2196F3', markersize=8)
+    ax.plot(gen_root[-1, 0], gen_root[-1, 1], '*', color='#2196F3', markersize=12)
+
+    # Ground truth root trajectory
+    if gt_joints is not None:
+        gt_root = gt_joints[:length, 0, [0, 2]]  # (T, 2)
+        ax.plot(gt_root[:, 0], gt_root[:, 1], '-o', color='#4CAF50',
+                markersize=2, linewidth=1.5, label='Ground Truth')
+        ax.plot(gt_root[0, 0], gt_root[0, 1], 's', color='#4CAF50', markersize=8)
+        ax.plot(gt_root[-1, 0], gt_root[-1, 1], '*', color='#4CAF50', markersize=12)
+
+    # Ego trajectory
+    ego_plot = ego_denorm[:length]
+    ax.plot(ego_plot[:, 0], ego_plot[:, 1], '-o', color='#FF5722',
+            markersize=2, linewidth=1.5, label='Ego')
+    ax.plot(ego_plot[0, 0], ego_plot[0, 1], 's', color='#FF5722', markersize=8)
+    ax.plot(ego_plot[-1, 0], ego_plot[-1, 1], '*', color='#FF5722', markersize=12)
+
+    # Metrics text
+    metrics_str = ''
+    if ade is not None:
+        metrics_str += f'ADE: {ade:.4f}'
+    if fde is not None:
+        metrics_str += f'  FDE: {fde:.4f}'
+    if metrics_str:
+        ax.text(0.02, 0.98, metrics_str, transform=ax.transAxes,
+                fontsize=11, verticalalignment='top',
+                bbox=dict(boxstyle='round,pad=0.3', facecolor='wheat', alpha=0.8))
+
+    ax.set_xlabel('X (meters)')
+    ax.set_ylabel('Z (meters)')
+    ax.set_title(f'Top-Down Trajectories: {sample_name}')
+    ax.legend(loc='lower right')
+    ax.set_aspect('equal')
+    ax.grid(True, alpha=0.3)
+
+    plot_path = os.path.join(output_path, f"{sample_name}_trajectories.png")
+    fig.savefig(plot_path, dpi=150, bbox_inches='tight')
+    plt.close(fig)
+    print(f"  Saved trajectory plot: {plot_path}")
+
+
 def main():
     parser = argparse.ArgumentParser(description="Ego-Conditioned Motion Generation Demo")
     parser.add_argument("--config", type=str, default="configs/config_ego_motion.yaml",
@@ -244,6 +339,8 @@ def main():
                         help="Generate multiple motions per ego (for diversity check)")
     parser.add_argument("--mean_std_path", type=str, default="/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo",
                         help="Path to mean/std for denormalization (directory with Mean.npy, Std.npy)")
+    parser.add_argument("--trajectories", action="store_true",
+                        help="Plot top-down trajectories and compute ADE/FDE metrics")
     args = parser.parse_args()
     
     # Setup
@@ -342,15 +439,46 @@ def main():
             
             path_to_save = os.path.join(args.output_dir, cfg.NAME)
             os.mkdir(path_to_save) if not os.path.exists(path_to_save) else None
+
+            # Denormalize ego for saving/plotting
+            ego_denorm = ego * ego_std + ego_mean if ego_std is not None and ego_mean is not None else ego
+
             # Save results
             save_results(
                 path_to_save,
                 f"{sample_name}{rep_suffix}",
                 features,
                 joints,
-                ego * ego_std + ego_mean,  # Denormalize ego for saving
+                ego_denorm,
                 gt_motion
             )
+
+            # Trajectory plotting and metrics
+            if args.trajectories:
+                # Convert GT features to joints for comparison
+                gt_joints = None
+                # if gt_motion is not None and mean is not None and std is not None:
+                #     gt_features_denorm = gt_motion * std + mean
+                gt_joints = features_to_joints(gt_motion, njoints=22)
+
+                # Compute ADE/FDE if GT is available
+                ade, fde = None, None
+                if gt_joints is not None:
+                    gen_root = joints[:, 0, [0, 2]]  # (T, 2)
+                    gt_root = gt_joints[:, 0, [0, 2]]  # (T, 2)
+                    ade, fde = compute_trajectory_metrics(gen_root, gt_root, motion_length)
+                    print(f"  ADE: {ade:.4f}  FDE: {fde:.4f}")
+
+                plot_trajectories(
+                    gen_joints=joints,
+                    gt_joints=gt_joints,
+                    ego_denorm=ego_denorm,
+                    length=motion_length,
+                    output_path=path_to_save,
+                    sample_name=f"{sample_name}{rep_suffix}",
+                    ade=ade,
+                    fde=fde,
+                )
     
     print(f"\n{'='*50}")
     print(f"Done! Results saved to: {args.output_dir}")
@@ -359,6 +487,8 @@ def main():
     print("  - *_joints.npy: Generated 3D joints (T, 22, 3)")
     print("  - *_ego.npy: Ego trajectory (T, 2)")
     print("  - *_gt_features.npy: Ground truth features (if available)")
+    if args.trajectories:
+        print("  - *_trajectories.png: Top-down trajectory plot with ADE/FDE")
 
 
 if __name__ == "__main__":
