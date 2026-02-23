@@ -67,9 +67,10 @@
             "python": "/home/erik/anaconda3/envs/mld/bin/python",
             "args": [
                 "--cfg", "configs/config_ego_motion.yaml",
-                "--checkpoint", "/home/erik/NAS/methods/diffusion_gen/models/vae/1222_PELearn_VAE_MEncDec49_MdiffEnc49_bs64_clip_uncond75_01/checkpoints/epoch=5999.ckpt",
+                "--vae_only",
+                "--checkpoint", "/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=5999.ckpt",
                 "--motion_npy", "/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava/full_dataset/0001_33.json",
-                "--output_dir", "/home/erik/ssd2/gitprojects/motion-latent-diffusion/outputs/vae_inference",
+                "--output_dir", "/home/erik/ssd2/gitprojects/motion-latent-diffusion/outputs/vae_inference/vae_ava_nuscenes_waymo",
                 "--use_mean",
                 "--render",
                 "--render_mode", "video",
