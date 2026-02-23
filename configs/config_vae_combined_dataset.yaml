@@ -16,8 +16,8 @@ TRAIN:
   NUM_WORKERS: 11 # Number of workers
   BATCH_SIZE: 128 # Size of batches
   START_EPOCH: 0 # Start epochMMOTIONENCODER
-  END_EPOCH: 6000 # End epoch
-  RESUME: '' # Resume training from this path
+  END_EPOCH: 7000 # End epoch
+  RESUME: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo' # Resume training from this path
   PRETRAINED_VAE: ''
   OPTIM:
     TYPE: AdamW # Optimizer type

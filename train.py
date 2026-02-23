@@ -3,7 +3,15 @@ from pprint import pformat
 
 import pytorch_lightning as pl
 import torch
-from omegaconf import OmegaConf
+from omegaconf import OmegaConf, DictConfig, ListConfig
+from omegaconf.base import ContainerMetadata
+from omegaconf.nodes import ValueNode, AnyNode, EnumNode
+
+# PyTorch 2.6+ defaults weights_only=True; allowlist all OmegaConf types
+# so Lightning's internal torch.load calls can deserialize our checkpoints.
+torch.serialization.add_safe_globals([
+    DictConfig, ListConfig, ContainerMetadata, ValueNode, AnyNode, EnumNode,
+])
 from pytorch_lightning import loggers as pl_loggers
 from pytorch_lightning.callbacks import ModelCheckpoint
 # from pytorch_lightning.strategies.ddp import DDPStrategy
@@ -167,7 +175,8 @@ def main():
         logger.info("Loading pretrain vae from {}".format(
             cfg.TRAIN.PRETRAINED_VAE))
         state_dict = torch.load(cfg.TRAIN.PRETRAINED_VAE,
-                                map_location="cpu")["state_dict"]
+                                map_location="cpu",
+                                weights_only=False)["state_dict"]
         # extract encoder/decoder
         from collections import OrderedDict
         vae_dict = OrderedDict()
@@ -182,7 +191,8 @@ def main():
             cfg.TRAIN.PRETRAINED))
         logger.info("Attention! VAE will be recovered")
         state_dict = torch.load(cfg.TRAIN.PRETRAINED,
-                                map_location="cpu")["state_dict"]
+                                map_location="cpu",
+                                weights_only=False)["state_dict"]
         # remove mismatched and unused params
         from collections import OrderedDict
 
