@@ -73,7 +73,7 @@ def main():
             name=cfg.NAME,
             anonymous=False,
             log_model=False,
-            resum='allow',
+            resume='allow',
             config={
             "stage": cfg.TRAIN.STAGE,
             "batch_size": cfg.TRAIN.BATCH_SIZE,

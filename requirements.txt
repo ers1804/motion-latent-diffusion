@@ -1,5 +1,5 @@
-pytorch_lightning 
-torchmetrics==0.7
+pytorch_lightning==1.9.5 
+torchmetrics==0.7.3
 omegaconf
 shortuuid
 tqdm
@@ -11,7 +11,7 @@ psutil
 einops
 yacs
 wandb
-rich
+rich==12.6.0
 # for fitting
 smplx==0.1.28
 trimesh==3.9.24

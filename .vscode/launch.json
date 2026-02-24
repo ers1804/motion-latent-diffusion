@@ -28,7 +28,7 @@
                 "--epochs=2000",
                 "--lr=1e-4",
                 "--use_mean",
-                "--output_dir=./experiments/ego_encoder_pretraining"
+                "--output_dir=./experiments/ego_encoder_pretraining_new_vae_det"
             ]
         },
         {
@@ -68,10 +68,9 @@
             "args": [
                 "--cfg", "configs/config_ego_motion.yaml",
                 "--vae_only",
-                "--checkpoint", "/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=5999.ckpt",
+                "--checkpoint", "/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=6999.ckpt",
                 "--motion_npy", "/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava/full_dataset/0001_33.json",
                 "--output_dir", "/home/erik/ssd2/gitprojects/motion-latent-diffusion/outputs/vae_inference/vae_ava_nuscenes_waymo",
-                "--use_mean",
                 "--render",
                 "--render_mode", "video",
             ]
