@@ -1,0 +1,222 @@
+####################################
+# Baseline 1: Unconditional MLD
+#
+# Runs the trained ego-conditioned diffusion model with ALL ego trajectories
+# replaced by zeros before encoding.  Since the model was trained with 10 %
+# null-ego dropout (guidance_uncondp = 0.1), its unconditional prior is
+# well-defined.
+#
+# Run with:
+#   python baselines/eval_uncond.py \
+#       --cfg configs/config_ego_motion_baseline_uncond.yaml \
+#       --cfg_assets configs/assets.yaml
+####################################
+
+NAME: ego_motion_baseline_uncond
+SEED_VALUE: 1234
+
+DEBUG: False
+OVERFIT: False
+ACCELERATOR: 'gpu'
+DEVICE: [0]
+
+#####################################
+# Training Settings (needed by parser — not used for baseline)
+#####################################
+TRAIN:
+  STAGE: diffusion
+  DATASETS: ['egomotion']
+  NUM_WORKERS: 4
+  BATCH_SIZE: 32
+  END_EPOCH: 5000
+
+  RESUME: ''
+  PRETRAINED_VAE: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=6999.ckpt'
+  PRETRAINED_EGO: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/ego_encoder_pretrain_full/checkpoints/best.pt'
+  PRETRAINED: ''
+  FREEZE_EGO: True
+  DETERMINISTIC_Z: False
+
+  OPTIM:
+    TYPE: AdamW
+    LR: 1e-4
+
+  ABLATION:
+    SKIP_CONNECT: True
+    PE_TYPE: mld
+    DIFF_PE_TYPE: mld
+    PREDICT_EPSILON: True
+    VAE_TYPE: mld
+    MLP_DIST: False
+    IS_DIST: False
+
+#####################################
+# Validation Settings
+#####################################
+EVAL:
+  DATASETS: ['egomotion']
+  BATCH_SIZE: 32
+  SPLIT: test
+
+#####################################
+# Testing Settings
+#####################################
+TEST:
+  CHECKPOINTS: '/home/erik/NAS/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_all_new_vae_stochastic/checkpoints/epoch=1599.ckpt'
+  DATASETS: ['egomotion']
+  SPLIT: val
+  BATCH_SIZE: 1       # one sample at a time (batch > 1 changes diffusion timing)
+  MEAN: False
+  NUM_SAMPLES: 1
+  FACT: 1
+  COUNT_TIME: False
+  REPLICATION_TIMES: 3
+  MM_NUM_SAMPLES: 100
+  MM_NUM_TIMES: 10
+  DIVERSITY_TIMES: 300
+
+#####################################
+# Dataset Settings
+#####################################
+DATASET:
+  JOINT_TYPE: 'humanml3d'
+  NFEATS: 263
+  NJOINTS: 22
+
+  HUMANML3D:
+    ROOT: 'datasets/humanml3d'
+    UNIT_LEN: 4
+
+  EGOMOTION:
+    ROOT:
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava'
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/nuscenes'
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/waymo'
+
+    MAX_EGO_LEN: 196
+    FPS: 20
+    EGO_SCALE: 50.0
+
+    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'
+    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/stats'
+
+  SAMPLER:
+    MAX_LEN: 196
+    MIN_LEN: 40
+    MAX_TEXT_LEN: 20
+
+#####################################
+# Model Settings
+#####################################
+model:
+  vae: true
+  model_type: mld
+  condition: 'ego'
+  latent_dim: [1, 256]
+  ff_size: 1024
+  num_layers: 9
+  num_heads: 4
+  dropout: 0.1
+  activation: gelu
+  guidance_scale: 7.5       # CFG still enabled — both branches receive zero ego
+  guidance_uncondp: 0.1
+
+  ego_encoder:
+    target: mld.models.architectures.ego_encoder.EgoEncoderPooled
+    params:
+      input_dim: 2
+      latent_dim: 256
+      num_layers: 4
+      num_heads: 4
+      ff_size: 1024
+      dropout: 0.1
+      activation: gelu
+      pool_type: mean
+
+  motion_vae:
+    target: mld.models.architectures.mld_vae.MldVae
+    params:
+      nfeats: ${DATASET.NFEATS}
+      latent_dim: ${model.latent_dim}
+      ff_size: 1024
+      num_layers: 9
+      num_heads: 4
+      dropout: 0.1
+      activation: gelu
+      ablation: ${TRAIN.ABLATION}
+
+  denoiser:
+    target: mld.models.architectures.mld_denoiser.MldDenoiser
+    params:
+      latent_dim: ${model.latent_dim}
+      text_encoded_dim: 256
+      ff_size: ${model.ff_size}
+      num_layers: ${model.num_layers}
+      num_heads: ${model.num_heads}
+      dropout: ${model.dropout}
+      activation: ${model.activation}
+      guidance_scale: ${model.guidance_scale}
+      guidance_uncondp: ${model.guidance_uncondp}
+      ablation: ${TRAIN.ABLATION}
+      condition: ${model.condition}
+      nfeats: ${DATASET.NFEATS}
+
+  scheduler:
+    target: diffusers.DDIMScheduler
+    params:
+      num_train_timesteps: 1000
+      beta_start: 0.00085
+      beta_end: 0.012
+      beta_schedule: scaled_linear
+      clip_sample: false
+      set_alpha_to_one: false
+      steps_offset: 0
+      prediction_type: sample
+    num_inference_timesteps: 50
+    eta: 0.0
+
+  noise_scheduler:
+    target: diffusers.DDPMScheduler
+    params:
+      num_train_timesteps: 1000
+      beta_start: 0.00085
+      beta_end: 0.012
+      beta_schedule: scaled_linear
+      variance_type: fixed_small
+      clip_sample: false
+      prediction_type: sample
+
+#####################################
+# Loss Settings
+#####################################
+LOSS:
+  TYPE: mld
+  LAMBDA_LATENT: 1.0e-5
+  LAMBDA_KL: 1.0e-4
+  LAMBDA_REC: 1.0
+  LAMBDA_GEN: 1.0
+  LAMBDA_CROSS: 1.0
+  LAMBDA_CYCLE: 0.0
+  LAMBDA_PRIOR: 0.0
+  DIST_SYNC_ON_STEP: False
+
+#####################################
+# Metric Settings
+#####################################
+METRIC:
+  TYPE: ['EgoMotionMetrics']
+  FORCE_IN_METER: True
+  DIST_SYNC_ON_STEP: False
+
+#####################################
+# Logger Settings
+#####################################
+LOGGER:
+  SACE_CHECKPOINT_EPOCH: 100
+  LOG_EVERY_STEPS: 1
+  VAL_EVERY_STEPS: 100
+  TENSORBOARD: True
+  WANDB:
+    PROJECT: null
+    OFFLINE: False
+    RESUME_ID: null
