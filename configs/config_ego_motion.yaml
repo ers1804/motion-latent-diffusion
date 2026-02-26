@@ -27,7 +27,7 @@ TRAIN:
   PRETRAINED_EGO: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/ego_encoder_pretrain_full/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
   PRETRAINED: ''
   FREEZE_EGO: True
-  DETERMINISTIC_Z: True             # Use VAE mean (not sample) — eliminates stochastic noise floor, loss should → 0
+  DETERMINISTIC_Z: False             # Use VAE mean (not sample) — eliminates stochastic noise floor, loss should → 0
   
   OPTIM:
     TYPE: AdamW
@@ -37,7 +37,7 @@ TRAIN:
     SKIP_CONNECT: True
     PE_TYPE: mld
     DIFF_PE_TYPE: mld
-    PREDICT_EPSILON: False       # x0/sample prediction — avoids SNR amplification at high t
+    PREDICT_EPSILON: True       # x0/sample prediction — avoids SNR amplification at high t
     VAE_TYPE: mld
     MLP_DIST: False
     IS_DIST: False
@@ -54,14 +54,18 @@ EVAL:
 # Testing Settings
 #####################################
 TEST:
-  CHECKPOINTS: ''
+  CHECKPOINTS: '/home/erik/NAS/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_all_new_vae_stochastic/checkpoints/epoch=1599.ckpt'
   DATASETS: ['egomotion']
-  SPLIT: test
+  SPLIT: val
   BATCH_SIZE: 1
   MEAN: False
   NUM_SAMPLES: 1
   FACT: 1
-  COUNT_TIME: False 
+  COUNT_TIME: False
+  REPLICATION_TIMES: 3
+  MM_NUM_SAMPLES: 100
+  MM_NUM_TIMES: 10
+  DIVERSITY_TIMES: 300
 
 #####################################
 # Dataset Settings
@@ -207,7 +211,7 @@ LOSS:
 # Metric Settings
 #####################################
 METRIC:
-  TYPE: []  # No metrics for ego (TemosMetric requires HumanML3D/KIT)
+  TYPE: ['EgoMotionMetrics']
   FORCE_IN_METER: True
   DIST_SYNC_ON_STEP: False
 

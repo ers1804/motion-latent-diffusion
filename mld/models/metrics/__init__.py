@@ -5,3 +5,4 @@ from .mm import MMMetrics
 from .gru import HUMANACTMetrics
 from .stgcn import UESTCMetrics
 from .uncond import UncondMetrics
+from .ego_motion import EgoMotionMetrics

@@ -347,7 +347,7 @@ class EgoMotionDataModule(pl.LightningDataModule):
         self.njoints = 22
         
         # For MLD compatibility
-        self.is_mm = False  # No multimodality evaluation for ego
+        self.is_mm = False
 
     def setup(self, stage: Optional[str] = None):
         """Setup train/val/test datasets."""
@@ -378,7 +378,9 @@ class EgoMotionDataModule(pl.LightningDataModule):
             self.njoints = self.train_dataset.njoints
 
         if stage == "test" or stage is None:
-            self.test_dataset = EgoMotionDataset(split="test", **common_kwargs)
+            if not self.is_mm:  # Don't overwrite MM-modified sample_paths
+                test_split = getattr(self.cfg.TEST, 'SPLIT', 'test')
+                self.test_dataset = EgoMotionDataset(split=test_split, **common_kwargs)
 
     def train_dataloader(self):
         return DataLoader(
@@ -401,6 +403,49 @@ class EgoMotionDataModule(pl.LightningDataModule):
             drop_last=False,
             pin_memory=True,
         )
+
+    def mm_mode(self, mm_on: bool = True):
+        """
+        Toggle MultiModality evaluation mode.
+
+        When on:
+          - A random subset of MM_NUM_SAMPLES test trajectories is selected.
+          - Each trajectory is replicated (MM_NUM_TIMES + 1) times so that
+            stochastic diffusion sampling can produce a diverse group of
+            motions for the same ego condition.
+          - batch_size is set to (MM_NUM_TIMES + 1) so each DataLoader batch
+            contains all replicates of one condition, giving shape
+            (1, MM_NUM_TIMES+1, 512) per MMMetrics.update call — which
+            satisfies the calculate_multimodality_np assertion
+            (activation.shape[1] > MM_NUM_TIMES).
+
+        When off: original sample_paths and batch_size are restored.
+        """
+        if mm_on:
+            self.is_mm = True
+            self._original_sample_paths = self.test_dataset.sample_paths
+            self._original_batch_size = self.batch_size
+
+            mm_num_times = self.cfg.TEST.MM_NUM_TIMES
+            mm_num_samples = min(
+                self.cfg.TEST.MM_NUM_SAMPLES, len(self.test_dataset.sample_paths)
+            )
+            rng_indices = np.random.choice(
+                len(self.test_dataset.sample_paths), mm_num_samples, replace=False
+            )
+            # Repeat each path (mm_num_times + 1) times so that the assertion
+            # activation.shape[1] > mm_num_times holds in calculate_multimodality_np.
+            mm_paths = [
+                self.test_dataset.sample_paths[i]
+                for i in rng_indices
+                for _ in range(mm_num_times + 1)
+            ]
+            self.test_dataset.sample_paths = mm_paths
+            self.batch_size = mm_num_times + 1
+        else:
+            self.is_mm = False
+            self.test_dataset.sample_paths = self._original_sample_paths
+            self.batch_size = self._original_batch_size
 
     def test_dataloader(self):
         return DataLoader(

@@ -117,8 +117,8 @@ def main():
         metrics_type = ", ".join(cfg.METRIC.TYPE)
         logger.info(f"Evaluating {metrics_type} - Replication {i}")
         metrics = trainer.test(model, datamodule=datasets)[0]
-        if "TM2TMetrics" in metrics_type:
-            # mm meteics
+        if "TM2TMetrics" in metrics_type or "EgoMotionMetrics" in metrics_type:
+            # mm metrics
             logger.info(f"Evaluating MultiModality - Replication {i}")
             datasets.mm_mode(True)
             mm_metrics = trainer.test(model, datamodule=datasets)[0]

@@ -3,7 +3,7 @@ from pathlib import Path
 import numpy as np
 import torch
 from pytorch_lightning import LightningModule
-from mld.models.metrics import ComputeMetrics, MRMetrics, TM2TMetrics, MMMetrics, HUMANACTMetrics, UESTCMetrics, UncondMetrics
+from mld.models.metrics import ComputeMetrics, MRMetrics, TM2TMetrics, MMMetrics, HUMANACTMetrics, UESTCMetrics, UncondMetrics, EgoMotionMetrics
 from os.path import join as pjoin
 from collections import OrderedDict
 
@@ -52,7 +52,9 @@ class BaseModel(LightningModule):
             })
 
         if split in ["val", "test"]:
-            if self.trainer.datamodule.is_mm and "TM2TMetrics" in self.metrics_dict:
+            if self.trainer.datamodule.is_mm and (
+                "TM2TMetrics" in self.metrics_dict or "EgoMotionMetrics" in self.metrics_dict
+            ):
                 metrics_dicts = ['MMMetrics']
             else:
                 metrics_dicts = self.metrics_dict
@@ -119,17 +121,26 @@ class BaseModel(LightningModule):
         checkpoint['state_dict'] = new_state_dict
 
     def load_state_dict(self, state_dict, strict=True):
-        # load clip state_dict to checkpoint
-        if not hasattr(self, 'text_encoder'):
-            super().load_state_dict(state_dict, strict)
-            return    
-        clip_state_dict = self.text_encoder.state_dict()
-        new_state_dict = OrderedDict()
-        for k, v in clip_state_dict.items():
-            new_state_dict['text_encoder.' + k] = v
-        for k, v in state_dict.items():
-            if 'text_encoder' not in k:
-                new_state_dict[k] = v
+        # Build a complete state dict by merging separately-loaded evaluator
+        # weights (t2m encoders, clip text encoder) into the checkpoint.
+        # These modules are initialised at test time from their own checkpoints
+        # and are therefore absent from the training state dict.
+        new_state_dict = OrderedDict(state_dict)
+
+        # Merge CLIP text encoder weights (text-conditioned models)
+        if hasattr(self, 'text_encoder'):
+            for k, v in self.text_encoder.state_dict().items():
+                new_state_dict['text_encoder.' + k] = v
+
+        # Merge t2m evaluator weights (added at test time for EgoMotionMetrics
+        # or TM2T/Uncond metrics when the training ckpt predates them)
+        for attr in ('t2m_textencoder', 't2m_moveencoder', 't2m_motionencoder'):
+            if hasattr(self, attr):
+                mod = getattr(self, attr)
+                for k, v in mod.state_dict().items():
+                    key = f'{attr}.{k}'
+                    if key not in new_state_dict:
+                        new_state_dict[key] = v
 
         super().load_state_dict(new_state_dict, strict)
 
@@ -179,10 +190,20 @@ class BaseModel(LightningModule):
                     if self.debug else self.cfg.TEST.DIVERSITY_TIMES,
                     dist_sync_on_step=self.cfg.METRIC.DIST_SYNC_ON_STEP,
                 )
+            elif metric == "EgoMotionMetrics":
+                self.EgoMotionMetrics = EgoMotionMetrics(
+                    diversity_times=30
+                    if self.debug else self.cfg.TEST.DIVERSITY_TIMES,
+                    dist_sync_on_step=self.cfg.METRIC.DIST_SYNC_ON_STEP,
+                )
             else:
                 raise NotImplementedError(
                     f"Do not support Metric Type {metric}")
-        if "TM2TMetrics" in self.metrics_dict or "UncondMetrics" in self.metrics_dict:
+        if (
+            "TM2TMetrics" in self.metrics_dict
+            or "UncondMetrics" in self.metrics_dict
+            or "EgoMotionMetrics" in self.metrics_dict
+        ):
             self.MMMetrics = MMMetrics(
                 mm_num_times=self.cfg.TEST.MM_NUM_TIMES,
                 dist_sync_on_step=self.cfg.METRIC.DIST_SYNC_ON_STEP,

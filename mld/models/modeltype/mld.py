@@ -87,7 +87,7 @@ class MLD(BaseModel):
         self.noise_scheduler = instantiate_from_config(
             cfg.model.noise_scheduler)
 
-        if self.condition in ["text", "text_uncond"]:
+        if self.condition in ["text", "text_uncond"] or "EgoMotionMetrics" in cfg.METRIC.TYPE:
             self._get_t2m_evaluator(cfg)
 
         if cfg.TRAIN.OPTIM.TYPE.lower() == "adamw":
@@ -670,6 +670,12 @@ class MLD(BaseModel):
             "joints_rst": joints_rst,
         }
 
+        # Store real ego embedding for R-precision metric.
+        # cond_emb is (2B, 1, 256) with CFG or (B, 1, 256) without.
+        # The last len(lengths) entries are always the real (non-zero) embeddings.
+        if self.condition in ['ego']:
+            rs_set["ego_emb"] = cond_emb[-len(lengths):].squeeze(1).detach()  # (B, 256)
+
         # prepare gt/refer for metric
         if "motion" in batch.keys() and not finetune_decoder:
             feats_ref = batch["motion"].detach()
@@ -687,6 +693,49 @@ class MLD(BaseModel):
             rs_set["lat_m"] = motion_z.permute(1, 0, 2)
             rs_set["lat_rm"] = recons_z.permute(1, 0, 2)
             rs_set["joints_ref"] = joints_ref
+        return rs_set
+
+    def ego_eval(self, batch):
+        """
+        Ego-conditioned evaluation pass.
+
+        Wraps test_diffusion_forward and computes the additional motion
+        embeddings needed by EgoMotionMetrics:
+
+          - t2m_lat_rm / t2m_lat_m : 512-D embeddings from the pretrained
+            HumanML3D t2m_motionencoder (used for FID and Diversity).
+          - motion_lat_pooled       : 256-D mean-pooled VAE latent of the
+            generated motion (used for R-Precision).
+          - ego_emb                 : 256-D ego encoder output (already added
+            by test_diffusion_forward, used for R-Precision).
+        """
+        rs_set = self.test_diffusion_forward(batch)
+        lengths = batch["length"]
+
+        # t2m motion encoder expects lengths divided by 4
+        # (two stride-2 convolutions in MovementConvEncoder).
+        m_lens = torch.tensor(lengths, device=rs_set["m_rst"].device) // 4
+        m_lens = torch.clamp(m_lens, min=1)
+
+        # pack_padded_sequence requires lengths sorted in descending order.
+        m_lens_sorted, sort_idx = m_lens.sort(descending=True)
+        unsort_idx = sort_idx.argsort()
+
+        with torch.no_grad():
+            # Generated motion → 512-D t2m embedding
+            recons_mov = self.t2m_moveencoder(rs_set["m_rst"][..., :-4]).detach()
+            lat_rm_sorted = self.t2m_motionencoder(recons_mov[sort_idx], m_lens_sorted)
+            rs_set["t2m_lat_rm"] = lat_rm_sorted[unsort_idx]  # (B, 512)
+
+            if "m_ref" in rs_set:
+                # GT motion → 512-D t2m embedding
+                motion_mov = self.t2m_moveencoder(rs_set["m_ref"][..., :-4]).detach()
+                lat_m_sorted = self.t2m_motionencoder(motion_mov[sort_idx], m_lens_sorted)
+                rs_set["t2m_lat_m"] = lat_m_sorted[unsort_idx]  # (B, 512)
+
+        # Mean-pool VAE latent for R-precision: (B, ntoken, 256) → (B, 256)
+        rs_set["motion_lat_pooled"] = rs_set["lat_rm"].mean(dim=1).detach()  # (B, 256)
+
         return rs_set
 
     def t2m_eval(self, batch):
@@ -932,8 +981,12 @@ class MLD(BaseModel):
                 # use a2m evaluators
                 rs_set = self.a2m_eval(batch)
             elif self.condition == 'ego':
-                # use test_diffusion_forward for ego evaluation
-                rs_set = self.test_diffusion_forward(batch)
+                # use ego_eval (includes t2m embeddings) when EgoMotionMetrics
+                # is active, otherwise fall back to plain diffusion forward
+                if "EgoMotionMetrics" in self.metrics_dict:
+                    rs_set = self.ego_eval(batch)
+                else:
+                    rs_set = self.test_diffusion_forward(batch)
             # MultiModality evaluation sperately
             if self.trainer.datamodule.is_mm:
                 metrics_dicts = ['MMMetrics']
@@ -973,9 +1026,24 @@ class MLD(BaseModel):
                     getattr(self, metric).update(rs_set["joints_rst"],
                                                  rs_set["joints_ref"],
                                                  batch["length"])
+                elif metric == "EgoMotionMetrics":
+                    getattr(self, metric).update(
+                        recmotion_embeddings=rs_set["t2m_lat_rm"],
+                        gtmotion_embeddings=rs_set["t2m_lat_m"],
+                        motion_latents=rs_set["motion_lat_pooled"],
+                        ego_embeddings=rs_set["ego_emb"],
+                        lengths=batch["length"],
+                    )
                 elif metric == "MMMetrics":
-                    getattr(self, metric).update(rs_set["lat_rm"].unsqueeze(0),
-                                                 batch["length"])
+                    # For ego condition use t2m embeddings; otherwise VAE latents
+                    if self.condition == 'ego' and "t2m_lat_rm" in rs_set:
+                        getattr(self, metric).update(
+                            rs_set["t2m_lat_rm"].unsqueeze(0), batch["length"]
+                        )
+                    else:
+                        getattr(self, metric).update(
+                            rs_set["lat_rm"].unsqueeze(0), batch["length"]
+                        )
                 elif metric == "HUMANACTMetrics":
                     getattr(self, metric).update(rs_set["m_action"],
                                                  rs_set["joints_eval_rst"],
