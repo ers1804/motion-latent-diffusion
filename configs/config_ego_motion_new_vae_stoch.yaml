@@ -3,7 +3,7 @@
 # Diffusion training config
 ####################################
 
-NAME: ego_motion_diffusion_all_new_vae_deterministic
+NAME: ego_motion_diffusion_all_new_vae_stochastic
 SEED_VALUE: 1234
 
 DEBUG: False
@@ -19,15 +19,15 @@ TRAIN:
   STAGE: diffusion
   DATASETS: ['egomotion']
   NUM_WORKERS: 4
-  BATCH_SIZE: 32
+  BATCH_SIZE: 64
   END_EPOCH: 5000
 
-  RESUME: ''
-  PRETRAINED_VAE: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=6999.ckpt'  # Set this to your VAE checkpoint path
-  PRETRAINED_EGO: '/home/erik/NAS/methods/diffusion_gen/models/ego_encoder/ego_encoder_pretraining_new_vae_det/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
+  RESUME: '/mnt/nas/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_all_new_vae_stochastic'
+  PRETRAINED_VAE: '/mnt/nas/methods/diffusion_gen/models/vae/vae_ava_nuscenes_waymo/checkpoints/epoch=6999.ckpt'  # Set this to your VAE checkpoint path
+  PRETRAINED_EGO: '/mnt/nas/methods/diffusion_gen/models/ego_encoder/ego_encoder_pretrain_new_vae_stoch/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
   PRETRAINED: ''
   FREEZE_EGO: True
-  DETERMINISTIC_Z: True             # Use VAE mean (not sample) — eliminates stochastic noise floor, loss should → 0
+  DETERMINISTIC_Z: False             # Use VAE mean (not sample) — eliminates stochastic noise floor, loss should → 0
   
   OPTIM:
     TYPE: AdamW
@@ -37,7 +37,7 @@ TRAIN:
     SKIP_CONNECT: True
     PE_TYPE: mld
     DIFF_PE_TYPE: mld
-    PREDICT_EPSILON: False       # x0/sample prediction — avoids SNR amplification at high t
+    PREDICT_EPSILON: True       # x0/sample prediction — avoids SNR amplification at high t
     VAE_TYPE: mld
     MLP_DIST: False
     IS_DIST: False
@@ -54,18 +54,14 @@ EVAL:
 # Testing Settings
 #####################################
 TEST:
-  CHECKPOINTS: '/home/erik/NAS/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_all_new_vae_stochastic/checkpoints/epoch=1599.ckpt'
+  CHECKPOINTS: ''
   DATASETS: ['egomotion']
-  SPLIT: val
+  SPLIT: test
   BATCH_SIZE: 1
   MEAN: False
   NUM_SAMPLES: 1
   FACT: 1
-  COUNT_TIME: False
-  REPLICATION_TIMES: 3
-  MM_NUM_SAMPLES: 100
-  MM_NUM_TIMES: 10
-  DIVERSITY_TIMES: 300
+  COUNT_TIME: False 
 
 #####################################
 # Dataset Settings
@@ -87,9 +83,9 @@ DATASET:
     
     # Multiple datasets (train on all):
     ROOT: 
-      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava'
-      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/nuscenes'
-      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/waymo'
+      - '/mnt/nas/methods/diffusion_gen/data/diffusion/ava'
+      - '/mnt/nas/methods/diffusion_gen/data/diffusion/nuscenes'
+      - '/mnt/nas/methods/diffusion_gen/data/diffusion/waymo'
       # - 'data/diffusion/HumanML3D'  # Add if has ego data
     
     MAX_EGO_LEN: 196              # Max ego trajectory length
@@ -101,8 +97,8 @@ DATASET:
     #           Leave MEAN_STD_PATH empty, will auto-use HUMANML3D.ROOT
     # Option 2: Use your own mean/std (for your own VAE)
     #           Set MEAN_STD_PATH to directory containing Mean.npy, Std.npy
-    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
-    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/stats'
+    MEAN_STD_PATH: '/mnt/nas/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
+    EGO_MEAN_STD_PATH: '/mnt/nas/methods/diffusion_gen/data/stats'
   SAMPLER:
     MAX_LEN: 196                   # Max motion length
     MIN_LEN: 40                    # Min motion length
@@ -211,7 +207,7 @@ LOSS:
 # Metric Settings
 #####################################
 METRIC:
-  TYPE: ['EgoMotionMetrics']
+  TYPE: []  # No metrics for ego (TemosMetric requires HumanML3D/KIT)
   FORCE_IN_METER: True
   DIST_SYNC_ON_STEP: False
 
@@ -224,6 +220,7 @@ LOGGER:
   VAL_EVERY_STEPS: 100
   TENSORBOARD: True
   WANDB:
-    PROJECT: null                  # Set to your wandb project name to enable
+    PROJECT: diffusion_gen
+    ENTITY: erik_hm
     OFFLINE: False
-    RESUME_ID: null
+    RESUME_ID: ego_motion_diffusion_all_new_vae_stochastic_1
