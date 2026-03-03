@@ -124,6 +124,7 @@ LOSS:
   LAMBDA_CROSS: 1.0
   LAMBDA_CYCLE: 0.0
   LAMBDA_PRIOR: 0.0
+  LAMBDA_TRAJ: 1.0
   DIST_SYNC_ON_STEP: False
 
 #####################################

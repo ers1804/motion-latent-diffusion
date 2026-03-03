@@ -41,6 +41,10 @@ class MLDLosses(Metric):
             losses.append("recons_joints")
             losses.append("recons_limb")
 
+            # trajectory loss
+            if self.cfg.LOSS.LAMBDA_TRAJ != 0.0:
+                losses.append("recons_traj")
+
             losses.append("gen_feature")
             losses.append("gen_joints")
 
@@ -76,6 +80,10 @@ class MLDLosses(Metric):
                 if cfg.LOSS.LAMBDA_KL != 0.0:
                     self._losses_func[loss] = KLLoss()
                     self._params[loss] = cfg.LOSS.LAMBDA_KL
+            elif loss == 'recons_traj':
+                # Trajectory loss: MSE on root XZ positions (not SmoothL1)
+                self._losses_func[loss] = torch.nn.MSELoss(reduction='mean')
+                self._params[loss] = cfg.LOSS.LAMBDA_TRAJ
             elif loss.split('_')[0] == 'recons':
                 self._losses_func[loss] = torch.nn.SmoothL1Loss(
                     reduction='mean')
@@ -102,6 +110,11 @@ class MLDLosses(Metric):
                                        rs_set['m_ref'])
             total += self._update_loss("recons_joints", rs_set['joints_rst'],
                                        rs_set['joints_ref'])
+            # Trajectory loss: root XZ positions from recover_root_rot_pos
+            if self.cfg.LOSS.LAMBDA_TRAJ != 0.0:
+                traj_rst = self._extract_root_traj(rs_set['m_rst'])
+                traj_ref = self._extract_root_traj(rs_set['m_ref'])
+                total += self._update_loss("recons_traj", traj_rst, traj_ref)
             total += self._update_loss("kl_motion", rs_set['dist_m'], rs_set['dist_ref'])
 
         if self.stage in ["diffusion", "vae_diffusion"]:
@@ -143,6 +156,19 @@ class MLDLosses(Metric):
         # Return a weighted sum
         weighted_loss = self._params[loss] * val
         return weighted_loss
+
+    @staticmethod
+    def _extract_root_traj(features: torch.Tensor) -> torch.Tensor:
+        """Extract root XZ trajectory from HumanML3D features via cumulative integration.
+
+        Args:
+            features: (B, T, 263) HumanML3D motion features
+
+        Returns:
+            root_xz: (B, T, 2) global root XZ positions
+        """
+        _, r_pos = recover_root_rot_pos(features)  # r_pos: (B, T, 3)
+        return r_pos[..., [0, 2]]  # XZ only
 
     def loss2logname(self, loss: str, split: str):
         if loss == "total":

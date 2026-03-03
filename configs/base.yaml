@@ -67,6 +67,7 @@ LOSS:
   LAMBDA_CROSS: 1.0 # Lambda for cross-reconstruction losses
   LAMBDA_CYCLE: 1.0 # Lambda for cycle losses
   LAMBDA_PRIOR: 0.0
+  LAMBDA_TRAJ: 0.0
   DIST_SYNC_ON_STEP: True
 METRIC:
   FORCE_IN_METER: True
