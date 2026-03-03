@@ -1,0 +1,226 @@
+####################################
+# Ego-Conditioned Motion Generation
+# Diffusion training config
+####################################
+
+NAME: ego_motion_diffusion_all_old_vae_stochastic
+SEED_VALUE: 1234
+
+DEBUG: False
+OVERFIT: False
+ACCELERATOR: 'gpu'
+DEVICE: [0]
+
+#####################################
+# Training Settings
+#####################################
+TRAIN:
+  # Train diffusion (VAE should be pre-trained)
+  STAGE: diffusion
+  DATASETS: ['egomotion']
+  NUM_WORKERS: 4
+  BATCH_SIZE: 64
+  END_EPOCH: 5000
+
+  RESUME: '/mnt/nas/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_all_old_vae_stochastic'
+  PRETRAINED_VAE: '/mnt/nas/methods/diffusion_gen/models/vae/1222_PELearn_VAE_MEncDec49_MdiffEnc49_bs64_clip_uncond75_01/checkpoints/epoch=5999.ckpt'  # Set this to your VAE checkpoint path
+  PRETRAINED_EGO: '/mnt/nas/methods/diffusion_gen/models/ego_encoder/ego_encoder_pretrain_old_vae_stoch/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
+  PRETRAINED: ''
+  FREEZE_EGO: True
+  DETERMINISTIC_Z: False             # Use VAE mean (not sample) — eliminates stochastic noise floor, loss should → 0
+  
+  OPTIM:
+    TYPE: AdamW
+    LR: 1e-4
+  
+  ABLATION:
+    SKIP_CONNECT: True
+    PE_TYPE: mld
+    DIFF_PE_TYPE: mld
+    PREDICT_EPSILON: True       # x0/sample prediction — avoids SNR amplification at high t
+    VAE_TYPE: mld
+    MLP_DIST: False
+    IS_DIST: False
+
+#####################################
+# Validation Settings
+#####################################
+EVAL:
+  DATASETS: ['egomotion']
+  BATCH_SIZE: 32
+  SPLIT: test
+
+#####################################
+# Testing Settings
+#####################################
+TEST:
+  CHECKPOINTS: ''
+  DATASETS: ['egomotion']
+  SPLIT: test
+  BATCH_SIZE: 1
+  MEAN: False
+  NUM_SAMPLES: 1
+  FACT: 1
+  COUNT_TIME: False 
+
+#####################################
+# Dataset Settings
+#####################################
+DATASET:
+  JOINT_TYPE: 'humanml3d'
+  NFEATS: 263
+  NJOINTS: 22
+  
+  # HumanML3D path (needed for mean/std when using HumanML3D VAE)
+  HUMANML3D:
+    ROOT: 'datasets/humanml3d'     # Path to HumanML3D data (has Mean.npy, Std.npy)
+    UNIT_LEN: 4
+  
+  # EgoMotion specific settings
+  EGOMOTION:
+    # Single dataset:
+    # ROOT: 'data/diffusion/waymo'
+    
+    # Multiple datasets (train on all):
+    ROOT: 
+      - '/mnt/nas/methods/diffusion_gen/data/diffusion/ava'
+      - '/mnt/nas/methods/diffusion_gen/data/diffusion/nuscenes'
+      - '/mnt/nas/methods/diffusion_gen/data/diffusion/waymo'
+      # - 'data/diffusion/HumanML3D'  # Add if has ego data
+    
+    MAX_EGO_LEN: 196              # Max ego trajectory length
+    FPS: 20                        # Your data FPS
+    EGO_SCALE: 50.0               # Ego normalization: divide by this (meters)
+    
+    # Motion normalization (CRITICAL - must match VAE training!)
+    # Option 1: Use HumanML3D mean/std (for testing with HumanML3D VAE)
+    #           Leave MEAN_STD_PATH empty, will auto-use HUMANML3D.ROOT
+    # Option 2: Use your own mean/std (for your own VAE)
+    #           Set MEAN_STD_PATH to directory containing Mean.npy, Std.npy
+    MEAN_STD_PATH: '/mnt/nas/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
+    EGO_MEAN_STD_PATH: '/mnt/nas/methods/diffusion_gen/data/stats'
+  SAMPLER:
+    MAX_LEN: 196                   # Max motion length
+    MIN_LEN: 40                    # Min motion length
+    MAX_TEXT_LEN: 20               # Not used for ego, but required
+
+#####################################
+# Model Settings
+#####################################
+model:
+  vae: true
+  model_type: mld
+  condition: 'ego'                 # Changed from 'text'
+  latent_dim: [1, 256]             # MLD-1 (best for generation)
+  ff_size: 1024
+  num_layers: 9
+  num_heads: 4
+  dropout: 0.1
+  activation: gelu
+  guidance_scale: 7.5 #1.0 #7.5
+  guidance_uncondp: 0.1 #0.0 #0.1            # 10% dropout for CFG
+
+  # Ego encoder settings
+  ego_encoder:
+    target: mld.models.architectures.ego_encoder.EgoEncoderPooled
+    params:
+      input_dim: 2                 # (x, z) lateral motion
+      latent_dim: 256
+      num_layers: 4
+      num_heads: 4
+      ff_size: 1024
+      dropout: 0.1
+      activation: gelu
+      pool_type: mean
+
+  # VAE settings (same as HumanML3D MLD)
+  motion_vae:
+    target: mld.models.architectures.mld_vae.MldVae
+    params:
+      nfeats: ${DATASET.NFEATS}
+      latent_dim: ${model.latent_dim}
+      ff_size: 1024
+      num_layers: 9
+      num_heads: 4
+      dropout: 0.1
+      activation: gelu
+      ablation: ${TRAIN.ABLATION}
+
+  # Denoiser settings
+  denoiser:
+    target: mld.models.architectures.mld_denoiser.MldDenoiser
+    params:
+      latent_dim: ${model.latent_dim}
+      text_encoded_dim: 256        # Ego encoder output dim
+      ff_size: ${model.ff_size}
+      num_layers: ${model.num_layers}
+      num_heads: ${model.num_heads}
+      dropout: ${model.dropout}
+      activation: ${model.activation}
+      guidance_scale: ${model.guidance_scale}
+      guidance_uncondp: ${model.guidance_uncondp}
+      ablation: ${TRAIN.ABLATION}
+      condition: ${model.condition}
+      nfeats: ${DATASET.NFEATS}
+
+  # Scheduler settings
+  scheduler:
+    target: diffusers.DDIMScheduler
+    params:
+      num_train_timesteps: 1000
+      beta_start: 0.00085
+      beta_end: 0.012
+      beta_schedule: scaled_linear
+      clip_sample: false
+      set_alpha_to_one: false
+      steps_offset: 0
+      prediction_type: sample # was epsilon
+    num_inference_timesteps: 50
+    eta: 0.0
+
+  noise_scheduler:
+    target: diffusers.DDPMScheduler
+    params:
+      num_train_timesteps: 1000
+      beta_start: 0.00085
+      beta_end: 0.012
+      beta_schedule: scaled_linear
+      variance_type: fixed_small
+      clip_sample: false
+      prediction_type: sample # was epsilon
+
+#####################################
+# Loss Settings
+#####################################
+LOSS:
+  TYPE: mld
+  LAMBDA_LATENT: 1.0e-5
+  LAMBDA_KL: 1.0e-4
+  LAMBDA_REC: 1.0
+  LAMBDA_GEN: 1.0
+  LAMBDA_CROSS: 1.0
+  LAMBDA_CYCLE: 0.0
+  LAMBDA_PRIOR: 0.0
+  DIST_SYNC_ON_STEP: False
+
+#####################################
+# Metric Settings
+#####################################
+METRIC:
+  TYPE: []  # No metrics for ego (TemosMetric requires HumanML3D/KIT)
+  FORCE_IN_METER: True
+  DIST_SYNC_ON_STEP: False
+
+#####################################
+# Logger Settings
+#####################################
+LOGGER:
+  SACE_CHECKPOINT_EPOCH: 100
+  LOG_EVERY_STEPS: 1
+  VAL_EVERY_STEPS: 100
+  TENSORBOARD: True
+  WANDB:
+    PROJECT: diffusion_gen
+    ENTITY: erik_hm
+    OFFLINE: False
+    RESUME_ID: ego_motion_diffusion_all_old_vae_stochastic_1
