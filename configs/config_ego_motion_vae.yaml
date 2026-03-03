@@ -102,7 +102,7 @@ DATASET:
 model:
   vae: true
   model_type: mld
-  condition: 'text'                 # Changed from 'text'
+  condition: 'ego'
   latent_dim: [1, 256]             # MLD-1 (best for generation)
   ff_size: 1024
   num_layers: 9
@@ -111,6 +111,34 @@ model:
   activation: gelu
   guidance_scale: 7.5
   guidance_uncondp: 0.1            # 10% dropout for CFG
+
+  ego_encoder:
+    target: mld.models.architectures.ego_encoder.EgoEncoderPooled
+    params:
+      input_dim: 2
+      latent_dim: 256
+      num_layers: 4
+      num_heads: 4
+      ff_size: 1024
+      dropout: 0.1
+      activation: gelu
+      pool_type: mean
+
+  denoiser:
+    target: mld.models.architectures.mld_denoiser.MldDenoiser
+    params:
+      latent_dim: ${model.latent_dim}
+      text_encoded_dim: 256
+      ff_size: ${model.ff_size}
+      num_layers: ${model.num_layers}
+      num_heads: ${model.num_heads}
+      dropout: ${model.dropout}
+      activation: ${model.activation}
+      guidance_scale: ${model.guidance_scale}
+      guidance_uncondp: ${model.guidance_uncondp}
+      ablation: ${TRAIN.ABLATION}
+      condition: ${model.condition}
+      nfeats: ${DATASET.NFEATS}
 
 #####################################
 # Loss Settings
@@ -131,7 +159,7 @@ LOSS:
 # Metric Settings
 #####################################
 METRIC:
-  TYPE: ['TemosMetric', 'TM2TMetrics']  # No metrics for ego (TemosMetric requires HumanML3D/KIT)
+  TYPE: []
   # FORCE_IN_METER: True
   # DIST_SYNC_ON_STEP: False
 

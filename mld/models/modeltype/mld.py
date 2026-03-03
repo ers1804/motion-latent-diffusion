@@ -740,14 +740,15 @@ class MLD(BaseModel):
 
         # cut longer part over max length
         min_len = min(feats_ref.shape[1], feats_rst.shape[1])
+        min_joints_len = min(joints_ref.shape[1], joints_rst.shape[1])
         rs_set = {
             "m_ref": feats_ref[:, :min_len, :],
             "m_rst": feats_rst[:, :min_len, :],
             # [bs, ntoken, nfeats]<= [ntoken, bs, nfeats]
             "lat_m": motion_z.permute(1, 0, 2),
             "lat_rm": recons_z.permute(1, 0, 2),
-            "joints_ref": joints_ref,
-            "joints_rst": joints_rst,
+            "joints_ref": joints_ref[:, :min_joints_len, ...],
+            "joints_rst": joints_rst[:, :min_joints_len, ...],
             "dist_m": dist_m,
             "dist_ref": dist_ref,
         }
@@ -769,6 +770,38 @@ class MLD(BaseModel):
             prior_loss = F.mse_loss(rs_set['noise_pred_prior'], rs_set['noise_prior'])
             loss = loss + self.cfg.LOSS.LAMBDA_PRIOR * prior_loss
     
+        return loss
+
+    def _compute_vae_loss(self, rs_set):
+        """Compute VAE training loss directly (bypasses torchmetrics) for backprop."""
+        import torch.nn.functional as F
+        from mld.data.humanml.scripts.motion_process import recover_root_rot_pos
+
+        loss = torch.tensor(0.0, device=rs_set["m_rst"].device)
+
+        # Reconstruction losses
+        loss = loss + self.cfg.LOSS.LAMBDA_REC * F.smooth_l1_loss(
+            rs_set["m_rst"], rs_set["m_ref"]
+        )
+        loss = loss + self.cfg.LOSS.LAMBDA_JOINT * F.smooth_l1_loss(
+            rs_set["joints_rst"], rs_set["joints_ref"]
+        )
+
+        # Optional trajectory loss on root XZ from features
+        if self.cfg.LOSS.LAMBDA_TRAJ != 0.0:
+            _, rst_pos = recover_root_rot_pos(rs_set["m_rst"])
+            _, ref_pos = recover_root_rot_pos(rs_set["m_ref"])
+            traj_rst = rst_pos[..., [0, 2]]
+            traj_ref = ref_pos[..., [0, 2]]
+            loss = loss + self.cfg.LOSS.LAMBDA_TRAJ * F.mse_loss(traj_rst, traj_ref)
+
+        # KL loss against N(0, I)
+        if self.cfg.LOSS.LAMBDA_KL != 0.0:
+            kl = torch.distributions.kl_divergence(
+                rs_set["dist_m"], rs_set["dist_ref"]
+            ).mean()
+            loss = loss + self.cfg.LOSS.LAMBDA_KL * kl
+
         return loss
 
     def train_diffusion_forward(self, batch):
@@ -1178,6 +1211,8 @@ class MLD(BaseModel):
             # Compute loss directly for backprop (bypasses torchmetrics issues)
             if self.stage == "diffusion":
                 loss = self._compute_diffusion_loss(rs_set)
+            elif self.stage == "vae":
+                loss = self._compute_vae_loss(rs_set)
             else:
                 # For vae or vae_diffusion stages, use original method
                 loss = self.losses[split].update(rs_set)
@@ -1185,7 +1220,7 @@ class MLD(BaseModel):
                     raise ValueError("Loss is None, this happened with torchmetrics > 0.7")
 
             # Still update metrics for logging (but don't use return value)
-            if self.stage == "diffusion":
+            if self.stage in ["diffusion", "vae"]:
                 self.losses[split].update(rs_set)
 
         # Compute the metrics - currently evaluate results from text to motion
