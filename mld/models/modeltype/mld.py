@@ -80,7 +80,10 @@ class MLD(BaseModel):
                     p.requires_grad = False
 
         self.denoiser = instantiate_from_config(cfg.model.denoiser)
-        if not self.predict_epsilon:
+        if self.predict_epsilon:
+            cfg.model.scheduler.params['prediction_type'] = 'epsilon'
+            cfg.model.noise_scheduler.params['prediction_type'] = 'epsilon'
+        else:
             cfg.model.scheduler.params['prediction_type'] = 'sample'
             cfg.model.noise_scheduler.params['prediction_type'] = 'sample'
         self.scheduler = instantiate_from_config(cfg.model.scheduler)
@@ -376,7 +379,220 @@ class MLD(BaseModel):
         # [batch_size, 1, latent_dim] -> [1, batch_size, latent_dim]
         latents = latents.permute(1, 0, 2)
         return latents
-    
+
+    # ------------------------------------------------------------------
+    # Guided reverse diffusion  (GMD-style trajectory guidance in latent space)
+    # ------------------------------------------------------------------
+    def _diffusion_reverse_guided(
+        self,
+        encoder_hidden_states,
+        lengths=None,
+        traj_target=None,
+        traj_mask=None,
+        guide_scale=100.0,
+        guide_start_t=1000,
+        guide_stop_t=0,
+        normalize_grad=False,
+        verbose=False,
+        scale_by_alpha=False,
+    ):
+        """
+        Denoising loop with per-step trajectory guidance.
+
+        At every timestep *t* the predicted clean latent z0 is decoded through
+        the frozen VAE, the root (pelvis) trajectory is extracted, and an L2
+        loss against ``traj_target`` is back-propagated to z0.
+        The resulting gradient nudges the sample toward trajectories
+        that match the target.
+
+        Args:
+            encoder_hidden_states: conditioning embedding (with CFG doubling)
+            lengths:               list of motion lengths
+            traj_target:           (B, T, 2) target root (x, z) positions
+                                   **in denormalized (real-world) metres**.
+            traj_mask:             (B, T) bool — which frames to guide on.
+                                   ``None`` → guide on all frames.
+            guide_scale:           gradient multiplier (like classifier scale
+                                   in classifier-guided diffusion).
+            guide_start_t:         only guide when t <= this value
+            guide_stop_t:          stop guiding when t < this value
+            normalize_grad:        if True, normalize gradient to unit
+                                   direction (step size = guide_scale only).
+            verbose:               if True, print per-step diagnostics.
+            scale_by_alpha:        if True, multiply effective scale by
+                                   alpha_bar_t (weaker at noisy steps).
+        """
+        from mld.data.humanml.scripts.motion_process import recover_root_rot_pos
+
+        bsz = encoder_hidden_states.shape[0]
+        if self.do_classifier_free_guidance:
+            bsz = bsz // 2
+
+        # --- init latents ------------------------------------------------
+        if self.vae_type == "no":
+            assert lengths is not None
+            latents = torch.randn(
+                (bsz, max(lengths), self.cfg.DATASET.NFEATS),
+                device=encoder_hidden_states.device, dtype=torch.float,
+            )
+        else:
+            latents = torch.randn(
+                (bsz, self.latent_dim[0], self.latent_dim[-1]),
+                device=encoder_hidden_states.device, dtype=torch.float,
+            )
+        latents = latents * self.scheduler.init_noise_sigma
+
+        # --- scheduler setup ---------------------------------------------
+        self.scheduler.set_timesteps(
+            self.cfg.model.scheduler.num_inference_timesteps)
+        timesteps = self.scheduler.timesteps.to(encoder_hidden_states.device)
+
+        extra_step_kwargs = {}
+        if "eta" in set(
+                inspect.signature(self.scheduler.step).parameters.keys()):
+            extra_step_kwargs["eta"] = self.cfg.model.scheduler.eta
+
+        # --- precompute mean / std for denorm (keep on device) -----------
+        dm = self.datamodule
+        if hasattr(dm, 'mean') and dm.mean is not None:
+            mean_t = torch.tensor(dm.mean, dtype=torch.float32,
+                                  device=latents.device)
+            std_t  = torch.tensor(dm.std,  dtype=torch.float32,
+                                  device=latents.device)
+        else:
+            mean_t = std_t = None
+
+        # --- denoising loop with guidance --------------------------------
+        for i, t in enumerate(timesteps):
+            t_int = int(t)
+            do_guide = (
+                traj_target is not None
+                and t_int <= guide_start_t
+                and t_int >= guide_stop_t
+            )
+
+            # duplicate for CFG
+            latent_model_input = (
+                torch.cat([latents] * 2)
+                if self.do_classifier_free_guidance else latents
+            )
+            lengths_reverse = (
+                lengths * 2 if self.do_classifier_free_guidance else lengths
+            )
+
+            # ---- denoiser forward (always no_grad) ----------------------
+            with torch.no_grad():
+                noise_pred = self.denoiser(
+                    sample=latent_model_input,
+                    timestep=t,
+                    encoder_hidden_states=encoder_hidden_states,
+                    lengths=lengths_reverse,
+                    return_dict=False,
+                )[0]
+
+            # CFG combination
+            if self.do_classifier_free_guidance:
+                noise_pred_uncond, noise_pred_cond = noise_pred.chunk(2)
+                noise_pred = noise_pred_uncond + self.guidance_scale * (
+                    noise_pred_cond - noise_pred_uncond)
+
+            # scheduler step → get x_{t-1} *and* predicted x0
+            step_out = self.scheduler.step(
+                noise_pred, t, latents, **extra_step_kwargs)
+            latents_prev = step_out.prev_sample
+            pred_z0 = step_out.pred_original_sample       # (B, 1, 256)
+
+            # ---- trajectory guidance ------------------------------------
+            if do_guide and pred_z0 is not None:
+                alpha_prod_t = self.scheduler.alphas_cumprod[t]
+                alpha_prod_t_prev = (
+                    self.scheduler.alphas_cumprod[
+                        timesteps[i + 1]] if i + 1 < len(timesteps)
+                    else self.scheduler.final_alpha_cumprod
+                )
+
+                # Decode predicted z0 through frozen VAE → features
+                z0_for_decode = pred_z0.detach().requires_grad_(True)
+                z0_perm = z0_for_decode.permute(1, 0, 2)  # (1, B, 256)
+                feats = self.vae.decode(z0_perm, lengths)  # (B, T, 263)
+
+                # Denormalize
+                if mean_t is not None:
+                    feats_denorm = feats * std_t + mean_t
+                else:
+                    feats_denorm = feats
+
+                # Extract root trajectory
+                _, r_pos = recover_root_rot_pos(feats_denorm)
+                pred_root_xz = r_pos[..., [0, 2]]        # (B, T, 2)
+
+                # Compute trajectory loss
+                T_pred = pred_root_xz.shape[1]
+                T_tgt  = traj_target.shape[1]
+                T_min  = min(T_pred, T_tgt)
+                pred_crop = pred_root_xz[:, :T_min]
+                tgt_crop  = traj_target[:, :T_min]
+
+                if traj_mask is not None:
+                    mask_crop = traj_mask[:, :T_min].unsqueeze(-1).float()
+                else:
+                    mask_crop = torch.ones_like(pred_crop)
+
+                diff = (pred_crop - tgt_crop) * mask_crop
+                loss = (diff ** 2).sum() / mask_crop.sum().clamp(min=1)
+
+                # Gradient w.r.t. predicted z0
+                grad_z0 = torch.autograd.grad(loss, z0_for_decode)[0]
+                grad_norm = grad_z0.norm()
+
+                if normalize_grad and grad_norm > 1e-8:
+                    grad_z0 = grad_z0 / grad_norm
+
+                effective_scale = (
+                    guide_scale * float(alpha_prod_t) if scale_by_alpha
+                    else guide_scale
+                )
+
+                # Compute raw correction
+                correction = effective_scale * grad_z0
+
+                # Adaptive clamp: limit correction norm to 10% of pred_z0
+                # norm.  Prevents catastrophic divergence on samples where
+                # the gradient is disproportionately large.
+                z0_norm = pred_z0.norm().clamp(min=1e-8)
+                max_correction_norm = 0.1 * z0_norm
+                corr_norm = correction.norm()
+                if corr_norm > max_correction_norm:
+                    correction = correction * (max_correction_norm / corr_norm)
+
+                if verbose:
+                    print(f"  t={t_int:4d} loss={loss.item():.6f} "
+                          f"|grad|={grad_norm.item():.6f} "
+                          f"|z0|={z0_norm.item():.4f} "
+                          f"|corr|={correction.norm().item():.4f} "
+                          f"pred_end={pred_root_xz[0,-1].detach().cpu().tolist()} "
+                          f"tgt_end={tgt_crop[0,-1].detach().cpu().tolist()}")
+
+                # Correct z0, then re-derive x_{t-1} using the ORIGINAL
+                # eps (preserves the denoiser's noise estimate, only shifts
+                # the clean signal).
+                pred_z0_corrected = pred_z0 - correction
+                eps_implied = (
+                    (latents - alpha_prod_t.sqrt() * pred_z0)
+                    / (1 - alpha_prod_t).sqrt().clamp(min=1e-8)
+                )
+                latents_prev = (
+                    alpha_prod_t_prev.sqrt() * pred_z0_corrected
+                    + (1 - alpha_prod_t_prev).sqrt() * eps_implied
+                )
+
+            latents = latents_prev.detach()
+
+        # (B, 1, 256) → (1, B, 256)
+        latents = latents.permute(1, 0, 2)
+        return latents
+    # ------------------------------------------------------------------
+
     def _diffusion_reverse_tsne(self, encoder_hidden_states, lengths=None):
         # init latents
         bsz = encoder_hidden_states.shape[0]

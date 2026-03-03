@@ -130,7 +130,10 @@ def load_ego_from_json(json_path, max_ego_len=196, ego_scale=50.0, ego_mean=None
     return ego_2d, actual_len, gt_motion, data.get("scene_id", ""), data.get("object_id", "")
 
 
-def generate_motion(model, ego, length, device, mean=None, std=None):
+def generate_motion(model, ego, length, device, mean=None, std=None,
+                     guide_trajectory=None, guide_scale=100.0,
+                     guide_start_t=1000, guide_stop_t=0,
+                     guide_normalize=False, guide_verbose=False):
     """
     Generate pedestrian motion from ego trajectory.
     
@@ -138,11 +141,17 @@ def generate_motion(model, ego, length, device, mean=None, std=None):
     
     Args:
         model: Trained MLD model
-        ego: (T_ego, 2) numpy array
+        ego: (T_ego, 2) numpy array (normalized)
         length: Desired output motion length
         device: torch device
         mean: Motion mean for denormalization (optional)
         std: Motion std for denormalization (optional)
+        guide_trajectory: (T, 2) numpy array — target root (x,z) positions
+                          in **denormalized** (real-world) metres.
+                          If provided, uses guided diffusion.
+        guide_scale: Gradient scale for trajectory guidance.
+        guide_normalize: If True, normalize gradient to unit direction.
+        guide_verbose: If True, print per-step diagnostics.
     
     Returns:
         features: (T, 263) numpy array - motion features
@@ -151,21 +160,36 @@ def generate_motion(model, ego, length, device, mean=None, std=None):
     ego_tensor = torch.tensor(ego, dtype=torch.float32).unsqueeze(0).to(device)  # (1, T, 2)
     lengths = [length]
     
+    # Step 1: Encode ego trajectory
     with torch.no_grad():
-        # Step 1: Encode ego trajectory
         if model.do_classifier_free_guidance:
             uncond_ego = torch.zeros_like(ego_tensor)
             ego_input = torch.cat([uncond_ego, ego_tensor], dim=0)
         else:
             ego_input = ego_tensor
-        
         cond_emb = model.ego_encoder(ego_input)
-        
-        # Step 2: Diffusion reverse to get latent z
-        z = model._diffusion_reverse(cond_emb, lengths)
-        
-        # Step 3: VAE decode to get features (vectors_263)
-        feats_rst = model.vae.decode(z, lengths)  # (B, T, 263)
+
+    # Step 2: Diffusion reverse — guided or standard
+    if guide_trajectory is not None:
+        traj_target = torch.tensor(
+            guide_trajectory, dtype=torch.float32
+        ).unsqueeze(0).to(device)                         # (1, T, 2)
+        z = model._diffusion_reverse_guided(
+            cond_emb, lengths,
+            traj_target=traj_target,
+            guide_scale=guide_scale,
+            guide_start_t=guide_start_t,
+            guide_stop_t=guide_stop_t,
+            normalize_grad=guide_normalize,
+            verbose=guide_verbose,
+        )
+    else:
+        with torch.no_grad():
+            z = model._diffusion_reverse(cond_emb, lengths)
+
+    # Step 3: VAE decode to get features (vectors_263)
+    with torch.no_grad():
+        feats_rst = model.vae.decode(z, lengths)           # (B, T, 263)
     
     # Get the generated features
     features = feats_rst[0].cpu().numpy()  # (T, 263)
@@ -174,6 +198,72 @@ def generate_motion(model, ego, length, device, mean=None, std=None):
     if mean is not None and std is not None:
         features = features * std + mean
     
+    return features
+
+
+def inject_trajectory(features, target_root_xz):
+    """
+    Post-hoc trajectory injection: replace the root velocity features in
+    the generated motion with velocities derived from a target root (x,z)
+    trajectory. Preserves all other pose features (joints, contacts, etc.).
+
+    This works because the HumanML3D 263-dim features encode the root
+    trajectory via:
+      col 0: rotation velocity (yaw around Y)
+      col 1: x velocity (in root's local frame)
+      col 2: z velocity (in root's local frame)
+      col 3: y height
+
+    The local velocities are rotated to the global frame then integrated
+    (cumsum) to recover positions. To inject a new trajectory, we compute
+    the inverse: target global displacements → rotate to local frame →
+    store as velocity features.
+
+    Args:
+        features: (T, 263) numpy array — denormalized generated features.
+        target_root_xz: (T, 2) numpy array — target root (x, z) positions
+                         in the same coordinate system as the features.
+
+    Returns:
+        corrected: (T, 263) numpy array — features with replaced trajectory.
+    """
+    from mld.data.humanml.common.quaternion import qrot, qinv
+
+    features = features.copy()
+    T = features.shape[0]
+    feats_t = torch.tensor(features, dtype=torch.float32).unsqueeze(0)  # (1, T, 263)
+
+    # ---- 1. Get the root rotation from the GENERATED features ----
+    # (we keep the generated root rotation, only replace the translation)
+    rot_vel = feats_t[0, :, 0]               # (T,)
+    r_rot_ang = torch.zeros_like(rot_vel)
+    r_rot_ang[1:] = rot_vel[:-1]
+    r_rot_ang = torch.cumsum(r_rot_ang, dim=0)   # cumulative rotation angle
+
+    r_rot_quat = torch.zeros(T, 4)
+    r_rot_quat[:, 0] = torch.cos(r_rot_ang)
+    r_rot_quat[:, 2] = torch.sin(r_rot_ang)
+
+    # ---- 2. Compute global displacements from target positions ----
+    target_t = torch.tensor(target_root_xz, dtype=torch.float32)  # (T, 2)
+    # Global displacement (in 3D, Y=0): (T-1, 3) 
+    global_disp = torch.zeros(T, 3)
+    global_disp[1:, 0] = target_t[1:, 0] - target_t[:-1, 0]  # dx
+    global_disp[1:, 2] = target_t[1:, 1] - target_t[:-1, 1]  # dz
+
+    # ---- 3. Rotate global displacements to root-local frame ----
+    # The feature encoding does: local_disp → qrot(qinv(rot), local_disp) → global
+    # So to go back: global_disp → qrot(rot, global_disp) → local
+    local_disp = qrot(r_rot_quat.unsqueeze(0), global_disp.unsqueeze(0))  # (1, T, 3)
+    local_disp = local_disp[0]  # (T, 3)
+
+    # ---- 4. Replace velocity features ----
+    # Features: data[t, 1:3] corresponds to the displacement applied at frame t+1
+    # i.e., r_pos[1:, [0,2]] = data[:-1, 1:3]
+    # So: data[t, 1] = local_disp[t+1, 0], data[t, 2] = local_disp[t+1, 2]
+    features[:-1, 1] = local_disp[1:, 0].numpy()   # x velocity
+    features[:-1, 2] = local_disp[1:, 2].numpy()   # z velocity
+
     return features
 
 
@@ -341,6 +431,22 @@ def main():
                         help="Path to mean/std for denormalization (directory with Mean.npy, Std.npy)")
     parser.add_argument("--trajectories", action="store_true",
                         help="Plot top-down trajectories and compute ADE/FDE metrics")
+    parser.add_argument("--guide", action="store_true",
+                        help="Enable trajectory guidance (GMD-style). Uses GT root trajectory as target.")
+    parser.add_argument("--guide_scale", type=float, default=100.0,
+                        help="Trajectory guidance gradient scale (higher = stronger steering)")
+    parser.add_argument("--guide_start_t", type=int, default=1000,
+                        help="Only guide when t <= this value (default: 1000 = guide all steps)")
+    parser.add_argument("--guide_stop_t", type=int, default=0,
+                        help="Stop guiding when t < this value (default: 0 = guide to the end)")
+    parser.add_argument("--guide_normalize", action="store_true",
+                        help="Normalize guidance gradient (unit direction, magnitude controlled only by scale)")
+    parser.add_argument("--guide_verbose", action="store_true",
+                        help="Print per-step guidance diagnostics (loss, gradient norm, shift)")
+    parser.add_argument("--seed", type=int, default=None,
+                        help="Random seed for reproducibility")
+    parser.add_argument("--inject_traj", action="store_true",
+                        help="Post-hoc: replace root trajectory features with GT trajectory (keeps generated pose)")
     args = parser.parse_args()
     
     # Setup
@@ -411,6 +517,12 @@ def main():
         sample_name = Path(json_path).stem
         print(f"\n{'='*50}")
         print(f"Processing: {sample_name}")
+
+        # Set seed per-sample for reproducibility
+        if args.seed is not None:
+            torch.manual_seed(args.seed)
+            torch.cuda.manual_seed_all(args.seed)
+            np.random.seed(args.seed)
         
         # Load ego trajectory
         ego, ego_len, gt_motion, scene_id, object_id = load_ego_from_json(
@@ -430,9 +542,30 @@ def main():
             gt_motion, motion_length = _pad_or_crop(gt_motion, motion_length)
             
             # Generate features (vectors_263)
-            features = generate_motion(model, ego, motion_length, device, mean, std)
+            # Build guidance target from GT root trajectory if --guide
+            guide_traj = None
+            if args.guide and gt_motion is not None:
+                gt_joints_for_guide = features_to_joints(gt_motion, njoints=22)
+                guide_traj = gt_joints_for_guide[:, 0, [0, 2]]  # (T, 2) root xz
+                print(f"  Trajectory guidance enabled (scale={args.guide_scale})")
+            features = generate_motion(
+                model, ego, motion_length, device, mean, std,
+                guide_trajectory=guide_traj,
+                guide_scale=args.guide_scale,
+                guide_start_t=args.guide_start_t,
+                guide_stop_t=args.guide_stop_t,
+                guide_normalize=args.guide_normalize,
+                guide_verbose=args.guide_verbose,
+            )
             print(f"  Generated features shape: {features.shape} (motion_length={motion_length})")
-            
+
+            # Post-hoc trajectory injection (if requested)
+            if args.inject_traj and gt_motion is not None:
+                gt_joints_for_inject = features_to_joints(gt_motion, njoints=22)
+                gt_root_xz = gt_joints_for_inject[:, 0, [0, 2]]  # (T, 2)
+                features = inject_trajectory(features, gt_root_xz)
+                print(f"  Post-hoc trajectory injection applied")
+
             # Convert to joints using recover_from_ric
             joints = features_to_joints(features, njoints=22)
             print(f"  Generated joints shape: {joints.shape}")

@@ -23,7 +23,7 @@ TRAIN:
   END_EPOCH: 5000
 
   RESUME: ''
-  PRETRAINED_VAE: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=6999.ckpt'  # Set this to your VAE checkpoint path
+  PRETRAINED_VAE: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=6999.ckpt'  # /home/erik/NAS/methods/diffusion_gen/models/vae/1222_PELearn_VAE_MEncDec49_MdiffEnc49_bs64_clip_uncond75_01/checkpoints/epoch=5999.ckpt /home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=6999.ckpt
   PRETRAINED_EGO: '/home/erik/NAS/methods/diffusion_gen/models/ego_encoder/ego_encoder_pretraining_new_vae_det/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
   PRETRAINED: ''
   FREEZE_EGO: True

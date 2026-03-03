@@ -174,7 +174,7 @@ model:
       clip_sample: false
       set_alpha_to_one: false
       steps_offset: 0
-      prediction_type: sample # was epsilon
+      prediction_type: epsilon
     num_inference_timesteps: 50
     eta: 0.0
 
@@ -187,7 +187,7 @@ model:
       beta_schedule: scaled_linear
       variance_type: fixed_small
       clip_sample: false
-      prediction_type: sample # was epsilon
+      prediction_type: epsilon
 
 #####################################
 # Loss Settings
