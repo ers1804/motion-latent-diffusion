@@ -84,6 +84,9 @@ class EgoMotionDataset(Dataset):
         self.overfit = overfit
         self.split_list_root = split_list_root
 
+        # Make ego stats compatible with ego trajectory dimensionality (XZ => 2D)
+        self.ego_mean, self.ego_std = self._prepare_ego_stats(self.ego_mean, self.ego_std)
+
         # Load all sample paths from ALL data roots
         self.sample_paths = self._load_sample_paths()
         
@@ -106,24 +109,24 @@ class EgoMotionDataset(Dataset):
 
     def _load_sample_paths(self) -> List[str]:
         """
-                Find all sample files from ALL data roots.
+        Find all sample files from ALL data roots.
 
-                Priority:
-                    1) If split list exists at <split_list_root>/<split>.txt, use ONLY
-                         the listed scenarios.
-                    2) Else fallback to scanning <root>/<split>/*.{json,npy}.
+        Priority:
+          1) If split list exists at <split_list_root>/<split>.txt, use ONLY
+             the listed scenarios.
+          2) Else fallback to scanning <root>/<split>/*.{json,npy}.
         """
-                # Optional: force split membership from txt list (e.g. interactive set)
-                split_list_path = None
-                if self.split_list_root:
-                        candidate = pjoin(self.split_list_root, f"{self.split}.txt")
-                        if os.path.exists(candidate):
-                                split_list_path = candidate
+        # Optional: force split membership from txt list (e.g. interactive set)
+        split_list_path = None
+        if self.split_list_root:
+            candidate = pjoin(self.split_list_root, f"{self.split}.txt")
+            if os.path.exists(candidate):
+                split_list_path = candidate
 
-                if split_list_path is not None:
-                        listed_paths = self._load_paths_from_split_file(split_list_path)
-                        print(f"[EgoMotionDataset] Using split list: {split_list_path}")
-                        return sorted(listed_paths)
+        if split_list_path is not None:
+            listed_paths = self._load_paths_from_split_file(split_list_path)
+            print(f"[EgoMotionDataset] Using split list: {split_list_path}")
+            return sorted(listed_paths)
 
         all_paths = []
         
@@ -305,13 +308,38 @@ class EgoMotionDataset(Dataset):
         Option 2: Simple scaling by ego_scale (e.g., divide by 50 meters)
         """
         if self.ego_mean is not None and self.ego_std is not None:
-            # Full normalization
+            # Full normalization (stats already projected/aligned in _prepare_ego_stats)
             ego = (ego - self.ego_mean) / (self.ego_std + 1e-8)
         else:
             # Simple scaling: divide by scale factor
             # This puts values roughly in [-1, 1] range if ego is within ±scale meters
             ego = ego / self.ego_scale
         return ego
+
+    def _prepare_ego_stats(self, ego_mean, ego_std):
+        """Prepare ego mean/std to match ego feature dims (typically XZ => 2).
+
+        Accepts stats saved as shape (3,), (1,3), or (2,), and returns vectors
+        compatible with ego arrays of shape (T, 2).
+        """
+        if ego_mean is None or ego_std is None:
+            return None, None
+
+        mean = np.asarray(ego_mean, dtype=np.float32).reshape(-1)
+        std = np.asarray(ego_std, dtype=np.float32).reshape(-1)
+
+        # If stats are XYZ, project to XZ to match ego_2d = ego_3d[:, [0, 2]].
+        if mean.shape[0] == 3 and std.shape[0] == 3:
+            mean = mean[[0, 2]]
+            std = std[[0, 2]]
+        elif mean.shape[0] != 2 or std.shape[0] != 2:
+            print(
+                f"[EgoMotionDataset] WARNING: incompatible ego stats shapes "
+                f"mean={mean.shape}, std={std.shape}; falling back to EGO_SCALE normalization."
+            )
+            return None, None
+
+        return mean, std
 
     def _pad_or_crop(
         self, 
@@ -495,6 +523,22 @@ class EgoMotionDataModule(pl.LightningDataModule):
             overfit=self.overfit
         )
 
+        def _split_exists(split_name: str) -> bool:
+            roots = data_root if isinstance(data_root, list) else [data_root]
+            split_list_root = getattr(self.cfg.DATASET.EGOMOTION, 'MEAN_STD_PATH', None)
+
+            # If split txt exists in MEAN_STD_PATH, treat split as available.
+            if split_list_root:
+                split_txt = pjoin(split_list_root, f"{split_name}.txt")
+                if os.path.exists(split_txt):
+                    return True
+
+            # Otherwise, require at least one root with split dir.
+            for root in roots:
+                if os.path.isdir(pjoin(root, split_name)):
+                    return True
+            return False
+
         if stage == "fit" or stage is None:
             self.train_dataset = EgoMotionDataset(split="train", **common_kwargs)
             self.val_dataset = EgoMotionDataset(split="val", **common_kwargs)
@@ -504,6 +548,9 @@ class EgoMotionDataModule(pl.LightningDataModule):
         if stage == "test" or stage is None:
             if not self.is_mm:  # Don't overwrite MM-modified sample_paths
                 test_split = getattr(self.cfg.TEST, 'SPLIT', 'test')
+                if test_split == 'test' and not _split_exists('test') and _split_exists('val'):
+                    print("[EgoMotionDataModule] No test split found; falling back to val split for testing.")
+                    test_split = 'val'
                 self.test_dataset = EgoMotionDataset(split=test_split, **common_kwargs)
 
     def train_dataloader(self):
