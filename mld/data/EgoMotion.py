@@ -15,6 +15,7 @@ JSON structure:
 import json
 import os
 from os.path import join as pjoin
+from pathlib import Path
 from typing import Dict, List, Optional, Callable
 from glob import glob
 
@@ -60,6 +61,7 @@ class EgoMotionDataset(Dataset):
         fps: int = 20,
         debug: bool = False,
         overfit: bool = False,
+        split_list_root: Optional[str] = None,
         **kwargs
     ):
         # Support both single path and list of paths
@@ -80,6 +82,7 @@ class EgoMotionDataset(Dataset):
         self.fps = fps
         self.debug = debug
         self.overfit = overfit
+        self.split_list_root = split_list_root
 
         # Load all sample paths from ALL data roots
         self.sample_paths = self._load_sample_paths()
@@ -103,8 +106,25 @@ class EgoMotionDataset(Dataset):
 
     def _load_sample_paths(self) -> List[str]:
         """
-        Find all JSON files from ALL data roots.
+                Find all sample files from ALL data roots.
+
+                Priority:
+                    1) If split list exists at <split_list_root>/<split>.txt, use ONLY
+                         the listed scenarios.
+                    2) Else fallback to scanning <root>/<split>/*.{json,npy}.
         """
+                # Optional: force split membership from txt list (e.g. interactive set)
+                split_list_path = None
+                if self.split_list_root:
+                        candidate = pjoin(self.split_list_root, f"{self.split}.txt")
+                        if os.path.exists(candidate):
+                                split_list_path = candidate
+
+                if split_list_path is not None:
+                        listed_paths = self._load_paths_from_split_file(split_list_path)
+                        print(f"[EgoMotionDataset] Using split list: {split_list_path}")
+                        return sorted(listed_paths)
+
         all_paths = []
         
         for data_root in self.data_roots:
@@ -132,6 +152,109 @@ class EgoMotionDataset(Dataset):
             all_paths.extend(paths)
         
         return sorted(all_paths)
+
+    def _load_paths_from_split_file(self, split_file: str) -> List[str]:
+        """Resolve scenario names from split file to absolute paths.
+
+        Expected line formats (examples):
+          - A0001_33.json  (prefix identifies dataset root)
+          - 0001_33.json   (no prefix; searched across all roots)
+          - A0001_33       (extension optional)
+        """
+        with open(split_file, "r") as f:
+            names = [line.strip() for line in f.readlines() if line.strip()]
+
+        # Infer dataset prefix for each configured root
+        prefix_to_root = {}
+        for root in self.data_roots:
+            low = root.lower()
+            if "ava" in low:
+                prefix_to_root["A"] = root
+            elif "waymo" in low:
+                prefix_to_root["W"] = root
+            elif "nuscenes" in low or "nuScenes" in root:
+                prefix_to_root["N"] = root
+            elif "humanml" in low:
+                prefix_to_root["H"] = root
+
+        resolved = []
+        missing = []
+
+        for raw_name in names:
+            token = raw_name.strip()
+            stem = Path(token).stem
+            suffix = Path(token).suffix.lower()
+
+            # Candidate filename list (keep token ext first, then json/npy)
+            filename_candidates = []
+            if suffix:
+                filename_candidates.append(Path(token).name)
+            else:
+                filename_candidates.extend([f"{stem}.json", f"{stem}.npy"])
+
+            # 1) Prefix-aware resolution (A/W/N/H)
+            root_candidates = []
+            if len(stem) >= 2 and stem[0].upper() in prefix_to_root:
+                ds_prefix = stem[0].upper()
+                root_candidates.append(prefix_to_root[ds_prefix])
+
+                # Remove leading dataset prefix from scenario id
+                stripped_stem = stem[1:]
+                stripped_candidates = []
+                if suffix:
+                    stripped_candidates.append(f"{stripped_stem}{suffix}")
+                else:
+                    stripped_candidates.extend([f"{stripped_stem}.json", f"{stripped_stem}.npy"])
+                filename_candidates = filename_candidates + stripped_candidates
+
+            # 2) Fallback search across all roots
+            if not root_candidates:
+                root_candidates = list(self.data_roots)
+
+            found = None
+            # Deduplicate while preserving order
+            seen = set()
+            uniq_filenames = []
+            for fn in filename_candidates:
+                if fn not in seen:
+                    uniq_filenames.append(fn)
+                    seen.add(fn)
+
+            for root in root_candidates:
+                split_dir = pjoin(root, self.split)
+                for fname in uniq_filenames:
+                    candidate_path = pjoin(split_dir, fname)
+                    if os.path.exists(candidate_path):
+                        found = candidate_path
+                        break
+                if found is not None:
+                    break
+
+            if found is None and root_candidates != list(self.data_roots):
+                # If prefix-directed lookup fails, try global fallback once
+                for root in self.data_roots:
+                    split_dir = pjoin(root, self.split)
+                    for fname in uniq_filenames:
+                        candidate_path = pjoin(split_dir, fname)
+                        if os.path.exists(candidate_path):
+                            found = candidate_path
+                            break
+                    if found is not None:
+                        break
+
+            if found is not None:
+                resolved.append(found)
+            else:
+                missing.append(raw_name)
+
+        if missing:
+            print(f"[EgoMotionDataset] WARNING: {len(missing)} entries from {split_file} were not found.")
+            for item in missing[:10]:
+                print(f"  - missing: {item}")
+            if len(missing) > 10:
+                print("  - ...")
+
+        return resolved
 
     def _load_sample(self, json_path: str) -> Dict:
         """
@@ -363,6 +486,7 @@ class EgoMotionDataModule(pl.LightningDataModule):
             ego_mean=self.ego_mean,
             ego_std=self.ego_std,
             ego_scale=ego_scale,
+            split_list_root=getattr(self.cfg.DATASET.EGOMOTION, 'MEAN_STD_PATH', None),
             max_motion_length=self.cfg.DATASET.SAMPLER.MAX_LEN,
             min_motion_length=self.cfg.DATASET.SAMPLER.MIN_LEN,
             max_ego_length=self.cfg.DATASET.EGOMOTION.MAX_EGO_LEN,
