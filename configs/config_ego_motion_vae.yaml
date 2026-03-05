@@ -3,7 +3,7 @@
 # Diffusion training config
 ####################################
 
-NAME: ego_motion_interactive_vae_1
+NAME: ego_motion_interactive_vae_3_wo_traj
 SEED_VALUE: 1234
 
 DEBUG: False
@@ -33,6 +33,10 @@ TRAIN:
   OPTIM:
     TYPE: AdamW
     LR: 1e-4
+    LR_SCHEDULER:
+      TYPE: CosineAnnealingWarmup
+      WARMUP_EPOCHS: 100
+      MIN_LR: 1e-6
 
 #####################################
 # Validation Settings
@@ -146,14 +150,20 @@ model:
 LOSS:
   TYPE: mld
   LAMBDA_LATENT: 1.0e-5
-  LAMBDA_KL: 1.0e-4
+  LAMBDA_KL: 5.0e-4
   LAMBDA_REC: 1.0
   LAMBDA_GEN: 1.0
   LAMBDA_CROSS: 1.0
   LAMBDA_CYCLE: 0.0
   LAMBDA_PRIOR: 0.0
-  LAMBDA_TRAJ: 1.0
+  LAMBDA_TRAJ: 0.0 #was 0.05
   DIST_SYNC_ON_STEP: False
+  KL_ANNEAL:
+    ENABLED: true
+    START_EPOCH: 0
+    END_EPOCH: 500
+    START_WEIGHT: 0.0
+    END_WEIGHT: 5.0e-4
 
 #####################################
 # Metric Settings

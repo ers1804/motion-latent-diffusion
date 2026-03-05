@@ -5,6 +5,7 @@ import numpy as np
 import torch
 from torch import Tensor
 from torch.optim import AdamW
+from torch.optim.lr_scheduler import CosineAnnealingLR, LinearLR, SequentialLR
 from torchmetrics import MetricCollection
 import time
 from mld.config import instantiate_from_config
@@ -19,7 +20,7 @@ from mld.models.architectures import (
 )
 from mld.models.losses.mld import MLDLosses
 from mld.models.modeltype.base import BaseModel
-from mld.utils.temos_utils import remove_padding
+from mld.utils.temos_utils import remove_padding, lengths_to_mask
 
 from .base import BaseModel
 
@@ -99,6 +100,37 @@ class MLD(BaseModel):
         else:
             raise NotImplementedError(
                 "Do not support other optimizer for now.")
+
+        # LR Scheduler
+        self.lr_scheduler = None
+        sched_cfg = getattr(cfg.TRAIN.OPTIM, 'LR_SCHEDULER', None)
+        if sched_cfg and getattr(sched_cfg, 'TYPE', '') == 'CosineAnnealingWarmup':
+            warmup_epochs = getattr(sched_cfg, 'WARMUP_EPOCHS', 0)
+            min_lr = getattr(sched_cfg, 'MIN_LR', 0.0)
+            total_epochs = cfg.TRAIN.END_EPOCH
+            if warmup_epochs > 0:
+                warmup_sched = LinearLR(
+                    self.optimizer,
+                    start_factor=1e-2,  # start at 1% of base LR
+                    end_factor=1.0,
+                    total_iters=warmup_epochs,
+                )
+                cosine_sched = CosineAnnealingLR(
+                    self.optimizer,
+                    T_max=total_epochs - warmup_epochs,
+                    eta_min=min_lr,
+                )
+                self.lr_scheduler = SequentialLR(
+                    self.optimizer,
+                    schedulers=[warmup_sched, cosine_sched],
+                    milestones=[warmup_epochs],
+                )
+            else:
+                self.lr_scheduler = CosineAnnealingLR(
+                    self.optimizer,
+                    T_max=total_epochs,
+                    eta_min=min_lr,
+                )
 
         if cfg.LOSS.TYPE == "mld":
             self._losses = MetricCollection({
@@ -751,6 +783,7 @@ class MLD(BaseModel):
             "joints_rst": joints_rst[:, :min_joints_len, ...],
             "dist_m": dist_m,
             "dist_ref": dist_ref,
+            "lengths": lengths,
         }
         return rs_set
     
@@ -773,36 +806,80 @@ class MLD(BaseModel):
         return loss
 
     def _compute_vae_loss(self, rs_set):
-        """Compute VAE training loss directly (bypasses torchmetrics) for backprop."""
+        """Compute VAE training loss directly (bypasses torchmetrics) for backprop.
+        
+        Uses length-based masking so that zero-padded frames do not
+        contribute to reconstruction / joint / trajectory losses.
+        """
         import torch.nn.functional as F
         from mld.data.humanml.scripts.motion_process import recover_root_rot_pos
 
-        loss = torch.tensor(0.0, device=rs_set["m_rst"].device)
+        device = rs_set["m_rst"].device
+        lengths = rs_set["lengths"]
+        loss = torch.tensor(0.0, device=device)
 
-        # Reconstruction losses
-        loss = loss + self.cfg.LOSS.LAMBDA_REC * F.smooth_l1_loss(
-            rs_set["m_rst"], rs_set["m_ref"]
-        )
-        loss = loss + self.cfg.LOSS.LAMBDA_JOINT * F.smooth_l1_loss(
-            rs_set["joints_rst"], rs_set["joints_ref"]
-        )
+        # --- Build frame mask from lengths ---
+        m_rst = rs_set["m_rst"]  # (B, T, 263)
+        m_ref = rs_set["m_ref"]
+        feat_mask = lengths_to_mask(lengths, device, max_len=m_ref.shape[1])  # (B, T)
 
-        # Optional trajectory loss on root XZ from features
+        # --- Feature reconstruction loss (masked) ---
+        # Average over feature dim first, then mask over frames.
+        # This keeps the same loss scale as reduction='mean' but excludes padding.
+        rec_loss = F.smooth_l1_loss(m_rst, m_ref, reduction='none').mean(dim=-1)  # (B, T)
+        rec_loss = (rec_loss * feat_mask).sum() / feat_mask.sum()
+        loss = loss + self.cfg.LOSS.LAMBDA_REC * rec_loss
+
+        # --- Joint reconstruction loss (masked) ---
+        j_rst = rs_set["joints_rst"]  # (B, T, 22, 3)
+        j_ref = rs_set["joints_ref"]
+        joint_mask = lengths_to_mask(lengths, device, max_len=j_ref.shape[1])  # (B, T)
+
+        joint_loss = F.smooth_l1_loss(j_rst, j_ref, reduction='none').mean(dim=(-1, -2))  # (B, T)
+        joint_loss = (joint_loss * joint_mask).sum() / joint_mask.sum()
+        loss = loss + self.cfg.LOSS.LAMBDA_JOINT * joint_loss
+
+        # --- Trajectory loss (masked) ---
         if self.cfg.LOSS.LAMBDA_TRAJ != 0.0:
-            _, rst_pos = recover_root_rot_pos(rs_set["m_rst"])
-            _, ref_pos = recover_root_rot_pos(rs_set["m_ref"])
-            traj_rst = rst_pos[..., [0, 2]]
+            _, rst_pos = recover_root_rot_pos(m_rst)
+            _, ref_pos = recover_root_rot_pos(m_ref)
+            traj_rst = rst_pos[..., [0, 2]]  # (B, T, 2)
             traj_ref = ref_pos[..., [0, 2]]
-            loss = loss + self.cfg.LOSS.LAMBDA_TRAJ * F.mse_loss(traj_rst, traj_ref)
+            traj_mask = lengths_to_mask(lengths, device, max_len=traj_ref.shape[1])  # (B, T)
 
-        # KL loss against N(0, I)
-        if self.cfg.LOSS.LAMBDA_KL != 0.0:
+            traj_loss = F.mse_loss(traj_rst, traj_ref, reduction='none').mean(dim=-1)  # (B, T)
+            traj_loss = (traj_loss * traj_mask).sum() / traj_mask.sum()
+            loss = loss + self.cfg.LOSS.LAMBDA_TRAJ * traj_loss
+
+        # KL loss against N(0, I) — with optional annealing
+        kl_weight = self._get_kl_weight()
+        if kl_weight > 0.0:
             kl = torch.distributions.kl_divergence(
                 rs_set["dist_m"], rs_set["dist_ref"]
             ).mean()
-            loss = loss + self.cfg.LOSS.LAMBDA_KL * kl
+            loss = loss + kl_weight * kl
 
         return loss
+
+    def _get_kl_weight(self):
+        """Compute the current KL weight, with optional linear annealing."""
+        kl_anneal_cfg = getattr(self.cfg.LOSS, 'KL_ANNEAL', None)
+        if kl_anneal_cfg is not None and getattr(kl_anneal_cfg, 'ENABLED', False):
+            start_epoch = kl_anneal_cfg.START_EPOCH
+            end_epoch = kl_anneal_cfg.END_EPOCH
+            start_w = kl_anneal_cfg.START_WEIGHT
+            end_w = kl_anneal_cfg.END_WEIGHT
+            current_epoch = self.current_epoch
+            if current_epoch <= start_epoch:
+                return start_w
+            elif current_epoch >= end_epoch:
+                return end_w
+            else:
+                # Linear interpolation
+                progress = (current_epoch - start_epoch) / (end_epoch - start_epoch)
+                return start_w + progress * (end_w - start_w)
+        else:
+            return self.cfg.LOSS.LAMBDA_KL
 
     def train_diffusion_forward(self, batch):
         feats_ref = batch["motion"]
@@ -1212,6 +1289,10 @@ class MLD(BaseModel):
             if self.stage == "diffusion":
                 loss = self._compute_diffusion_loss(rs_set)
             elif self.stage == "vae":
+                # Sync the KL weight for logging consistency
+                kl_weight = self._get_kl_weight()
+                if hasattr(self.losses[split], '_params') and 'kl_motion' in self.losses[split]._params:
+                    self.losses[split]._params['kl_motion'] = kl_weight
                 loss = self._compute_vae_loss(rs_set)
             else:
                 # For vae or vae_diffusion stages, use original method
@@ -1222,6 +1303,12 @@ class MLD(BaseModel):
             # Still update metrics for logging (but don't use return value)
             if self.stage in ["diffusion", "vae"]:
                 self.losses[split].update(rs_set)
+
+            # Log LR and KL weight for monitoring
+            if split == "train" and self.stage == "vae":
+                current_lr = self.optimizer.param_groups[0]['lr']
+                self.log("train/lr", current_lr, prog_bar=False)
+                self.log("train/kl_weight", self._get_kl_weight(), prog_bar=False)
 
         # Compute the metrics - currently evaluate results from text to motion
         if split in ["val", "test"]:

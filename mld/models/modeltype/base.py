@@ -145,7 +145,13 @@ class BaseModel(LightningModule):
         super().load_state_dict(new_state_dict, strict)
 
     def configure_optimizers(self):
-        return {"optimizer": self.optimizer}
+        opt_config = {"optimizer": self.optimizer}
+        if getattr(self, 'lr_scheduler', None) is not None:
+            opt_config["lr_scheduler"] = {
+                "scheduler": self.lr_scheduler,
+                "interval": "epoch",
+            }
+        return opt_config
 
     def configure_metrics(self):
         for metric in self.metrics_dict:
