@@ -103,6 +103,9 @@ DATASET:
     #           Set MEAN_STD_PATH to directory containing Mean.npy, Std.npy
     MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
     EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/stats'
+    # Interaction-aware training options
+    INTERACTION_CROP: False          # Centre crop window on closest ego-ped approach frame
+    INTERACTION_WEIGHTED_SAMPLING: False  # Weight sampling by interaction score
   SAMPLER:
     MAX_LEN: 196                   # Max motion length
     MIN_LEN: 40                    # Min motion length

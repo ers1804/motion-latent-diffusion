@@ -21,7 +21,7 @@ from glob import glob
 
 import numpy as np
 import torch
-from torch.utils.data import Dataset, DataLoader
+from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 import pytorch_lightning as pl
 
 from mld.data.humanml.scripts.motion_process import recover_from_ric
@@ -62,8 +62,13 @@ class EgoMotionDataset(Dataset):
         debug: bool = False,
         overfit: bool = False,
         split_list_root: Optional[str] = None,
+        interaction_crop: bool = False,
+        interaction_weighted_sampling: bool = False,
         **kwargs
     ):
+        self.interaction_crop = interaction_crop
+        self.interaction_weighted_sampling = interaction_weighted_sampling
+
         # Support both single path and list of paths
         if isinstance(data_root, str):
             self.data_roots = [data_root]
@@ -103,6 +108,11 @@ class EgoMotionDataset(Dataset):
             count = len([p for p in self.sample_paths if root in p])
             print(f"  - {root}: {count} samples")
         
+        # Compute interaction weights for weighted sampling
+        self.sample_weights = None
+        if self.interaction_weighted_sampling and split == "train":
+            self.sample_weights = self._compute_interaction_weights()
+
         # Dataset info (required by MLD)
         self.nfeats = 263  # Motion feature dimension
         self.njoints = 22  # Joint count (HumanML3D format)
@@ -259,6 +269,59 @@ class EgoMotionDataset(Dataset):
 
         return resolved
 
+    def _compute_interaction_weights(self) -> np.ndarray:
+        """Compute per-sample interaction weights for WeightedRandomSampler.
+
+        The weight for each scenario is derived from the same interaction score
+        used in dataset_statistics.ipynb:
+            score = ped_travel * (pct_within_5m / 100) * (1 + heading_change / 180)
+
+        Scores are clipped to a small floor value so non-interactive samples are
+        still seen occasionally, then normalized to sum to len(dataset).
+        """
+        print("[EgoMotionDataset] Computing interaction weights (this scans all JSON files once)...")
+        weights = np.ones(len(self.sample_paths), dtype=np.float64)
+
+        for i, fpath in enumerate(self.sample_paths):
+            if not fpath.endswith(".json"):
+                continue
+            try:
+                with open(fpath, "r") as f:
+                    data = json.load(f)
+
+                ego = np.array(data["ego_in_ped_frame"], dtype=np.float32)
+                ped = np.array(data["ped_in_ped_frame"], dtype=np.float32)
+                root_joint = ped[:, 0, :]  # pelvis, (T, 3)
+
+                T = min(len(ego), len(root_joint))
+                ego_xz = ego[:T, [0, 2]]
+                root_xz = root_joint[:T, [0, 2]]
+
+                # Pedestrian total travel distance (ground plane)
+                ped_travel = np.linalg.norm(np.diff(root_xz, axis=0), axis=1).sum()
+
+                # Ego–ped distance per frame
+                dists = np.linalg.norm(ego_xz - root_xz, axis=1)
+                pct_within_5m = (dists < 5).mean() * 100
+
+                # Bearing heading change
+                bearing = root_xz - ego_xz
+                angles = np.arctan2(bearing[:, 1], bearing[:, 0])
+                angle_diffs = np.abs(np.diff(angles))
+                angle_diffs = np.minimum(angle_diffs, 2 * np.pi - angle_diffs)
+                heading_change = np.degrees(angle_diffs.sum())
+
+                score = ped_travel * (pct_within_5m / 100.0) * (1 + heading_change / 180.0)
+                weights[i] = max(score, 0.01)
+            except Exception:
+                weights[i] = 0.01
+
+        # Normalize so weights sum to N (keeps effective epoch size the same)
+        weights = weights / weights.sum() * len(weights)
+        n_high = (weights > 1.0).sum()
+        print(f"[EgoMotionDataset] Interaction weights: {n_high}/{len(weights)} samples above average weight")
+        return weights
+
     def _load_sample(self, json_path: str) -> Dict:
         """
         Load a single sample from JSON file.
@@ -273,6 +336,7 @@ class EgoMotionDataset(Dataset):
             return {
             "ego": ego_2d,
             "motion": motion,
+            "ped_root_xz": np.zeros_like(ego_2d),
             "scene_id": "",
             "object_id": "",
         }
@@ -286,10 +350,15 @@ class EgoMotionDataset(Dataset):
             
             # Extract motion features: [[263], ...] -> (T, 263)
             motion = np.array(data["vectors_263"], dtype=np.float32)
-        
+
+            # Extract pedestrian root joint XZ for ego-ped distance computation
+            ped_joints = np.array(data["ped_in_ped_frame"], dtype=np.float32)  # (T, 22, 3)
+            ped_root_xz = ped_joints[:, 0, [0, 2]]  # (T, 2)
+
             return {
                 "ego": ego_2d,
                 "motion": motion,
+                "ped_root_xz": ped_root_xz,
                 "scene_id": data.get("scene_id", ""),
                 "object_id": data.get("object_id", ""),
             }
@@ -364,15 +433,36 @@ class EgoMotionDataset(Dataset):
         
         return sequence, actual_length
 
+    def _find_interaction_center(self, ego_ped_dists: np.ndarray, actual_length: int) -> int:
+        """Find the frame index of minimum ego-pedestrian distance.
+
+        Args:
+            ego_ped_dists: (T,) precomputed per-frame ego-ped distances (raw, unnormalized)
+            actual_length: number of valid frames
+        Returns the frame index within [0, actual_length).
+        """
+        return int(np.argmin(ego_ped_dists[:actual_length]))
+
     def _pad_or_crop_ego_motion(
         self, 
         sequence: np.ndarray,
         ego_sequence: np.ndarray, 
-        max_length: int
+        max_length: int,
+        ego_ped_dists: Optional[np.ndarray] = None,
     ) -> tuple:
         """
         Pad/crop motion and ego together with aligned indexing.
         Ego is first truncated/padded to match motion length so they stay aligned.
+
+        When ``self.interaction_crop`` is True the crop window is centred on the
+        frame of closest ego-pedestrian approach (with uniform jitter of up to
+        ±25 % of the window so the closest frame is not always dead-centre).
+        Otherwise a random contiguous window is selected (original behaviour).
+
+        Args:
+            ego_ped_dists: (T,) precomputed raw ego-ped distances (before normalization).
+                           Required when interaction_crop is True.
+
         Returns: (padded_motion, padded_ego, actual_length)
         """
         actual_length = len(sequence)
@@ -388,8 +478,19 @@ class EgoMotionDataset(Dataset):
             ego_sequence = np.concatenate([ego_sequence, pad_ego], axis=0)
 
         if actual_length >= max_length:
-            # Randomly select a contiguous subsequence
-            start_idx = np.random.randint(0, actual_length - max_length + 1)
+            if self.interaction_crop and ego_ped_dists is not None:
+                # Centre the window on the closest-approach frame
+                center = self._find_interaction_center(ego_ped_dists, actual_length)
+                # Add uniform jitter of ±25 % of the window so the model does
+                # not memorise a fixed position for the closest frame.
+                jitter = int(max_length * 0.25)
+                center += np.random.randint(-jitter, jitter + 1)
+                start_idx = center - max_length // 2
+                # Clamp to valid range
+                start_idx = max(0, min(start_idx, actual_length - max_length))
+            else:
+                # Randomly select a contiguous subsequence
+                start_idx = np.random.randint(0, actual_length - max_length + 1)
             sequence = sequence[start_idx:start_idx + max_length]
             ego_sequence = ego_sequence[start_idx:start_idx + max_length]
             actual_length = max_length
@@ -433,17 +534,19 @@ class EgoMotionDataset(Dataset):
         
         ego = sample["ego"]
         motion = sample["motion"]
+        ped_root_xz = sample["ped_root_xz"]
+
+        # Compute raw ego-ped distances BEFORE normalization (for interaction crop)
+        T = min(len(ego), len(ped_root_xz))
+        ego_ped_dists = np.linalg.norm(ego[:T] - ped_root_xz[:T], axis=-1)
 
         # Normalize motion and ego
         motion = self._normalize_motion(motion)
         ego = self._normalize_ego(ego)
 
         # Pad/crop sequences
-        # ego, ego_length = self._pad_or_crop(ego, self.max_ego_length)
-        # motion, motion_length = self._pad_or_crop(motion, self.max_motion_length)
-
         motion, ego, motion_length = self._pad_or_crop_ego_motion(
-            motion, ego, self.max_motion_length
+            motion, ego, self.max_motion_length, ego_ped_dists=ego_ped_dists,
         )
         ego_length = motion_length
         # Filter by length constraints
@@ -507,6 +610,9 @@ class EgoMotionDataModule(pl.LightningDataModule):
         # Get ego scale from config (default 50 meters)
         ego_scale = getattr(self.cfg.DATASET.EGOMOTION, 'EGO_SCALE', 50.0)
         
+        interaction_crop = getattr(self.cfg.DATASET.EGOMOTION, 'INTERACTION_CROP', False)
+        interaction_weighted = getattr(self.cfg.DATASET.EGOMOTION, 'INTERACTION_WEIGHTED_SAMPLING', False)
+
         common_kwargs = dict(
             data_root=data_root,
             mean=self.mean,
@@ -520,7 +626,9 @@ class EgoMotionDataModule(pl.LightningDataModule):
             max_ego_length=self.cfg.DATASET.EGOMOTION.MAX_EGO_LEN,
             fps=self.cfg.DATASET.EGOMOTION.FPS,
             debug=self.debug,
-            overfit=self.overfit
+            overfit=self.overfit,
+            interaction_crop=interaction_crop,
+            interaction_weighted_sampling=interaction_weighted,
         )
 
         def _split_exists(split_name: str) -> bool:
@@ -554,10 +662,21 @@ class EgoMotionDataModule(pl.LightningDataModule):
                 self.test_dataset = EgoMotionDataset(split=test_split, **common_kwargs)
 
     def train_dataloader(self):
+        sampler = None
+        shuffle = True
+        if self.train_dataset.sample_weights is not None:
+            sampler = WeightedRandomSampler(
+                weights=self.train_dataset.sample_weights,
+                num_samples=len(self.train_dataset),
+                replacement=True,
+            )
+            shuffle = False  # mutually exclusive with sampler
+
         return DataLoader(
             self.train_dataset,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=shuffle,
+            sampler=sampler,
             num_workers=self.num_workers,
             collate_fn=self.collate_fn,
             drop_last=True,
