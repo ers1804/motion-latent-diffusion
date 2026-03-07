@@ -18,5 +18,5 @@ export OMP_NUM_THREADS=12
 export WANDB_API_KEY="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"
 
 python -m train \
---cfg configs/config_ego_motion_new_vae_stoch.yaml \
+--cfg configs/config_ego_motion_new_vae_stoch_latent_1.yaml \
 --nodebug
