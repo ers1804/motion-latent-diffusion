@@ -143,13 +143,23 @@ def run_pretraining(args):
 
     # Build our own dataloaders with drop_last=False so small datasets
     # (e.g. AVA with 27 samples) don't lose all data when batch_size > n_samples.
-    from torch.utils.data import DataLoader
+    from torch.utils.data import DataLoader, WeightedRandomSampler
     from mld.data.EgoMotion import ego_motion_collate
     effective_bs = min(cfg.TRAIN.BATCH_SIZE, len(datamodule.train_dataset))
+    sampler = None
+    shuffle = True
+    if datamodule.train_dataset.sample_weights is not None:
+        sampler = WeightedRandomSampler(
+            weights=datamodule.train_dataset.sample_weights,
+            num_samples=len(datamodule.train_dataset),
+            replacement=True,
+        )
+        shuffle = False
     train_loader = DataLoader(
         datamodule.train_dataset,
         batch_size=effective_bs,
-        shuffle=True,
+        shuffle=shuffle,
+        sampler=sampler,
         num_workers=cfg.TRAIN.NUM_WORKERS,
         collate_fn=ego_motion_collate,
         drop_last=False,
@@ -251,10 +261,11 @@ def run_pretraining(args):
                 z_gt, dist_gt = vae.encode(motion, lengths)
                 # z_gt shape: (n_token, B, z_dim) = (1, B, 256)
                 if use_mean:
-                    z_target = dist_gt.loc       # (1, B, z_dim) — deterministic
+                    z_target = dist_gt.loc       # (n_token, B, z_dim) — deterministic
                 else:
-                    z_target = z_gt              # (1, B, z_dim) — sampled
-                z_target = z_target.squeeze(0)   # (B, z_dim)
+                    z_target = z_gt              # (n_token, B, z_dim) — sampled
+                # Average over latent tokens (handles multi-token VAEs, e.g. latent_dim=[4,256])
+                z_target = z_target.mean(dim=0)  # (B, z_dim)
 
             # ── Student: ego encoder → pooled embedding (includes projection) ─
             ego_emb = ego_encoder(ego)           # (B, 1, z_dim) for pooled
@@ -351,7 +362,7 @@ def evaluate(ego_encoder, vae, val_loader, device, use_mean):
         lengths = batch["length"]
 
         z_gt, dist_gt = vae.encode(motion, lengths)
-        z_target = (dist_gt.loc if use_mean else z_gt).squeeze(0)
+        z_target = (dist_gt.loc if use_mean else z_gt).mean(dim=0)
 
         z_pred = ego_encoder(ego).squeeze(1)  # includes built-in projection
 
