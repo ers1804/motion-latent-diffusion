@@ -63,18 +63,7 @@ def main():
     # tensorboard logger and wandb logger
     loggers = []
     if cfg.LOGGER.WANDB.PROJECT:
-        wandb_logger = pl_loggers.WandbLogger(
-            entity=cfg.LOGGER.WANDB.ENTITY,
-            project=cfg.LOGGER.WANDB.PROJECT,
-            offline=cfg.LOGGER.WANDB.OFFLINE,
-            id=cfg.LOGGER.WANDB.RESUME_ID,
-            save_dir=cfg.FOLDER_EXP,
-            version="",
-            name=cfg.NAME,
-            anonymous=False,
-            log_model=False,
-            resume='allow',
-            config={
+        wandb_config = {
             "stage": cfg.TRAIN.STAGE,
             "batch_size": cfg.TRAIN.BATCH_SIZE,
             "end_epoch": cfg.TRAIN.END_EPOCH,
@@ -100,14 +89,31 @@ def main():
             "ego_scale": cfg.DATASET.EGOMOTION.EGO_SCALE,
             "max_len": cfg.DATASET.SAMPLER.MAX_LEN,
             "min_len": cfg.DATASET.SAMPLER.MIN_LEN,
-            "scheduler_timesteps": cfg.model.scheduler.params.num_train_timesteps,
-            "scheduler_prediction_type": cfg.model.scheduler.params.prediction_type,
-            "num_inference_timesteps": cfg.model.scheduler.num_inference_timesteps,
             "lambda_latent": cfg.LOSS.LAMBDA_LATENT,
             "lambda_kl": cfg.LOSS.LAMBDA_KL,
             "lambda_rec": cfg.LOSS.LAMBDA_REC,
             "lambda_gen": cfg.LOSS.LAMBDA_GEN,
-            }
+        }
+
+        if str(cfg.TRAIN.STAGE).lower() == "diffusion":
+            wandb_config.update({
+                "scheduler_timesteps": cfg.model.scheduler.params.num_train_timesteps,
+                "scheduler_prediction_type": cfg.model.scheduler.params.prediction_type,
+                "num_inference_timesteps": cfg.model.scheduler.num_inference_timesteps,
+            })
+
+        wandb_logger = pl_loggers.WandbLogger(
+            entity=cfg.LOGGER.WANDB.ENTITY,
+            project=cfg.LOGGER.WANDB.PROJECT,
+            offline=cfg.LOGGER.WANDB.OFFLINE,
+            id=cfg.LOGGER.WANDB.RESUME_ID,
+            save_dir=cfg.FOLDER_EXP,
+            version="",
+            name=cfg.NAME,
+            anonymous=False,
+            log_model=False,
+            resume='allow',
+            config=wandb_config
         )
         loggers.append(wandb_logger)
     if cfg.LOGGER.TENSORBOARD:
@@ -154,8 +160,8 @@ def main():
 
     # callbacks
     callbacks = [
-        pl.callbacks.RichProgressBar(),
-        #pl.callbacks.TQDMProgressBar(),
+        pl.callbacks.TQDMProgressBar(),
+        # pl.callbacks.RichProgressBar(),
         ProgressLogger(metric_monitor=metric_monitor),
         # ModelCheckpoint(dirpath=os.path.join(cfg.FOLDER_EXP,'checkpoints'),filename='latest-{epoch}',every_n_epochs=1,save_top_k=1,save_last=True,save_on_train_epoch_end=True),
         ModelCheckpoint(
@@ -175,7 +181,7 @@ def main():
         # ddp_strategy = DDPStrategy(find_unused_parameters=False)
         ddp_strategy = "ddp"
     else:
-        ddp_strategy = None
+        ddp_strategy = "auto"
 
     # trainer
     trainer = pl.Trainer(
