@@ -110,6 +110,12 @@ def load_ego_from_json(json_path, max_ego_len=196, ego_scale=50.0, ego_mean=None
         ego_mean = np.array([0.03992962314720422, 5.138034295405447], dtype=np.float32)
     if ego_std is None:
         ego_std = np.array([13.274100607793672, 15.879450116636379], dtype=np.float32)
+
+    # If mean/std are 3D (x, y, z), slice to match ego_2d's (x, z) columns
+    if ego_mean.shape[-1] == 3:
+        ego_mean = ego_mean[..., [0, 2]]
+    if ego_std.shape[-1] == 3:
+        ego_std = ego_std[..., [0, 2]]
     
     # Also load ground truth motion if available (for comparison)
     gt_motion = None
@@ -499,6 +505,12 @@ def main():
             ego_mean, ego_std = None, None
     else:
         ego_mean, ego_std = None, None
+
+    # Slice 3D ego mean/std to 2D (x, z) to match ego trajectory columns
+    if ego_mean is not None and ego_mean.shape[-1] == 3:
+        ego_mean = ego_mean[..., [0, 2]]
+    if ego_std is not None and ego_std.shape[-1] == 3:
+        ego_std = ego_std[..., [0, 2]]
     
     # Collect input files
     json_files = []
