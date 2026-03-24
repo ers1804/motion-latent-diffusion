@@ -3,7 +3,7 @@
 # Diffusion training config
 ####################################
 
-NAME: ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling
+NAME: ego_motion_vae_latent_8_wo_traj_interaction_crop_weighted_sampling
 SEED_VALUE: 1234
 
 DEBUG: False
@@ -26,7 +26,7 @@ TRAIN:
   BATCH_SIZE: 128
   END_EPOCH: 6000
 
-  RESUME: ''
+  RESUME: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/vae/mld/ego_motion_vae_latent_8_wo_traj_interaction_crop_weighted_sampling'
   PRETRAINED_VAE: ''  # Set this to your VAE checkpoint path
   PRETRAINED: ''
   
@@ -79,10 +79,10 @@ DATASET:
     
     # Multiple datasets (train on all):
     ROOT: 
-      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava'
-      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/waymo'
-      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/nuscenes'
-      # - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/humanml3d'  # Add if has ego data
+      - '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/diffusion/ava'
+      - '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/diffusion/waymo'
+      - '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/diffusion/nuscenes'
+      # - '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/diffusion/humanml3d'  # Add if has ego data
     
     MAX_EGO_LEN: 196              # Max ego trajectory length
     FPS: 20                        # Your data FPS
@@ -93,8 +93,8 @@ DATASET:
     #           Leave MEAN_STD_PATH empty, will auto-use HUMANML3D.ROOT
     # Option 2: Use your own mean/std (for your own VAE)
     #           Set MEAN_STD_PATH to directory containing Mean.npy, Std.npy
-    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
-    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'
+    MEAN_STD_PATH: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
+    EGO_MEAN_STD_PATH: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'
 
     # Interaction-aware training options
     INTERACTION_CROP: True          # Centre crop window on closest ego-ped approach frame
@@ -111,7 +111,7 @@ model:
   vae: true
   model_type: mld
   condition: 'ego'
-  latent_dim: [4, 256]             # MLD-1 (best for generation)
+  latent_dim: [8, 256]             # MLD-1 (best for generation)
   ff_size: 1024
   num_layers: 9
   num_heads: 4
@@ -186,6 +186,7 @@ LOGGER:
   VAL_EVERY_STEPS: 100
   TENSORBOARD: True
   WANDB:
-    PROJECT: null                  # Set to your wandb project name to enable
+    PROJECT: diffusion_gen
+    ENTITY: erik_hm
     OFFLINE: False
-    RESUME_ID: null
+    RESUME_ID: ego_motion_vae_latent_8_wo_traj_interaction_crop_weighted_sampling

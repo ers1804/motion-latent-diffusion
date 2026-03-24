@@ -3,7 +3,7 @@
 # Diffusion training config
 ####################################
 
-NAME: ego_motion_diffusion_interactive_1_stochastic
+NAME: ego_motion_diffusion_interaction_crop_weighted_1
 SEED_VALUE: 1234
 
 DEBUG: False
@@ -18,13 +18,13 @@ TRAIN:
   # Train diffusion (VAE should be pre-trained)
   STAGE: diffusion
   DATASETS: ['egomotion']
-  NUM_WORKERS: 4
-  BATCH_SIZE: 64
+  NUM_WORKERS: 8
+  BATCH_SIZE: 128
   END_EPOCH: 5000
 
-  RESUME: ''
-  PRETRAINED_VAE: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/vae/ego_motion_interactive_vae_wo_traj_loss/checkpoints/epoch=5999.ckpt'  # Set this to your VAE checkpoint path
-  PRETRAINED_EGO: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/ego_encoder/ego_encoder_latent_1_interactive_stoch/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
+  RESUME: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_interaction_crop_weighted_1'
+  PRETRAINED_VAE: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt'  # Set this to your VAE checkpoint path
+  PRETRAINED_EGO: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/ego_encoder/ego_encoder_interaction_crop_weighted/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
   PRETRAINED: ''
   FREEZE_EGO: True
   DETERMINISTIC_Z: False             # Use VAE mean (not sample) — eliminates stochastic noise floor, loss should → 0
@@ -97,8 +97,11 @@ DATASET:
     #           Leave MEAN_STD_PATH empty, will auto-use HUMANML3D.ROOT
     # Option 2: Use your own mean/std (for your own VAE)
     #           Set MEAN_STD_PATH to directory containing Mean.npy, Std.npy
-    MEAN_STD_PATH: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive'             # Empty = use HUMANML3D.ROOT, or set your path
-    EGO_MEAN_STD_PATH: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive'
+    MEAN_STD_PATH: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'             # Empty = use HUMANML3D.ROOT, or set your path
+    EGO_MEAN_STD_PATH: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'
+    # Interaction-aware training options
+    INTERACTION_CROP: True          # Centre crop window on closest ego-ped approach frame
+    INTERACTION_WEIGHTED_SAMPLING: True  # Weight sampling by interaction score
   SAMPLER:
     MAX_LEN: 196                   # Max motion length
     MIN_LEN: 40                    # Min motion length
@@ -111,13 +114,13 @@ model:
   vae: true
   model_type: mld
   condition: 'ego'                 # Changed from 'text'
-  latent_dim: [1, 256]             # MLD-1 (best for generation)
+  latent_dim: [4, 256]             # MLD-1 (best for generation)
   ff_size: 1024
   num_layers: 9
   num_heads: 4
   dropout: 0.1
   activation: gelu
-  guidance_scale: 7.5 #1.0 #7.5
+  guidance_scale: 15 #1.0 #7.5
   guidance_uncondp: 0.1 #0.0 #0.1            # 10% dropout for CFG
 
   # Ego encoder settings
@@ -223,4 +226,4 @@ LOGGER:
     PROJECT: diffusion_gen
     ENTITY: erik_hm
     OFFLINE: False
-    RESUME_ID: ego_motion_diffusion_interactive_1_stochastic
+    RESUME_ID: ego_motion_diffusion_interaction_crop_weighted_1
