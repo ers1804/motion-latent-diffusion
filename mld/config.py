@@ -67,6 +67,10 @@ def parse_args(phase="train"):
                            type=str,
                            required=False,
                            help="evaluate existing npys")
+        group.add_argument("--overrides",
+                           nargs="*",
+                           default=[],
+                           help="Override config values, e.g. KEY=VALUE or KEY.SUBKEY=VALUE")
 
     if phase == "demo":
         # group.add_argument("--motion_transfer", action='store_true', help="Motion Distribution Transfer")
@@ -169,6 +173,9 @@ def parse_args(phase="train"):
     cfg_model = get_module_config(cfg_exp.model, cfg_exp.model.target)
     cfg_assets = OmegaConf.load(params.cfg_assets)
     cfg = OmegaConf.merge(cfg_exp, cfg_model, cfg_assets)
+
+    if getattr(params, "overrides", None):
+        cfg = OmegaConf.merge(cfg, OmegaConf.from_dotlist(params.overrides))
 
     if phase in ["train", "test"]:
         cfg.TRAIN.BATCH_SIZE = (params.batch_size
