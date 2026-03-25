@@ -26,12 +26,15 @@ def main():
     if cfg.TRAIN.RESUME:
         resume = cfg.TRAIN.RESUME
         backcfg = cfg.TRAIN.copy()
+        cli_overrides = list(cfg.get("CLI_OVERRIDES", []))
         if os.path.exists(resume):
             file_list = sorted(os.listdir(resume), reverse=True)
             for item in file_list:
                 if item.endswith(".yaml"):
                     cfg = OmegaConf.load(os.path.join(resume, item))
                     cfg.TRAIN = backcfg
+                    if cli_overrides:
+                        cfg = OmegaConf.merge(cfg, OmegaConf.from_dotlist(cli_overrides))
                     break
             checkpoints = sorted(os.listdir(os.path.join(
                 resume, "checkpoints")),
