@@ -26,7 +26,7 @@ def main():
     if cfg.TRAIN.RESUME:
         resume = cfg.TRAIN.RESUME
         backcfg = cfg.TRAIN.copy()
-        cli_overrides = list(cfg.get("CLI_OVERRIDES", []))
+        cli_overrides = [str(x) for x in cfg.get("CLI_OVERRIDES", [])]
         if os.path.exists(resume):
             file_list = sorted(os.listdir(resume), reverse=True)
             for item in file_list:

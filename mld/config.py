@@ -174,9 +174,10 @@ def parse_args(phase="train"):
     cfg_assets = OmegaConf.load(params.cfg_assets)
     cfg = OmegaConf.merge(cfg_exp, cfg_model, cfg_assets)
 
-    cfg.CLI_OVERRIDES = list(getattr(params, "overrides", None) or [])
-    if cfg.CLI_OVERRIDES:
-        cfg = OmegaConf.merge(cfg, OmegaConf.from_dotlist(cfg.CLI_OVERRIDES))
+    cli_overrides = list(getattr(params, "overrides", None) or [])
+    cfg.CLI_OVERRIDES = cli_overrides  # stored for re-use after resume
+    if cli_overrides:
+        cfg = OmegaConf.merge(cfg, OmegaConf.from_dotlist(cli_overrides))
 
     if phase in ["train", "test"]:
         cfg.TRAIN.BATCH_SIZE = (params.batch_size
