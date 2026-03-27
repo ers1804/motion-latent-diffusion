@@ -62,3 +62,21 @@ Can interaction-aware training + larger latent spaces improve ego-conditioned mo
 2. When VAE finishes: `sbatch pretrain_ego_encoder_latent_8_helma.sh` → `sbatch diffusion_training_latent_8_helma.sh`
 3. After run_005 completes at epoch 5000: eval final checkpoint
 4. Submit CFG sweep once run_005 eval confirms setup works
+
+## 2026-03-27 — Ego Encoder Pretraining Fix & Resubmission
+
+### Issue: Job 327946 Failed (FileNotFoundError)
+- Error: `FileNotFoundError: '.../data/vae/mean_std_txt/ava_nuscenes_waymo/Mean.npy'`
+- Root cause: `pretrain_ego_encoder.py` reads `DATASET.EGOMOTION.MEAN_STD_PATH` from config, which contains the local NAS path `/mnt/md0/erik/nas/...`. The slurm script extracts data to `$TMPDIR/data/` but didn't override this path.
+- `pretrain_ego_encoder.py` had no mechanism to override `MEAN_STD_PATH` (only `--data_roots` existed)
+
+### Fix Applied
+- Added `--mean_std_path` CLI argument to `pretrain_ego_encoder.py`
+- `build_cfg()` now overrides both `DATASET.EGOMOTION.MEAN_STD_PATH` and `DATASET.EGOMOTION.EGO_MEAN_STD_PATH` when `--mean_std_path` is provided
+- Updated `slurm/pretrain_ego_encoder_latent_8_helma.sh` to pass `--mean_std_path "$TMPDIR/data/vae/mean_std_txt/ava_nuscenes_waymo"`
+- Committed (2922363), pushed, pulled on helma, resubmitted as **job 327955**
+
+### Current Job Status
+- **327955** ego_enc_pretrain — RUNNING (just started, h13-13)
+- **327950** eval_cfg_sweep — RUNNING (extracting data, h13-24)
+- **326049** diffusion_train (H2 run_005) — RUNNING (23h51m, h14-06)
