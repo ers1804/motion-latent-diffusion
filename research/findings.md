@@ -1,6 +1,6 @@
 # Findings — Ego-Conditioned Pedestrian Motion Generation
 
-*Last updated: 2026-03-27*
+*Last updated: 2026-03-27 (CFG sweep results)*
 
 ## Current Understanding
 
@@ -16,13 +16,18 @@ latent-4×256 space.
 
 ## Key Results So Far
 
-| Run | Epoch | FID ↓ | Diversity | R-prec@1 | MM | Notes |
-|-----|-------|-------|-----------|----------|----|-------|
-| interaction_crop_weighted_1 (crashed) | ~mid | 7.503 | 5.665 | 0.825 | — | Latent-4, interaction crop+weighted; crashed |
-| **interaction_crop_weighted_1_helma** | **4399** | **7.400 ±0.02** | **5.742** | **0.797** | **2.724** | **Continued run; FID improved; 500 epochs remaining** |
-| GT reference | — | — | 5.330 | — | — | Ground truth motion diversity |
+| Run | Epoch | CFG | FID ↓ | FID CI | Diversity | R-prec@1 | MM | Notes |
+|-----|-------|-----|-------|--------|-----------|----------|----|-------|
+| interaction_crop_weighted_1 (crashed) | ~mid | 15 | 7.503 | — | 5.665 | 0.825 | — | Latent-4, interaction crop+weighted; crashed |
+| interaction_crop_weighted_1_helma | 4399 | 15 | 7.400 | ±0.016 | 5.742 | 0.797 | 2.724 | Default CFG |
+| **interaction_crop_weighted_1_helma** | **4399** | **5** | **6.603** | **±0.067** | **5.779** | **0.671** | **3.503** | **Best FID — OPTIMAL** |
+| interaction_crop_weighted_1_helma | 4399 | 10 | 6.963 | ±0.035 | 5.762 | 0.767 | 3.031 | CFG sweep |
+| interaction_crop_weighted_1_helma | 4399 | 20 | 7.856 | ±0.041 | 5.759 | 0.815 | 2.573 | CFG sweep |
+| GT reference | — | — | — | — | 5.330 | — | — | Ground truth motion diversity |
 
-**Key finding (2026-03-27)**: The full H2 run at epoch 4399 achieves FID=7.40, improving on the crashed partial run's 7.50. R-precision @1 is 0.797 (slightly below crashed 0.825), suggesting model has room to improve on conditioning alignment in the remaining 500 epochs. Diversity at 5.74 is slightly above GT (5.33), indicating mild overgeneration but not mode collapse.
+**MAJOR FINDING (2026-03-27 — H5 CFG Sweep)**: CFG guidance scale has a large, monotonic effect on FID. The original default (CFG=15) was suboptimal — **CFG=5 gives FID=6.603, a 10.8% improvement** (7.40→6.60) at zero training cost. The trade-off: R-precision drops from 0.797→0.671 (lower conditioning fidelity). Diversity is nearly constant across all CFG values (5.74–5.78) — the CFG knob primarily controls quality/conditioning tradeoff, not diversity. MultiModality increases at low CFG (3.50 vs 2.57), indicating the model is more expressive without strong guidance.
+
+**Implication**: Future evaluations should use **CFG=5** to report FID. H2 epoch=4599 eval at CFG=5 submitted (job 327991); expected FID ~6.4–6.6.
 
 ## Patterns and Insights
 
@@ -34,8 +39,11 @@ latent-4×256 space.
    The latent-8 VAE uses KL annealing and cosine LR warmup — suggesting the team learned
    that larger latent spaces need more careful training to avoid posterior collapse.
 
-3. **Guidance scale**: Currently at 15 (high). This was increased from 7.5 in earlier runs.
-   Higher CFG generally improves quality at the cost of diversity — worth sweeping.
+3. **Guidance scale (H5 — COMPLETED)**: CFG has a large monotonic effect on FID — **lower is better for FID**.
+   CFG=5 achieves FID=6.603 vs FID=7.400 at CFG=15 (10.8% improvement). Diversity barely changes (5.74–5.78 across all scales).
+   R-precision monotonically increases with CFG (0.671 at CFG=5 → 0.815 at CFG=20), so there is a genuine quality/conditioning tradeoff.
+   This finding falsifies the prior assumption that FID would be optimal at intermediate CFG — the relationship is monotone in this regime.
+   **Recommendation**: Use CFG=5 for FID-focused evaluation; CFG=10–15 if conditioning fidelity (R-prec) matters more.
 
 ## Lessons and Constraints
 
@@ -51,7 +59,7 @@ latent-4×256 space.
 
 1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → YES: epoch 4399 gives FID=7.40. Final eval at epoch 5000 pending.
 2. **Does latent-8 VAE give better reconstruction quality?** → VAE done (loss=0.0142). Ego encoder pretraining running. Diffusion training TBD.
-3. **What is the sensitivity to CFG guidance scale?** → Sweep {5,10,15,20} ready to submit (`slurm/eval_cfg_sweep.sh`).
+3. ~~**What is the sensitivity to CFG guidance scale?**~~ → **ANSWERED**: FID monotonically decreases with lower CFG. CFG=5 is best for FID (6.603), CFG=20 worst (7.856). R-prec monotonically improves with higher CFG. Diversity is nearly constant. **Use CFG=5 for FID evaluation.**
 4. **Can a cross-attention ego encoder improve R-precision?** → Untested (H4). Current R-prec@1=0.797 leaves room for improvement.
 5. **Is there a meaningful gap vs retrieval baseline?** → ADE/FDE evaluation not yet set up.
 6. **Will the H3 latent-8 diffusion outperform H2?** → VAE+encoder pipeline underway; results expected in ~2-3 days.
@@ -84,13 +92,24 @@ This would use `arch=trans_dec` (already exists in the denoiser) with:
 are for the `EgoEncoderPooled` arch. H4 would require re-pretraining the ego encoder +
 re-training the diffusion model. Cost: ~2-3 days on H100.
 
-### CFG Sweep Predictions (H5)
-For guidance_scale sweep {5, 10, 15, 20}:
-- **Diversity**: monotone decrease with higher CFG (generation concentrates on high-likelihood modes)
-- **FID**: typically optimal at intermediate CFG (inverted U-curve; both extremes hurt FID)
-- **R-precision**: monotone increase with higher CFG (guidance forces conditioning alignment)
-- **Current**: CFG=15 gives FID=7.40, R-prec@1=0.797, Diversity=5.74
-- **Prediction**: FID minimum around CFG=10-15; R-prec may be higher at CFG=20 but diversity drops
+### CFG Sweep Results (H5 — COMPLETED)
+
+Evaluated H2 epoch=4399 checkpoint at CFG ∈ {5, 10, 15, 20}:
+
+| CFG | FID | FID CI | Diversity | R-prec@1 | MultiModality |
+|-----|-----|--------|-----------|----------|---------------|
+| 5 | **6.603** | ±0.067 | 5.779 | 0.671 | **3.503** |
+| 10 | 6.963 | ±0.035 | 5.762 | 0.767 | 3.031 |
+| 15 | 7.400 | ±0.016 | 5.742 | 0.797 | 2.724 |
+| 20 | 7.856 | ±0.041 | 5.759 | **0.815** | 2.573 |
+
+**What we predicted vs what happened**:
+- Diversity: predicted monotone decrease → **WRONG**: nearly constant (5.74–5.78 all scales)
+- FID: predicted inverted-U (optimal at intermediate) → **WRONG**: monotone decrease, CFG=5 best
+- R-precision: predicted monotone increase → **CORRECT**
+- MultiModality: increases at lower CFG → consistent with less-constrained generation
+
+**Mechanism hypothesis**: In this model, CFG guidance primarily constrains the output distribution toward conditioning-aligned samples, reducing FID by allowing more diverse motion generation rather than "quality polishing." The ego conditioning signal may be weak enough that high CFG causes over-constraint (mode collapse toward a few conditioning-aligned modes), hurting FID.
 
 ## Related Work (see literature/)
 
