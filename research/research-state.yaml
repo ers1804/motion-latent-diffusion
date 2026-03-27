@@ -1,0 +1,123 @@
+project: "Ego-Conditioned Pedestrian Motion Generation via Latent Diffusion"
+started: "2026-03-27"
+last_updated: "2026-03-27"
+
+research_question: |
+  Can interaction-aware training (ego-pedestrian proximity-based cropping + weighted sampling)
+  and larger VAE latent spaces (dim 8 vs 4) improve the quality and realism of ego-conditioned
+  pedestrian motion generation as measured by FID, diversity, and R-precision?
+
+phase: inner_loop  # bootstrap | inner_loop | outer_loop | conclude
+
+# Best known metrics (proxy: FID lower is better, diversity close to GT)
+baseline:
+  run: ego_motion_diffusion_interaction_crop_weighted_1  # crashed at ~mid-training
+  FID: 7.5029
+  Diversity: 5.6653
+  GT_Diversity: 5.3433
+  R_precision_top_1: 0.8254
+  R_precision_top_2: 0.8917
+  R_precision_top_3: 0.9179
+  note: "Crashed before completion. Latent-4, interaction_crop+weighted_sampling"
+
+# Experiment trajectory
+experiments:
+  - id: run_001
+    name: ego_motion_diffusion_all_new_vae_deterministic
+    hypothesis: H0-baseline
+    status: finished
+    metrics: {}  # no metrics recorded in summary
+    notes: "Trained on all datasets, deterministic VAE, no interaction features"
+
+  - id: run_002
+    name: ego_motion_diffusion_all_new_vae_stochastic
+    hypothesis: H0-baseline
+    status: finished
+    metrics: {}
+    notes: "Same as above but stochastic VAE"
+
+  - id: run_003
+    name: ego_motion_diffusion_interactive_4_stochastic
+    hypothesis: H1-interactive-subset
+    status: finished
+    metrics: {}
+    notes: "Interactive subset only, latent-4, stochastic"
+
+  - id: run_004
+    name: ego_motion_diffusion_interaction_crop_weighted_1
+    hypothesis: H2-interaction-aware
+    status: crashed
+    metrics:
+      FID: 7.5029
+      Diversity: 5.6653
+      R_precision_top_1: 0.8254
+    notes: "BEST SO FAR. Interaction crop + weighted sampling, latent-4. Crashed partway."
+
+  - id: run_005
+    name: ego_motion_diffusion_interaction_crop_weighted_1_helma
+    hypothesis: H2-interaction-aware
+    status: running
+    epoch: ~4200
+    end_epoch: 5000
+    loss: 0.302
+    notes: "Resume/continuation of run_004 on helma H100. Should complete soon."
+
+  - id: run_006
+    name: ego_motion_vae_latent_8_wo_traj_interaction_crop_weighted_sampling
+    hypothesis: H3-larger-latent
+    status: running
+    epoch: ~5699
+    end_epoch: 6000
+    loss: 0.0147
+    notes: "VAE with latent-8. KL annealing + cosine LR warmup. Almost done."
+
+hypotheses:
+  H0-baseline:
+    description: "Train on all datasets with standard VAE (latent-4, no interaction features)"
+    status: tested
+    result: "No metrics recorded — unclear baseline"
+
+  H1-interactive-subset:
+    description: "Train only on interactive ego-ped scenarios (crop to interaction window)"
+    status: partially_tested
+    result: "Trained, no metrics in WandB summary"
+
+  H2-interaction-aware:
+    description: "Interaction crop + interaction-weighted sampling focuses learning on ego-ped interactions"
+    prediction: "FID < 10, diversity closer to GT, better R-precision"
+    status: running
+    result: "Crashed run got FID=7.5; helma continuation running at epoch 4200/5000"
+
+  H3-larger-latent:
+    description: "Latent dim 8 (vs 4) gives VAE more capacity to represent motion diversity"
+    prediction: "Lower VAE reconstruction loss; when used for diffusion → better FID/diversity"
+    status: vae_training
+    result: "VAE at epoch 5699/6000, loss=0.0147 — awaiting completion to train diffusion"
+
+  H4-ego-encoder-architecture:
+    description: "Richer ego encoder (cross-attention instead of mean pooling) improves conditioning"
+    prediction: "Better R-precision (ego↔motion alignment)"
+    status: untested
+
+  H5-guidance-scale:
+    description: "Guidance scale 15 (current) vs sweep {5,10,15,20} affects quality-diversity tradeoff"
+    prediction: "Lower CFG → more diverse; higher CFG → better R-precision but lower diversity"
+    status: untested
+
+  H6-joint-vae-diffusion:
+    description: "Fine-tuning VAE jointly with diffusion (unfreeze ego encoder) improves alignment"
+    prediction: "Better R-precision"
+    status: untested
+
+next_actions:
+  - "Wait for run_005 (diffusion helma) to finish → evaluate metrics → compare to crashed baseline"
+  - "When run_006 (VAE latent-8) finishes → train diffusion on latent-8 VAE (H3)"
+  - "Search literature for interaction-aware motion generation approaches"
+  - "Consider H5 (guidance scale sweep) as cheap eval-only experiment once checkpoint ready"
+
+current_understanding: |
+  The model uses MLD-style latent diffusion conditioned on ego trajectory via EgoEncoderPooled
+  (transformer + mean pooling). Interaction-aware training (crop + weighted sampling) seems
+  promising — crashed run achieved FID=7.5 which is the best known result. Two experiments
+  are currently running on the helma H100 cluster. The main open question is whether
+  larger latent space (latent-8) further improves quality.

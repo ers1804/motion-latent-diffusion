@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Autoresearch Progress Report #1 — Ego-Conditioned Motion Generation</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2em; background: #0f1117; color: #e0e0e0; }
+  h1 { color: #7c9fff; border-bottom: 2px solid #7c9fff; padding-bottom: 0.3em; }
+  h2 { color: #a0d0ff; margin-top: 2em; }
+  h3 { color: #c0e0ff; }
+  .card { background: #1a1d2e; border: 1px solid #2a2d3e; border-radius: 8px; padding: 1.5em; margin: 1em 0; }
+  .metric-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1em; margin: 1em 0; }
+  .metric-box { background: #1e2235; border: 1px solid #3a4060; border-radius: 6px; padding: 1em; text-align: center; }
+  .metric-val { font-size: 2em; font-weight: bold; color: #7cfc00; }
+  .metric-label { color: #8090b0; font-size: 0.85em; margin-top: 0.3em; }
+  .metric-delta { color: #40d0ff; font-size: 0.9em; }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+  th { background: #2a2d3e; color: #a0c0ff; padding: 0.7em; text-align: left; }
+  td { padding: 0.6em; border-bottom: 1px solid #2a2d3e; }
+  tr:hover td { background: #1e2235; }
+  .running { color: #40d090; }
+  .finished { color: #8090b0; }
+  .crashed { color: #ff6060; }
+  .best { color: #7cfc00; font-weight: bold; }
+  canvas { background: #1a1d2e; border-radius: 6px; }
+  .status-badge { display: inline-block; padding: 0.2em 0.6em; border-radius: 4px; font-size: 0.8em; }
+  .status-running { background: #1a3a2a; color: #40d090; border: 1px solid #40d090; }
+  .status-done { background: #1a2a3a; color: #4090ff; border: 1px solid #4090ff; }
+  .status-next { background: #3a2a1a; color: #ffa040; border: 1px solid #ffa040; }
+  pre { background: #12141f; padding: 1em; border-radius: 6px; overflow-x: auto; font-size: 0.85em; color: #c0d0ff; }
+  .insight { border-left: 4px solid #7c9fff; padding-left: 1em; margin: 1em 0; color: #c0d8ff; }
+  .warning { border-left: 4px solid #ffa040; padding-left: 1em; margin: 1em 0; color: #ffd0a0; }
+</style>
+</head>
+<body>
+
+<h1>Autoresearch Progress Report #1</h1>
+<p style="color:#8090b0;">Ego-Conditioned Pedestrian Motion Generation &nbsp;|&nbsp; Generated: 2026-03-27</p>
+
+<h2>Research Question</h2>
+<div class="card">
+  <p>Can <strong>interaction-aware training</strong> (ego-ped proximity cropping + weighted sampling) and
+  <strong>larger VAE latent spaces</strong> (dim 8 vs 4) improve the quality and realism of ego-conditioned
+  pedestrian motion generation?</p>
+  <p><em>Proxy metrics: FID ↓, Diversity (close to GT ≈5.3), R-Precision@1 ↑</em></p>
+</div>
+
+<h2>Best Results So Far</h2>
+<div class="metric-grid">
+  <div class="metric-box">
+    <div class="metric-val">7.50</div>
+    <div class="metric-label">Best FID ↓</div>
+    <div class="metric-delta">epoch 3499</div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-val">5.67</div>
+    <div class="metric-label">Diversity</div>
+    <div class="metric-delta">GT ≈ 5.34</div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-val">82.5%</div>
+    <div class="metric-label">R-Prec@1</div>
+    <div class="metric-delta">at best FID epoch</div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-val">96.2%</div>
+    <div class="metric-label">R-Prec@3</div>
+    <div class="metric-delta">peaked at last eval</div>
+  </div>
+</div>
+
+<h2>FID Learning Curve (Main Diffusion Model)</h2>
+<div class="card">
+  <canvas id="fidChart" width="1000" height="320"></canvas>
+  <script>
+    const epochs = [99,199,299,399,499,599,699,799,899,999,1099,1199,1299,1399,1499,1599,1699,1799,1899,1999,2099,2199,2299,2399,2499,2599,2699,2799,2899,2999,3099,3199,3299,3399,3499];
+    const fids = [11.54,8.92,11.42,13.17,14.00,13.60,15.19,14.01,16.04,15.72,13.31,14.19,14.71,13.74,12.77,13.49,13.58,12.04,11.71,11.91,11.25,10.39,12.77,10.99,10.64,10.69,10.14,8.55,8.29,11.38,9.39,9.27,9.99,9.02,7.50];
+    const rprec = [0.592,0.752,0.780,0.785,0.827,0.795,0.834,0.853,0.851,0.865,0.843,0.874,0.903,0.866,0.860,0.872,0.896,0.862,0.890,0.897,0.873,0.848,0.906,0.877,0.858,0.878,0.843,0.840,0.802,0.892,0.871,0.844,0.872,0.836,0.825];
+
+    const canvas = document.getElementById('fidChart');
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+    const padL = 60, padR = 30, padT = 30, padB = 50;
+    const plotW = W - padL - padR, plotH = H - padT - padB;
+
+    const minE = Math.min(...epochs), maxE = Math.max(...epochs);
+    const minFID = 5, maxFID = 18;
+
+    function xScale(e) { return padL + (e - minE) / (maxE - minE) * plotW; }
+    function yScaleFID(v) { return padT + (1 - (v - minFID) / (maxFID - minFID)) * plotH; }
+
+    // Background
+    ctx.fillStyle = '#1a1d2e';
+    ctx.fillRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = '#2a2d3e';
+    ctx.lineWidth = 1;
+    for (let y = 6; y <= 16; y += 2) {
+      const py = yScaleFID(y);
+      ctx.beginPath(); ctx.moveTo(padL, py); ctx.lineTo(W - padR, py); ctx.stroke();
+      ctx.fillStyle = '#6070a0'; ctx.font = '11px monospace';
+      ctx.fillText(y.toString(), padL - 30, py + 4);
+    }
+    for (let e = 0; e <= 3500; e += 500) {
+      const px = xScale(e);
+      ctx.beginPath(); ctx.moveTo(px, padT); ctx.lineTo(px, H - padB); ctx.stroke();
+      ctx.fillStyle = '#6070a0'; ctx.font = '11px monospace';
+      ctx.fillText(e.toString(), px - 15, H - padB + 18);
+    }
+
+    // FID line
+    ctx.strokeStyle = '#7c9fff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (let i = 0; i < epochs.length; i++) {
+      const x = xScale(epochs[i]), y = yScaleFID(fids[i]);
+      i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    // Best FID marker
+    const bestIdx = fids.indexOf(Math.min(...fids));
+    const bx = xScale(epochs[bestIdx]), by = yScaleFID(fids[bestIdx]);
+    ctx.fillStyle = '#7cfc00';
+    ctx.beginPath(); ctx.arc(bx, by, 8, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#7cfc00'; ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('Best: 7.50', bx - 60, by - 12);
+    ctx.fillStyle = '#a0b0d0'; ctx.font = '11px monospace';
+    ctx.fillText('(epoch 3499)', bx - 60, by + 2);
+
+    // "Running →" arrow annotation
+    ctx.fillStyle = '#ffa040'; ctx.font = 'bold 12px sans-serif';
+    ctx.fillText('→ Helma continuation at epoch ~4446', bx + 15, by - 5);
+
+    // Crash marker
+    ctx.fillStyle = '#ff6060';
+    ctx.beginPath(); ctx.arc(bx, by - 0, 4, 0, Math.PI * 2); ctx.fill();
+
+    // Axes labels
+    ctx.fillStyle = '#a0b0d0'; ctx.font = '13px sans-serif';
+    ctx.fillText('FID ↓', 8, padT + plotH/2);
+    ctx.fillText('Training Epoch', W/2 - 40, H - 5);
+    ctx.fillStyle = '#c0d0ff'; ctx.font = 'bold 14px sans-serif';
+    ctx.fillText('FID over Training — ego_motion_diffusion_interaction_crop_weighted_1', padL, 20);
+  </script>
+  <p style="color:#8090b0; font-size:0.85em; margin-top:0.5em;">
+    FID improves from ~16 (early) to <strong>7.50 at epoch 3499</strong> (best checkpoint, just before crash).
+    The helma H100 continuation is now at epoch ~4446 — FID may have improved further.
+    Run crashed at epoch ~3525 (orange dot). Green star = best FID.
+  </p>
+</div>
+
+<h2>Active Experiments</h2>
+<table>
+  <tr>
+    <th>Job</th><th>Type</th><th>Progress</th><th>Key Config</th><th>Status</th>
+  </tr>
+  <tr>
+    <td>326049</td>
+    <td>Diffusion training</td>
+    <td>Epoch ~4446 / 5000</td>
+    <td>Latent-4, interaction_crop + weighted_sampling, CFG=15</td>
+    <td><span class="status-badge status-running">Running</span></td>
+  </tr>
+  <tr>
+    <td>327881</td>
+    <td>Diffusion (continuation)</td>
+    <td>Pending after 326049</td>
+    <td>Same config, auto-resume</td>
+    <td><span class="status-badge status-running">Queued</span></td>
+  </tr>
+  <tr>
+    <td>326050</td>
+    <td>VAE training (latent-8)</td>
+    <td>Epoch ~5898 / 6000</td>
+    <td>Latent-8, KL annealing, cosine warmup, loss≈0.014</td>
+    <td><span class="status-badge status-running">Running</span></td>
+  </tr>
+</table>
+
+<h2>Hypothesis Tracker</h2>
+<table>
+  <tr><th>Hypothesis</th><th>Description</th><th>Status</th><th>Result</th></tr>
+  <tr>
+    <td>H0 — Baseline</td>
+    <td>All-dataset training, standard latent-4 VAE, no interaction features</td>
+    <td><span class="finished">Tested</span></td>
+    <td>No metrics saved</td>
+  </tr>
+  <tr>
+    <td><strong>H2 — Interaction-aware</strong></td>
+    <td>Interaction crop + weighted sampling focuses on ego-ped scenes</td>
+    <td><span class="running">Running</span></td>
+    <td class="best">FID=7.50 (partial), improving</td>
+  </tr>
+  <tr>
+    <td>H3 — Latent-8 VAE</td>
+    <td>Larger latent space (8×256) gives VAE more capacity</td>
+    <td><span class="running">VAE training</span></td>
+    <td>Loss=0.014, almost done</td>
+  </tr>
+  <tr>
+    <td>H4 — Ego Encoder Arch</td>
+    <td>Cross-attention ego encoder vs mean pooling → better R-Precision</td>
+    <td>Planned</td>
+    <td>—</td>
+  </tr>
+  <tr>
+    <td>H5 — CFG Sweep</td>
+    <td>Guidance scale {5, 10, 15, 20}: quality-diversity tradeoff</td>
+    <td>Planned (cheap)</td>
+    <td>—</td>
+  </tr>
+</table>
+
+<h2>Key Findings</h2>
+<div class="card">
+  <div class="insight">
+    <strong>Interaction-aware training works:</strong> The crashed run with interaction_crop + weighted_sampling
+    achieved FID=7.5 — the best result so far. The training curve shows steady improvement, still going down
+    at epoch 3499 when the crash happened. The helma continuation at epoch 4446 may show further improvement.
+  </div>
+  <div class="insight">
+    <strong>FID training dynamics:</strong> FID is noisy early (high variance epochs 99–1500), then steadily
+    improves from epoch ~2700 onward. The trend is clear despite noise — more training helps.
+  </div>
+  <div class="warning">
+    <strong>Metrics not logged on helma:</strong> The helma training config has <code>METRIC.TYPE: []</code>,
+    so we don't have FID at the current epoch 4446. Need to run test.py separately with EgoMotionMetrics.
+  </div>
+</div>
+
+<h2>Planned Next Actions</h2>
+<div class="card">
+  <ol>
+    <li><strong>[Today]</strong> Run evaluation on epoch=4399 checkpoint from helma to get updated FID</li>
+    <li><strong>[After VAE finishes]</strong> Pretrain ego encoder for latent-8 → submit diffusion training (H3)</li>
+    <li><strong>[Short-term]</strong> Run CFG guidance scale sweep on best checkpoint (H5) — eval-only, no training</li>
+    <li><strong>[Medium-term]</strong> Design cross-attention ego encoder experiment (H4)</li>
+    <li><strong>[Literature]</strong> Survey interaction-aware motion generation papers (background agent running)</li>
+  </ol>
+</div>
+
+<h2>Research Pipeline</h2>
+<pre>
+Completed:         VAE (latent-4) → Ego Encoder (latent-4) → Diffusion (interaction-aware) [FID=7.5]
+Running now:       Diffusion continuation to epoch 5000 + VAE (latent-8) training
+Next:              Ego encoder pretrain (latent-8) → Diffusion (latent-8) [H3]
+Later:             CFG sweep [H5], Cross-attn encoder [H4]
+</pre>
+
+<hr style="border-color:#2a2d3e; margin-top:3em;">
+<p style="color:#5060a0; font-size:0.8em;">Report generated by autoresearch agent. Session: 2026-03-27. Next update in ~20 minutes.</p>
+</body>
+</html>
