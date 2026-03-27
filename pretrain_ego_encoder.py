@@ -81,6 +81,10 @@ def build_cfg(args):
     if args.data_roots is not None:
         cfg.DATASET.EGOMOTION.ROOT = args.data_roots
 
+    if args.mean_std_path is not None:
+        cfg.DATASET.EGOMOTION.MEAN_STD_PATH = args.mean_std_path
+        cfg.DATASET.EGOMOTION.EGO_MEAN_STD_PATH = args.mean_std_path
+
     return cfg
 
 
@@ -442,6 +446,11 @@ def main():
     parser.add_argument(
         "--data_roots", nargs="+", type=str, default=None,
         help="Override data roots, e.g.: --data_roots /path/to/ava /path/to/waymo",
+    )
+    parser.add_argument(
+        "--mean_std_path", type=str, default=None,
+        help="Override DATASET.EGOMOTION.MEAN_STD_PATH (and EGO_MEAN_STD_PATH). "
+             "Required on clusters where data is extracted to $TMPDIR.",
     )
 
     args = parser.parse_args()

@@ -87,6 +87,7 @@ python pretrain_ego_encoder.py \
     --batch_size 64 \
     --lr 1e-4 \
     --output_dir "$OUTPUT_DIR" \
+    --mean_std_path "$TMPDIR/data/vae/mean_std_txt/ava_nuscenes_waymo" \
     --data_roots \
         "$TMPDIR/data/diffusion/ava" \
         "$TMPDIR/data/diffusion/nuscenes" \
