@@ -143,10 +143,11 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "Wait for run_005 (diffusion helma) to finish → evaluate metrics → compare to crashed baseline"
-  - "When run_006 (VAE latent-8) finishes → train diffusion on latent-8 VAE (H3)"
-  - "Search literature for interaction-aware motion generation approaches"
-  - "Consider H5 (guidance scale sweep) as cheap eval-only experiment once checkpoint ready"
+  - "Await CFG sweep (job 327950) results → determine optimal guidance scale"
+  - "When ego encoder pretrain (job 327946) finishes → sbatch diffusion_training_latent_8_helma.sh"
+  - "Eval run_005 at epoch 5000 when training completes (~5h)"
+  - "Plan H4 (cross-attention decoder architecture for full ego sequence conditioning)"
+  - "Consider H6 (joint VAE+diffusion fine-tuning) once H3 baseline is established"
 
 current_understanding: |
   The model uses MLD-style latent diffusion conditioned on ego trajectory via EgoEncoderPooled

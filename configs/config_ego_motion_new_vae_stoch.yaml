@@ -23,8 +23,8 @@ TRAIN:
   END_EPOCH: 5000
 
   RESUME: ''
-  PRETRAINED_VAE: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/vae/ego_motion_interactive_vae_latent_4_wo_traj/checkpoints/epoch=5999.ckpt'  # Set this to your VAE checkpoint path
-  PRETRAINED_EGO: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/ego_encoder/ego_encoder_latent_4_interactive_stoch/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
+  PRETRAINED_VAE: '/home/erik/NAS/methods/diffusion_gen/models/vae/ego_motion_interactive_vae_latent_4_wo_traj/checkpoints/epoch=5999.ckpt'  # Set this to your VAE checkpoint path
+  PRETRAINED_EGO: '/home/erik/NAS/methods/diffusion_gen/models/ego_encoder/ego_encoder_latent_4_interactive_stoch/checkpoints/best.pt'               # Set to pretrain_ego_encoder.py output, e.g. ./experiments/ego_encoder_pretrain/checkpoints/best.pt
   PRETRAINED: ''
   FREEZE_EGO: True
   DETERMINISTIC_Z: False             # Use VAE mean (not sample) — eliminates stochastic noise floor, loss should → 0
@@ -54,14 +54,16 @@ EVAL:
 # Testing Settings
 #####################################
 TEST:
-  CHECKPOINTS: ''
+  CHECKPOINTS: '/home/erik/NAS/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_interactive_4_stochastic/checkpoints/epoch=4999.ckpt'
   DATASETS: ['egomotion']
-  SPLIT: test
+  SPLIT: val
   BATCH_SIZE: 1
   MEAN: False
   NUM_SAMPLES: 1
   FACT: 1
-  COUNT_TIME: False 
+  COUNT_TIME: False
+  REPLICATION_TIMES: 3
+  DIVERSITY_TIMES: 50
 
 #####################################
 # Dataset Settings
@@ -83,9 +85,9 @@ DATASET:
     
     # Multiple datasets (train on all):
     ROOT: 
-      - '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/diffusion/ava'
-      - '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/diffusion/nuscenes'
-      - '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/diffusion/waymo'
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava'
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/nuscenes'
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/waymo'
       # - 'data/diffusion/HumanML3D'  # Add if has ego data
     
     MAX_EGO_LEN: 196              # Max ego trajectory length
@@ -97,8 +99,8 @@ DATASET:
     #           Leave MEAN_STD_PATH empty, will auto-use HUMANML3D.ROOT
     # Option 2: Use your own mean/std (for your own VAE)
     #           Set MEAN_STD_PATH to directory containing Mean.npy, Std.npy
-    MEAN_STD_PATH: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive'             # Empty = use HUMANML3D.ROOT, or set your path
-    EGO_MEAN_STD_PATH: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive'
+    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive'             # Empty = use HUMANML3D.ROOT, or set your path
+    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive'
   SAMPLER:
     MAX_LEN: 196                   # Max motion length
     MIN_LEN: 40                    # Min motion length
@@ -117,7 +119,7 @@ model:
   num_heads: 4
   dropout: 0.1
   activation: gelu
-  guidance_scale: 7.5 #1.0 #7.5
+  guidance_scale: 15.0 #1.0 #7.5
   guidance_uncondp: 0.1 #0.0 #0.1            # 10% dropout for CFG
 
   # Ego encoder settings
@@ -207,7 +209,7 @@ LOSS:
 # Metric Settings
 #####################################
 METRIC:
-  TYPE: []  # No metrics for ego (TemosMetric requires HumanML3D/KIT)
+  TYPE: ['EgoMotionMetrics']
   FORCE_IN_METER: True
   DIST_SYNC_ON_STEP: False
 
