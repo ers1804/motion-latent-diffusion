@@ -90,4 +90,4 @@ python -m test \
     "TEST.CHECKPOINTS=$CHECKPOINT" \
     "METRIC.TYPE=['EgoMotionMetrics']" \
     "TEST.REPLICATION_TIMES=3" \
-    "TEST.SPLIT=test"
+    "TEST.SPLIT=val"

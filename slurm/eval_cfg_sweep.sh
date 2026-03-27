@@ -91,6 +91,6 @@ for CFG in 5 10 15 20; do
         "TEST.CHECKPOINTS=$CHECKPOINT" \
         "METRIC.TYPE=['EgoMotionMetrics']" \
         "TEST.REPLICATION_TIMES=3" \
-        "TEST.SPLIT=test" \
+        "TEST.SPLIT=val" \
         "model.guidance_scale=${CFG}"
 done
