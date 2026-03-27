@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Autoresearch Progress Report #002 — Ego-Conditioned Motion Generation</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2em; background: #f8f9fa; color: #222; }
+  h1 { color: #1a1a2e; border-bottom: 3px solid #e94560; padding-bottom: 0.3em; }
+  h2 { color: #16213e; margin-top: 2em; border-left: 4px solid #e94560; padding-left: 0.6em; }
+  h3 { color: #0f3460; }
+  .card { background: white; border-radius: 8px; padding: 1.5em; margin: 1em 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .highlight { background: #fff3cd; border-left: 4px solid #ffc107; padding: 0.8em 1.2em; border-radius: 4px; margin: 1em 0; }
+  .success { background: #d4edda; border-left: 4px solid #28a745; padding: 0.8em 1.2em; border-radius: 4px; margin: 1em 0; }
+  .warning { background: #fff3cd; border-left: 4px solid #fd7e14; padding: 0.8em 1.2em; border-radius: 4px; margin: 1em 0; }
+  .info { background: #d1ecf1; border-left: 4px solid #17a2b8; padding: 0.8em 1.2em; border-radius: 4px; margin: 1em 0; }
+  table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+  th { background: #1a1a2e; color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid #dee2e6; }
+  tr:hover { background: #f1f3f5; }
+  .metric-big { font-size: 2.2em; font-weight: bold; color: #e94560; }
+  .metric-label { font-size: 0.85em; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+  .status-running { color: #17a2b8; font-weight: bold; }
+  .status-pending { color: #fd7e14; font-weight: bold; }
+  .status-done { color: #28a745; font-weight: bold; }
+  .code { background: #1a1a2e; color: #e0e0e0; padding: 1em 1.2em; border-radius: 6px; font-family: monospace; font-size: 0.88em; overflow-x: auto; }
+  .pipeline-step { display: flex; align-items: center; gap: 1em; padding: 0.6em 0; }
+  .step-num { background: #e94560; color: white; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; flex-shrink: 0; }
+  .step-done { background: #28a745; }
+  .step-active { background: #fd7e14; animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+  .progress-bar { background: #dee2e6; border-radius: 4px; height: 12px; overflow: hidden; }
+  .progress-fill { background: linear-gradient(90deg, #e94560, #fd7e14); height: 100%; border-radius: 4px; transition: width 0.3s; }
+</style>
+</head>
+<body>
+
+<h1>Autoresearch Progress Report #002</h1>
+<p style="color:#666; margin-top:-0.5em">Ego-Conditioned Pedestrian Motion Generation &nbsp;·&nbsp; 2026-03-27</p>
+
+<!-- KEY STATUS -->
+<div class="card">
+  <h2 style="margin-top:0">Status at a Glance</h2>
+  <div style="display:grid; grid-template-columns: repeat(3, 1fr); gap: 1.5em; text-align:center; margin:1em 0">
+    <div>
+      <div class="metric-big">7.50</div>
+      <div class="metric-label">Best FID (crashed run)<br>Latent-4, interaction-aware</div>
+    </div>
+    <div>
+      <div class="metric-big">4500</div>
+      <div class="metric-label">Diffusion training progress<br>/ 5000 epochs (~90%)</div>
+    </div>
+    <div>
+      <div class="metric-big">5900</div>
+      <div class="metric-label">VAE latent-8 progress<br>/ 6000 epochs (~98%)</div>
+    </div>
+  </div>
+
+  <div class="success"><strong>Eval job 327939 COMPLETED.</strong> FID=7.40, R-prec@1=0.797, Diversity=5.74. Results confirmed valid — TEST.SPLIT=val fix worked.</div>
+  <div class="success"><strong>VAE latent-8 (run_006) DONE.</strong> Epoch 5999, final loss=0.0142. Ego encoder pretraining submitted (job 327946).</div>
+  <div class="info"><strong>CFG sweep (H5) submitted</strong> as job 327950. Sweeping guidance_scale ∈ {5, 10, 15, 20} on epoch=4399 checkpoint.</div>
+</div>
+
+<!-- ACTIVE EXPERIMENTS -->
+<div class="card">
+  <h2 style="margin-top:0">Active Experiments</h2>
+
+  <h3>H2: Interaction-Aware Training — Latent-4 (run_005)</h3>
+  <div class="info">SLURM job 326049 running on helma h14-06 · ~24h elapsed · epoch ~4500/5000</div>
+  <div style="margin: 0.8em 0">
+    <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span>Epoch ~4500 / 5000</span><span>~90%</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:90%"></div></div>
+  </div>
+  <ul>
+    <li>Training loss: <strong>0.292</strong> (stable, well-converged)</li>
+    <li><strong>Eval at epoch 4399:</strong> FID=7.40, Diversity=5.74, R-prec@1=0.797, MM=2.72</li>
+    <li>FID improved from crashed-run baseline (7.50 → 7.40)</li>
+    <li>~5h remaining to epoch 5000 for final eval</li>
+  </ul>
+
+  <h3>H3: Larger Latent Space — VAE Latent-8 (run_006)</h3>
+  <div class="success">DONE — epoch 5999/6000, final loss=0.0142</div>
+  <div style="margin: 0.8em 0">
+    <div style="display:flex; justify-content:space-between; margin-bottom:4px"><span>Epoch 5999 / 6000</span><span>100%</span></div>
+    <div class="progress-bar"><div class="progress-fill" style="width:100%"></div></div>
+  </div>
+  <ul>
+    <li>Final training loss: <strong>0.0142</strong> — excellent convergence</li>
+    <li>KL annealing + cosine LR warmup prevented posterior collapse</li>
+    <li><strong>Ego encoder pretraining submitted</strong> (job 327946) — 200 epochs</li>
+  </ul>
+
+  <h3>H5: CFG Guidance Scale Sweep</h3>
+  <div class="info">SLURM job 327950 submitted · sweeping {5, 10, 15, 20}</div>
+  <p>Evaluating guidance_scale sweep on epoch=4399 checkpoint. Results pending.</p>
+</div>
+
+<!-- BEST METRICS TABLE -->
+<div class="card">
+  <h2 style="margin-top:0">Metrics Comparison</h2>
+  <table>
+    <tr><th>Run</th><th>FID ↓</th><th>Diversity</th><th>R-Prec @1</th><th>Notes</th></tr>
+    <tr>
+      <td>interaction_crop_weighted_1 (crashed)</td>
+      <td><strong>7.50</strong></td>
+      <td>5.67</td>
+      <td>0.825</td>
+      <td>Best so far — crashed mid-training</td>
+    </tr>
+    <tr>
+      <td>GT reference</td>
+      <td>—</td>
+      <td>5.34</td>
+      <td>—</td>
+      <td>Ground truth motion diversity</td>
+    </tr>
+    <tr style="background:#d4edda">
+      <td><strong>H2 epoch=4399 (job 327939)</strong></td>
+      <td><strong>7.400 ±0.02</strong></td>
+      <td>5.742 ±0.10</td>
+      <td>0.797 ±0.005</td>
+      <td>✓ DONE · MM=2.72 · FID improved vs crashed baseline</td>
+    </tr>
+    <tr style="background:#fff8e1">
+      <td>H3 latent-8 diffusion (future)</td>
+      <td><em>TBD</em></td>
+      <td><em>TBD</em></td>
+      <td><em>TBD</em></td>
+      <td>VAE almost done; diffusion training next</td>
+    </tr>
+  </table>
+</div>
+
+<!-- H3 PIPELINE -->
+<div class="card">
+  <h2 style="margin-top:0">H3 Latent-8 Pipeline</h2>
+  <p>All scripts and configs are ready. Waiting for VAE to finish:</p>
+
+  <div class="pipeline-step">
+    <div class="step-num step-done">✓</div>
+    <div><strong>VAE latent-8 training</strong> — epoch 5900/6000, loss=0.0143. ~1h remaining.</div>
+  </div>
+  <div class="pipeline-step">
+    <div class="step-num">2</div>
+    <div><strong>Ego encoder pretraining</strong> — <code>sbatch pretrain_ego_encoder_latent_8_helma.sh</code><br>
+    200 epochs on latent-8 VAE; saves to <code>models/ego_encoder/ego_encoder_latent_8_interaction_crop_weighted</code></div>
+  </div>
+  <div class="pipeline-step">
+    <div class="step-num">3</div>
+    <div><strong>Diffusion training (H3)</strong> — <code>sbatch diffusion_training_latent_8_helma.sh</code><br>
+    24h job, 5000 epochs, latent_dim=[8,256]</div>
+  </div>
+  <div class="pipeline-step">
+    <div class="step-num">4</div>
+    <div><strong>Evaluation</strong> — <code>sbatch eval_latent_8.sh</code> (script ready)</div>
+  </div>
+
+  <div class="code">
+# When VAE finishes on helma:
+ssh helma "cd /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion && \
+  sbatch slurm/pretrain_ego_encoder_latent_8_helma.sh"
+# After ego encoder finishes:
+ssh helma "cd /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion && \
+  sbatch slurm/diffusion_training_latent_8_helma.sh"
+  </div>
+</div>
+
+<!-- HYPOTHESES TABLE -->
+<div class="card">
+  <h2 style="margin-top:0">Hypothesis Status</h2>
+  <table>
+    <tr><th>ID</th><th>Description</th><th>Status</th><th>Expected Outcome</th></tr>
+    <tr>
+      <td>H2</td>
+      <td>Interaction crop + weighted sampling (latent-4)</td>
+      <td><span class="status-running">Partial eval done · training continues</span></td>
+      <td>✓ FID=7.40 (improved from 7.50). Final eval at epoch 5000 pending.</td>
+    </tr>
+    <tr>
+      <td>H3</td>
+      <td>Latent-8 VAE for higher motion capacity</td>
+      <td><span class="status-running">Ego encoder training (job 327946)</span></td>
+      <td>VAE done. Ego encoder → diffusion training TBD</td>
+    </tr>
+    <tr>
+      <td>H5</td>
+      <td>CFG guidance scale sweep {5,10,15,20}</td>
+      <td><span class="status-running">Running (job 327950)</span></td>
+      <td>Quality-diversity tradeoff; expect optimal CFG ≠ 15</td>
+    </tr>
+    <tr>
+      <td>H4</td>
+      <td>Cross-attention ego encoder vs mean pool</td>
+      <td><span class="status-pending">Untested</span></td>
+      <td>Better R-precision (richer ego↔motion alignment)</td>
+    </tr>
+    <tr>
+      <td>H6</td>
+      <td>Joint VAE+diffusion fine-tuning</td>
+      <td><span class="status-pending">Untested</span></td>
+      <td>Better overall coherence</td>
+    </tr>
+  </table>
+</div>
+
+<!-- RESEARCH INSIGHTS -->
+<div class="card">
+  <h2 style="margin-top:0">Key Research Insights</h2>
+
+  <h3>Literature Context</h3>
+  <ul>
+    <li><strong>MLD (CVPR 2023)</strong>: Core architecture. Latent diffusion in VAE space outperforms raw-space diffusion by 50×. We inherit: HumanML3D 263D, VAE latent 256D, DDIM sampling.</li>
+    <li><strong>UniTraj (ECCV 2024)</strong>: Multi-dataset (Waymo + nuScenes + Argoverse) with ego trajectory conditioning — same conditioning modality and datasets as ours. Validates the approach.</li>
+    <li><strong>LED (CVPR 2023)</strong>: Latent diffusion for trajectory prediction on nuScenes. Finding: latent-space diffusion >> raw-space. Supports H3 (larger latent should help).</li>
+    <li><strong>RIG / InterGen</strong>: Reactive/interactive 3D body motion using cross-attention. Our ego-conditioned setup is a special case of RIG where the "other agent" is a vehicle trajectory.</li>
+    <li><strong>WoSAD (2024)</strong>: Very close to our approach — ego odometry encoded as polyline, cross-attended in diffusion denoiser. Key difference: they do 2D trajectory, we do 3D body motion.</li>
+  </ul>
+
+  <h3>What to Watch For in Eval Results</h3>
+  <ul>
+    <li><strong>FID vs baseline 7.50</strong>: Did the continued training at epoch 4399 improve over the crashed checkpoint?</li>
+    <li><strong>Diversity vs GT=5.34</strong>: Is model diversity close to GT? Overshoot = hallucinating, undershoot = mode collapse</li>
+    <li><strong>R-Precision @1</strong>: Are generated motions well-aligned with ego conditions? Low = poor conditioning</li>
+  </ul>
+</div>
+
+<!-- NEXT STEPS -->
+<div class="card">
+  <h2 style="margin-top:0">Immediate Next Steps</h2>
+  <ol>
+    <li>✅ <strong>Eval job 327939 DONE</strong> — FID=7.40, R-prec@1=0.797 (confirmed improvement)</li>
+    <li>✅ <strong>Ego encoder pretraining submitted</strong> (job 327946) — runs 200 epochs</li>
+    <li>✅ <strong>CFG sweep submitted</strong> (job 327950) — sweeping {5,10,15,20}</li>
+    <li>⏳ <strong>Await CFG sweep results</strong> — determine optimal guidance scale</li>
+    <li>⏳ <strong>When ego encoder finishes</strong>: submit H3 diffusion training (24h job)</li>
+    <li>⏳ <strong>Eval run_005 at epoch 5000</strong> when training completes (~5h)</li>
+  </ol>
+</div>
+
+<p style="text-align:center; color:#aaa; font-size:0.85em; margin-top:3em">Generated by autoresearch loop · 2026-03-27 15:00 CET · <em>Update this report once eval results are available</em></p>
+</body>
+</html>

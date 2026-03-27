@@ -20,6 +20,27 @@ baseline:
   R_precision_top_3: 0.9179
   note: "Crashed before completion. Latent-4, interaction_crop+weighted_sampling"
 
+best_completed_eval:
+  run: ego_motion_diffusion_interaction_crop_weighted_1_helma
+  checkpoint: epoch=4399
+  eval_job: 327939
+  eval_date: "2026-03-27"
+  FID: 7.400
+  FID_ci: 0.016
+  Diversity: 5.742
+  Diversity_ci: 0.101
+  GT_Diversity: 5.330
+  GT_Diversity_ci: 0.083
+  R_precision_top_1: 0.797
+  R_precision_top_1_ci: 0.005
+  R_precision_top_2: 0.871
+  R_precision_top_2_ci: 0.003
+  R_precision_top_3: 0.906
+  R_precision_top_3_ci: 0.003
+  MultiModality: 2.724
+  MultiModality_ci: 0.349
+  note: "H2 full run at epoch 4399/5000. FID improved over crashed baseline (7.40 vs 7.50). Training still ongoing — epoch 5000 eval pending."
+
 # Experiment trajectory
 experiments:
   - id: run_001
@@ -57,19 +78,31 @@ experiments:
     name: ego_motion_diffusion_interaction_crop_weighted_1_helma
     hypothesis: H2-interaction-aware
     status: running
-    epoch: ~4200
+    epoch: ~4500
     end_epoch: 5000
-    loss: 0.302
-    notes: "Resume/continuation of run_004 on helma H100. Should complete soon."
+    loss: 0.292
+    eval_at_4399:
+      FID: 7.400
+      Diversity: 5.742
+      R_precision_top_1: 0.797
+      MultiModality: 2.724
+    notes: "Eval at epoch 4399 done. FID=7.40 (improved from crashed 7.50). ~6h remaining to epoch 5000."
 
   - id: run_006
     name: ego_motion_vae_latent_8_wo_traj_interaction_crop_weighted_sampling
     hypothesis: H3-larger-latent
-    status: running
-    epoch: ~5699
+    status: finished
+    epoch: 5999
     end_epoch: 6000
-    loss: 0.0147
-    notes: "VAE with latent-8. KL annealing + cosine LR warmup. Almost done."
+    final_loss: 0.0142
+    notes: "DONE. VAE latent-8 trained. Ego encoder pretrain submitted (job 327946)."
+
+  - id: run_007
+    name: ego_encoder_latent_8_interaction_crop_weighted
+    hypothesis: H3-larger-latent
+    status: running
+    slurm_job: 327946
+    notes: "Ego encoder pretraining for latent-8 pipeline. 200 epochs."
 
 hypotheses:
   H0-baseline:
@@ -85,14 +118,14 @@ hypotheses:
   H2-interaction-aware:
     description: "Interaction crop + interaction-weighted sampling focuses learning on ego-ped interactions"
     prediction: "FID < 10, diversity closer to GT, better R-precision"
-    status: running
-    result: "Crashed run got FID=7.5; helma continuation running at epoch 4200/5000"
+    status: eval_partial
+    result: "Epoch 4399 eval: FID=7.40±0.02, Diversity=5.74, R-prec@1=0.797. FID improved vs crashed baseline 7.50. Final eval at epoch 5000 pending."
 
   H3-larger-latent:
     description: "Latent dim 8 (vs 4) gives VAE more capacity to represent motion diversity"
     prediction: "Lower VAE reconstruction loss; when used for diffusion → better FID/diversity"
-    status: vae_training
-    result: "VAE at epoch 5699/6000, loss=0.0147 — awaiting completion to train diffusion"
+    status: ego_encoder_training
+    result: "VAE done at epoch 5999 (loss=0.0142). Ego encoder pretraining running (job 327946). Diffusion training next."
 
   H4-ego-encoder-architecture:
     description: "Richer ego encoder (cross-attention instead of mean pooling) improves conditioning"

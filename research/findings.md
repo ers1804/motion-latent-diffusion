@@ -16,11 +16,13 @@ latent-4×256 space.
 
 ## Key Results So Far
 
-| Run | FID ↓ | Diversity | R-prec@1 | Notes |
-|-----|-------|-----------|----------|-------|
-| ego_motion_diffusion_interaction_crop_weighted_1 (crashed) | **7.50** | 5.67 | 0.825 | Latent-4, interaction crop+weighted |
+| Run | Epoch | FID ↓ | Diversity | R-prec@1 | MM | Notes |
+|-----|-------|-------|-----------|----------|----|-------|
+| interaction_crop_weighted_1 (crashed) | ~mid | 7.503 | 5.665 | 0.825 | — | Latent-4, interaction crop+weighted; crashed |
+| **interaction_crop_weighted_1_helma** | **4399** | **7.400 ±0.02** | **5.742** | **0.797** | **2.724** | **Continued run; FID improved; 500 epochs remaining** |
+| GT reference | — | — | 5.330 | — | — | Ground truth motion diversity |
 
-This is the only run with recorded metrics. The interaction-aware approach seems promising.
+**Key finding (2026-03-27)**: The full H2 run at epoch 4399 achieves FID=7.40, improving on the crashed partial run's 7.50. R-precision @1 is 0.797 (slightly below crashed 0.825), suggesting model has room to improve on conditioning alignment in the remaining 500 epochs. Diversity at 5.74 is slightly above GT (5.33), indicating mild overgeneration but not mode collapse.
 
 ## Patterns and Insights
 
@@ -47,15 +49,12 @@ This is the only run with recorded metrics. The interaction-aware approach seems
 
 ## Open Questions
 
-1. **Will the full run of H2 (interaction crop + weighted, latent-4) outperform the crashed
-   partial run's FID=7.5?** (job 326049 running now)
-2. **Does latent-8 VAE give better reconstruction quality that propagates to better generation?**
-   (VAE job 326050 running, diffusion training will follow)
-3. **What is the sensitivity to CFG guidance scale?** 15 seems high — sweep needed.
-4. **Can a cross-attention ego encoder (vs mean pooling) improve R-precision** by giving the
-   denoiser access to the full ego trajectory at each decoding step?
-5. **Is there a meaningful gap between our model and retrieval baseline** on interaction-specific
-   metrics like ADE/FDE w.r.t. ego trajectory?
+1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → YES: epoch 4399 gives FID=7.40. Final eval at epoch 5000 pending.
+2. **Does latent-8 VAE give better reconstruction quality?** → VAE done (loss=0.0142). Ego encoder pretraining running. Diffusion training TBD.
+3. **What is the sensitivity to CFG guidance scale?** → Sweep {5,10,15,20} ready to submit (`slurm/eval_cfg_sweep.sh`).
+4. **Can a cross-attention ego encoder improve R-precision?** → Untested (H4). Current R-prec@1=0.797 leaves room for improvement.
+5. **Is there a meaningful gap vs retrieval baseline?** → ADE/FDE evaluation not yet set up.
+6. **Will the H3 latent-8 diffusion outperform H2?** → VAE+encoder pipeline underway; results expected in ~2-3 days.
 
 ## Related Work (to be filled via literature search)
 
