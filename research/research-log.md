@@ -80,3 +80,36 @@ Can interaction-aware training + larger latent spaces improve ego-conditioned mo
 - **327955** ego_enc_pretrain — RUNNING (just started, h13-13)
 - **327950** eval_cfg_sweep — RUNNING (extracting data, h13-24)
 - **326049** diffusion_train (H2 run_005) — RUNNING (23h51m, h14-06)
+
+## 2026-03-30 — Inner Loop Results: FID Regression + H3 Pipeline Started
+
+### Key Results from Completed Jobs (2026-03-27)
+
+**Job 327955 (Ego encoder latent-8)**: COMPLETED. 200/200 epochs. `best.pt` saved.
+Cosine similarity ~0.92 at epoch 200. H3 pipeline fully ready.
+
+**Job 327991 (Eval H2 epoch=4599, CFG=5)**: COMPLETED. REGRESSION DETECTED.
+- FID: 8.400 ± 0.102
+- R-prec@1: 0.733
+- Diversity: 5.757
+- This is WORSE than epoch=4399 (FID=6.603). Training loss didn't diverge (~0.286), so FID oscillation is independent of loss. **Epoch=4399 is the best H2 checkpoint.**
+
+**Job 327990 (H2 resume epoch 4599→4999)**: COMPLETED. Final epoch=4999, loss=0.286.
+- NOTE: Job 327881 was an untracked duplicate resume from the same checkpoint, running in parallel.
+  This caused PyTorch Lightning to append "-v1" suffixes to checkpoints. The duplicate training
+  was submitted by someone (possibly user manually) and ran 15:22-19:34 on 2026-03-27.
+  Checkpoint integrity may be affected.
+
+### New Submissions (2026-03-30)
+
+- **Job 329788**: Eval H2 epoch=4999 at CFG=5 — checks if model recovered from epoch=4599 regression
+- **Job 329789**: H3 diffusion training (latent-8 VAE + new ego encoder) — the key H3 experiment
+
+### Outer Loop Reflection
+
+Three major findings from this research session:
+1. **CFG=5 is optimal for FID** (10.8% improvement vs CFG=15)
+2. **Epoch=4399 is the best H2 checkpoint** — model degraded from epoch 4399 → 4599 → unclear for 4999
+3. **H3 pipeline is running** — ego encoder (cos~0.92) proves latent-8 encoder alignment works
+
+The H2 FID regression raises an important question about training stability. The loss plateau (~0.287) doesn't predict sampling quality oscillation. For future training runs, we should save more frequent checkpoints and run periodic FID validation to catch the best model.

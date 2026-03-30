@@ -128,27 +128,48 @@ experiments:
   - id: run_007
     name: ego_encoder_latent_8_interaction_crop_weighted
     hypothesis: H3-larger-latent
-    status: running
+    status: finished
     slurm_job: 327955
-    epoch: ~60
+    epoch: 200
     end_epoch: 200
-    notes: "Ego encoder pretraining. Fixed MEAN_STD_PATH bug (job 327946 failed). Job 327955 running, epoch ~60/200, cos~0.89."
+    notes: "DONE. Ego encoder pretraining completed 200 epochs. best.pt saved. cos~0.92 at epoch 200. Fixed MEAN_STD_PATH bug (job 327946 failed → 327955 succeeded)."
 
   - id: run_008
     name: eval_h2_epoch4599_cfg5
     hypothesis: H5-guidance-scale
-    status: running
+    status: finished
     slurm_job: 327991
-    notes: "Eval H2 epoch=4599 at CFG=5 — expected FID~6.4-6.6 (similar to CFG sweep at 4399)."
+    metrics:
+      FID: 8.400
+      FID_ci: 0.102
+      Diversity: 5.757
+      R_precision_top_1: 0.733
+      MultiModality: 3.278
+    notes: "REGRESSION: epoch=4599 CFG=5 gives FID=8.40 vs epoch=4399 FID=6.60. Model degraded between epoch 4399 and 4599. Best checkpoint is epoch=4399, not final."
 
   - id: run_009
     name: h2_resumed_training
     hypothesis: H2-interaction-aware
-    status: running
+    status: finished
     slurm_job: 327990
     resume_from: epoch=4599
-    end_epoch: 5000
-    notes: "Resumed H2 training from epoch=4599. Will train remaining ~400 epochs to 5000."
+    final_epoch: 4999
+    final_loss: 0.286
+    notes: "DONE. Trained epoch 4599→4999. Also note: job 327881 was a parallel duplicate resume from epoch=4599 by unknown submitter — caused -v1 checkpoint suffixes."
+
+  - id: run_010
+    name: eval_h2_final_epoch4999_cfg5
+    hypothesis: H2-interaction-aware
+    status: running
+    slurm_job: 329788
+    notes: "Eval H2 epoch=4999 at CFG=5. Submitted 2026-03-30. Will determine if model recovered from epoch=4599 regression."
+
+  - id: run_011
+    name: h3_diffusion_training_latent8
+    hypothesis: H3-larger-latent
+    status: running
+    slurm_job: 329789
+    notes: "H3 diffusion training started 2026-03-30. Latent-8 VAE + new ego encoder (best.pt). 24h wall time."
 
 hypotheses:
   H0-baseline:
@@ -164,14 +185,18 @@ hypotheses:
   H2-interaction-aware:
     description: "Interaction crop + interaction-weighted sampling focuses learning on ego-ped interactions"
     prediction: "FID < 10, diversity closer to GT, better R-precision"
-    status: training
-    result: "Epoch 4399 eval: FID=7.40 (CFG=15) or 6.60 (CFG=5). Training resumed to epoch 5000 (job 327990)."
+    status: eval_pending
+    result: |
+      Epoch 4399 (CFG=5): FID=6.603 ← BEST CHECKPOINT
+      Epoch 4599 (CFG=5): FID=8.400 ← REGRESSION (model degraded after epoch 4399)
+      Epoch 4999 (CFG=5): PENDING (job 329788)
+      Key finding: epoch 4399 is the best, not the final checkpoint. Early stopping needed.
 
   H3-larger-latent:
     description: "Latent dim 8 (vs 4) gives VAE more capacity to represent motion diversity"
     prediction: "Lower VAE reconstruction loss; when used for diffusion → better FID/diversity"
-    status: ego_encoder_training
-    result: "VAE done (loss=0.0142). Ego encoder job 327955 running (~60/200 epochs). Diffusion training next."
+    status: diffusion_training
+    result: "VAE done (loss=0.0142). Ego encoder DONE (200 epochs, cos~0.92). Diffusion training started (job 329789)."
 
   H4-ego-encoder-architecture:
     description: "Richer ego encoder (cross-attention instead of mean pooling) improves conditioning"
@@ -197,24 +222,26 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "Await eval job 327991 (H2 epoch=4599 at CFG=5) → confirm FID~6.4-6.6"
-  - "Await H2 training resume (job 327990) → eval final epoch at CFG=5"
-  - "When ego encoder pretrain (job 327955) finishes → sbatch diffusion_training_latent_8_helma.sh"
-  - "Decide: plan H4 (cross-attention decoder) or explore CFG=7-8 as a better tradeoff"
-  - "Outer loop reflection: synthesize H2+H5 findings, update findings.md narrative"
+  - "Await job 329788 (H2 epoch=4999 CFG=5) — see if model recovered from epoch=4599 regression"
+  - "Await H3 diffusion training (job 329789) — first eval after 24h, expected ~epoch 4000-5000"
+  - "BEST H2 CHECKPOINT IS epoch=4399 at CFG=5 (FID=6.603). Consider this the H2 baseline."
+  - "When H3 training finishes — eval at CFG=5; compare to H2 best (FID=6.60)"
+  - "Investigate FID regression: why does H2 degrade after epoch 4399? Overfitting? Oscillation?"
 
 current_understanding: |
-  MAJOR FINDING: CFG guidance scale has a large monotonic effect on FID. The current default
-  (CFG=15) significantly hurts FID (7.40) vs CFG=5 (FID=6.60). This is a 10.8% improvement
-  with zero training cost. However, lower CFG reduces R-precision (0.797→0.671), reflecting
-  a tradeoff between generation quality (FID) and conditioning fidelity (R-prec).
+  MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
 
-  The interaction-aware training (H2) clearly works — all evals show FID in the 6-8 range.
-  H3 (latent-8) pipeline is underway; if it matches H2's quality, we can apply CFG=5 there too.
+  MAJOR FINDING 2: FID REGRESSION in H2. Epoch=4399 (FID=6.60) is better than epoch=4599
+  (FID=8.40). The model degraded after epoch 4399. This means early stopping matters — the
+  final checkpoint is NOT necessarily the best. Root cause unknown (may be training oscillation,
+  overfitting, or artifact from duplicate training jobs 327881 + 327990 running in parallel).
 
-  The ego encoder pretraining is working well (cos~0.89 at epoch 60/200).
+  The interaction-aware training (H2) works: best FID=6.60 at epoch=4399.
+  H3 (latent-8): ego encoder done (cos~0.92 at epoch 200). Diffusion training started (job 329789).
+  H3 is the key hypothesis to test — if latent-8 beats H2's FID=6.60, it justifies the complexity.
 
   Key remaining questions:
-  1. Does larger latent (H3) improve FID beyond CFG=5 of H2 (currently FID=6.60)?
-  2. Is there a better CFG sweet spot (e.g., 7-8) that balances FID and R-prec?
-  3. Does H4 (cross-attention encoder) recover R-prec without sacrificing FID?
+  1. Does H3 (latent-8) beat H2's best FID=6.603 at CFG=5?
+  2. Did H2 recover after epoch 4599? (job 329788 — epoch 4999 eval pending)
+  3. Is there a better CFG sweet spot (CFG=7-8) for the FID/R-prec tradeoff?
+  4. Did the parallel duplicate training (jobs 327881+327990) corrupt the H2 checkpoints?

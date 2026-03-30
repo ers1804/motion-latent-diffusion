@@ -27,7 +27,9 @@ latent-4×256 space.
 
 **MAJOR FINDING (2026-03-27 — H5 CFG Sweep)**: CFG guidance scale has a large, monotonic effect on FID. The original default (CFG=15) was suboptimal — **CFG=5 gives FID=6.603, a 10.8% improvement** (7.40→6.60) at zero training cost. The trade-off: R-precision drops from 0.797→0.671 (lower conditioning fidelity). Diversity is nearly constant across all CFG values (5.74–5.78) — the CFG knob primarily controls quality/conditioning tradeoff, not diversity. MultiModality increases at low CFG (3.50 vs 2.57), indicating the model is more expressive without strong guidance.
 
-**Implication**: Future evaluations should use **CFG=5** to report FID. H2 epoch=4599 eval at CFG=5 submitted (job 327991); expected FID ~6.4–6.6.
+**Implication**: Future evaluations should use **CFG=5** to report FID. **Best H2 checkpoint is epoch=4399** (FID=6.603).
+
+**FINDING (2026-03-30 — FID Regression)**: H2 epoch=4599 at CFG=5 gives FID=8.40 ± 0.10 — significantly worse than epoch=4399 (FID=6.60). The model degraded between epoch 4399 and 4599 during the original training run. The training loss did not diverge (~0.286–0.287 throughout), suggesting sampling quality oscillates independently of training loss. **Early stopping is critical — final checkpoint ≠ best checkpoint.** H2 epoch=4999 eval pending (job 329788) to see if recovery occurred.
 
 ## Patterns and Insights
 
@@ -53,12 +55,14 @@ latent-4×256 space.
   is a known sharp edge in this codebase)
 - **Latent dim** must match between VAE and diffusion model configs
 - VAE loss around 0.015 indicates good convergence (latent-8 VAE at epoch 5700)
+- **FID does not monotonically improve with training epochs** — sampling quality oscillates independently of training loss. Early stopping / checkpoint selection is critical for final FID.
+- Running two training jobs from the same checkpoint in parallel causes checkpoint name conflicts (PyTorch Lightning appends "-v1") — avoid duplicate job submissions.
 - Diffusion loss around 0.30 is typical mid-training for this setup
 
 ## Open Questions
 
-1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → YES: epoch 4399 gives FID=7.40. Final eval at epoch 5000 pending.
-2. **Does latent-8 VAE give better reconstruction quality?** → VAE done (loss=0.0142). Ego encoder pretraining running. Diffusion training TBD.
+1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → YES (at CFG=15: FID=7.40; at CFG=5: FID=6.60 at epoch=4399). **But FID regressed at epoch=4599 (8.40 at CFG=5). Epoch=4399 is the best H2 checkpoint.** Final epoch=4999 eval pending.
+2. **Does latent-8 VAE give better reconstruction quality?** → VAE done (loss=0.0142). Ego encoder DONE (200 epochs, cos~0.92). **H3 diffusion training started (job 329789, 2026-03-30).**
 3. ~~**What is the sensitivity to CFG guidance scale?**~~ → **ANSWERED**: FID monotonically decreases with lower CFG. CFG=5 is best for FID (6.603), CFG=20 worst (7.856). R-prec monotonically improves with higher CFG. Diversity is nearly constant. **Use CFG=5 for FID evaluation.**
 4. **Can a cross-attention ego encoder improve R-precision?** → Untested (H4). Current R-prec@1=0.797 leaves room for improvement.
 5. **Is there a meaningful gap vs retrieval baseline?** → ADE/FDE evaluation not yet set up.
