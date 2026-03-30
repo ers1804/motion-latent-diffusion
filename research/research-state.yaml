@@ -180,6 +180,13 @@ experiments:
     slurm_job: 329789
     notes: "H3 diffusion training started 2026-03-30. Latent-8 VAE + new ego encoder (best.pt). 24h wall time."
 
+  - id: run_012
+    name: eval_cfg7_h2_epoch4399
+    hypothesis: H5-guidance-scale
+    status: running
+    slurm_job: 329801
+    notes: "CFG=7 eval on H2 epoch=4399. Between CFG=5 (FID=6.60, R-prec=0.671) and CFG=10 (FID=6.96, R-prec=0.767). Submitted 2026-03-30."
+
 hypotheses:
   H0-baseline:
     description: "Train on all datasets with standard VAE (latent-4, no interaction features)"
