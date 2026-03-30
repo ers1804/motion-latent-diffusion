@@ -178,14 +178,23 @@ experiments:
     hypothesis: H3-larger-latent
     status: running
     slurm_job: 329789
-    notes: "H3 diffusion training started 2026-03-30. Latent-8 VAE + new ego encoder (best.pt). 24h wall time."
+    notes: "H3 diffusion training started 2026-03-30 08:42. ~51.6s/epoch (vs H2's ~17.6s/epoch — latent-8 is ~3x slower). Will reach ~1674 epochs at 24h wall time (vs H2 best at epoch=4399). IMPORTANT: must resume with resume_h3_diffusion_helma.sh after this job ends. Intermediate eval at epoch=1600 recommended before resuming."
 
   - id: run_012
     name: eval_cfg7_h2_epoch4399
     hypothesis: H5-guidance-scale
-    status: running
+    status: finished
     slurm_job: 329801
-    notes: "CFG=7 eval on H2 epoch=4399. Between CFG=5 (FID=6.60, R-prec=0.671) and CFG=10 (FID=6.96, R-prec=0.767). Submitted 2026-03-30."
+    metrics:
+      FID: 6.716
+      FID_ci: 0.068
+      Diversity: 5.771
+      R_precision_top_1: 0.724
+      R_precision_top_2: 0.814
+      R_precision_top_3: 0.859
+      MultiModality: 3.291
+      MultiModality_ci: 0.435
+    notes: "CFG=7 gives FID=6.716, R-prec@1=0.724. Good tradeoff: only 1.7% FID degradation vs CFG=5 but +7.9% R-prec. The CFG=7 operating point is the best combined FID/R-prec balance."
 
 hypotheses:
   H0-baseline:
@@ -239,11 +248,12 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "CONFIRMED: H2 best FID=6.603 (epoch=4399, CFG=5). Epoch=4999 gave 7.510 — no full recovery."
-  - "Await H3 diffusion training (job 329789, started 2026-03-30) — 24h wall time, eval when done"
-  - "When H3 finishes — prepare eval_h3_cfg5.sh and submit; compare to H2 best (FID=6.603)"
-  - "Plan H4: cross-attention ego encoder (trans_dec) to recover R-prec without FID cost"
-  - "Consider CFG=7 sweep: explore FID/R-prec sweet spot between CFG=5 (FID best) and CFG=15 (R-prec best)"
+  - "H3 will reach ~epoch=1674 at 24h wall time (51.6s/epoch). Submit resume_h3_diffusion_helma.sh after job 329789 ends."
+  - "Eval H3 at epoch~1600 (intermediate): submit eval_h3_cfg5.sh after updating checkpoint path to epoch=1599.ckpt or nearest"
+  - "Resume H3 for another 24h → will reach ~epoch 3300; then resume again → epoch~4999"
+  - "H3 needs ~3× 24h job segments to reach H2's best epoch (4399). Plan accordingly."
+  - "CFG=7 is now confirmed best tradeoff: FID=6.716 (+1.7% vs CFG=5) but R-prec=0.724 (+7.9% vs CFG=5)"
+  - "H4 (cross-attn) protocol locked. Start implementation after H3 first segment completes and shows promise."
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.

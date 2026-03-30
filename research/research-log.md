@@ -137,3 +137,32 @@ No checkpoints saved yet (~30 min elapsed). 24h wall time. First checkpoint expe
 - H3 RUNNING: 24h training on latent-8 model — critical experiment
 - H4 (cross-attn encoder): planned, untested
 - Key question: will H3 (latent-8) beat H2's FID=6.603?
+
+## 2026-03-30 — CFG=7 Result + H3 Timing Discovery
+
+### CFG=7 Eval (Job 329801): COMPLETED
+
+FID=6.716 ± 0.068, R-prec@1=0.724, Diversity=5.771, MM=3.291 ± 0.435
+
+**Full CFG curve now complete (H2 epoch=4399):**
+- CFG=5: FID=6.603, R-prec@1=0.671 (best FID)
+- CFG=7: FID=6.716, R-prec@1=0.724 ← **best FID/R-prec tradeoff**
+- CFG=10: FID=6.963, R-prec@1=0.767
+- CFG=15: FID=7.400, R-prec@1=0.797 (prior default)
+- CFG=20: FID=7.856, R-prec@1=0.815
+
+CFG=7 is the recommended operating point: only 1.7% FID cost vs CFG=5, but 7.9% better R-prec alignment.
+
+### H3 Timing Issue Discovered
+
+H3 latent-8 training is running at **~51.6 seconds/epoch** vs H2's ~17.6s/epoch — 3x slower.
+At 24h wall time: ~1674 epochs maximum. H2's best checkpoint was epoch=4399.
+**H3 needs ~3× 24h job segments** to reach comparable training depth.
+
+Actions taken:
+- Created `resume_h3_diffusion_helma.sh` for chaining job segments
+- Updated eval script to target epoch=4399 checkpoint (may need intermediate evals)
+- Plan: eval at epoch~1599 (end of first segment), resume for second 24h segment
+
+### Job 329818 (unrelated)
+Confirmed: "h7_lower_peak_lr" job is from workspace `v103fe12-jepa` (JEPA scene encoder project) — a different project under the same user account. Not related to this research.

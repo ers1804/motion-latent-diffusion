@@ -19,15 +19,26 @@ latent-4×256 space.
 | Run | Epoch | CFG | FID ↓ | FID CI | Diversity | R-prec@1 | MM | Notes |
 |-----|-------|-----|-------|--------|-----------|----------|----|-------|
 | interaction_crop_weighted_1 (crashed) | ~mid | 15 | 7.503 | — | 5.665 | 0.825 | — | Latent-4, interaction crop+weighted; crashed |
-| interaction_crop_weighted_1_helma | 4399 | 15 | 7.400 | ±0.016 | 5.742 | 0.797 | 2.724 | Default CFG |
-| **interaction_crop_weighted_1_helma** | **4399** | **5** | **6.603** | **±0.067** | **5.779** | **0.671** | **3.503** | **Best FID — H2 BASELINE** |
-| interaction_crop_weighted_1_helma | 4399 | 10 | 6.963 | ±0.035 | 5.762 | 0.767 | 3.031 | CFG sweep |
 | interaction_crop_weighted_1_helma | 4399 | 20 | 7.856 | ±0.041 | 5.759 | 0.815 | 2.573 | CFG sweep |
+| interaction_crop_weighted_1_helma | 4399 | 15 | 7.400 | ±0.016 | 5.742 | 0.797 | 2.724 | Default CFG |
+| interaction_crop_weighted_1_helma | 4399 | 10 | 6.963 | ±0.035 | 5.762 | 0.767 | 3.031 | CFG sweep |
+| **interaction_crop_weighted_1_helma** | **4399** | **7** | **6.716** | **±0.068** | **5.771** | **0.724** | **3.291** | **Best FID/R-prec tradeoff** |
+| **interaction_crop_weighted_1_helma** | **4399** | **5** | **6.603** | **±0.067** | **5.779** | **0.671** | **3.503** | **Best FID — H2 BASELINE** |
 | interaction_crop_weighted_1_helma | 4599 | 5 | 8.400 | ±0.102 | 5.757 | 0.733 | 3.278 | REGRESSION after epoch 4399 |
 | interaction_crop_weighted_1_helma | 4999 | 5 | 7.510 | ±0.084 | 5.816 | 0.671 | 3.613 | Partial recovery — NOT back to best |
 | GT reference | — | — | — | — | 5.330 | — | — | Ground truth motion diversity |
 
-**MAJOR FINDING (2026-03-27 — H5 CFG Sweep)**: CFG guidance scale has a large, monotonic effect on FID. The original default (CFG=15) was suboptimal — **CFG=5 gives FID=6.603, a 10.8% improvement** (7.40→6.60) at zero training cost. The trade-off: R-precision drops from 0.797→0.671 (lower conditioning fidelity). Diversity is nearly constant across all CFG values (5.74–5.78) — the CFG knob primarily controls quality/conditioning tradeoff, not diversity. MultiModality increases at low CFG (3.50 vs 2.57), indicating the model is more expressive without strong guidance.
+**MAJOR FINDING (2026-03-27 — H5 CFG Sweep, completed 2026-03-30)**: CFG guidance scale has a large, monotonic effect on FID. The original default (CFG=15) was suboptimal — **CFG=5 gives FID=6.603, a 10.8% improvement** (7.40→6.60) at zero training cost. The full sweep including CFG=7:
+
+| CFG | FID | R-prec@1 | Notes |
+|-----|-----|----------|-------|
+| 5 | **6.603** | 0.671 | Best FID |
+| **7** | **6.716** | **0.724** | **Best FID/R-prec tradeoff** (+1.7% FID, +7.9% R-prec vs CFG=5) |
+| 10 | 6.963 | 0.767 | — |
+| 15 | 7.400 | 0.797 | Prior default |
+| 20 | 7.856 | 0.815 | — |
+
+**CFG=7 is the recommended operating point** for balanced evaluation — minimal FID cost (+1.7%) with substantially better conditioning alignment (+7.9% R-prec). CFG=5 is best when FID alone is the target metric.
 
 **Implication**: Future evaluations should use **CFG=5** to report FID. **Best H2 checkpoint is epoch=4399** (FID=6.603).
 
@@ -59,7 +70,9 @@ latent-4×256 space.
 - VAE loss around 0.015 indicates good convergence (latent-8 VAE at epoch 5700)
 - **FID does not monotonically improve with training epochs** — sampling quality oscillates independently of training loss. Early stopping / checkpoint selection is critical for final FID.
 - Running two training jobs from the same checkpoint in parallel causes checkpoint name conflicts (PyTorch Lightning appends "-v1") — avoid duplicate job submissions.
-- Diffusion loss around 0.30 is typical mid-training for this setup
+- Diffusion loss around 0.30 is typical mid-training for this setup.
+- **Latent-8 training is ~3x slower per epoch** than latent-4: H3 trains at ~51.6s/epoch vs H2's ~17.6s/epoch. At 24h wall time, H3 only reaches ~1674 epochs. Reaching H2's best epoch (4399) requires ~3× 24h job segments. Plan resume jobs proactively.
+- **CFG=7 is the best operating point** for balanced FID/R-prec evaluation (FID=6.716, R-prec=0.724). CFG=5 for FID-only comparisons (FID=6.603).
 
 ## Open Questions
 
