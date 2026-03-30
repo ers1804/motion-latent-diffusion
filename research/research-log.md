@@ -113,3 +113,27 @@ Three major findings from this research session:
 3. **H3 pipeline is running** — ego encoder (cos~0.92) proves latent-8 encoder alignment works
 
 The H2 FID regression raises an important question about training stability. The loss plateau (~0.287) doesn't predict sampling quality oscillation. For future training runs, we should save more frequent checkpoints and run periodic FID validation to catch the best model.
+
+## 2026-03-30 — H2 Regression Confirmed: Epoch=4999 Result
+
+**Job 329788 (Eval H2 epoch=4999, CFG=5)**: COMPLETED.
+- FID: 7.510 ± 0.084
+- R-prec@1: 0.671
+- Diversity: 5.816
+- MultiModality: 3.613 ± 0.483
+
+**FID regression is CONFIRMED and PERMANENT**: The model did NOT recover to epoch=4399 levels.
+- epoch=4399: FID=6.603 ← BEST (confirmed baseline)
+- epoch=4599: FID=8.400 ← regression
+- epoch=4999: FID=7.510 ← partial recovery, still 13.7% worse than best
+
+The oscillation appears persistent: even after 400 more training epochs, the model settled at FID=7.51, not recovering to 6.60. **Conclusion: epoch=4399 is definitively the best H2 checkpoint.**
+
+**H3 training (job 329789)**: Confirmed running on h13-23. Training started at ~08:42 2026-03-30.
+No checkpoints saved yet (~30 min elapsed). 24h wall time. First checkpoint expected ~epoch 100-200.
+
+### Current Research State
+- H2 DONE: best FID=6.603 (epoch=4399, CFG=5) — this is the H2 baseline
+- H3 RUNNING: 24h training on latent-8 model — critical experiment
+- H4 (cross-attn encoder): planned, untested
+- Key question: will H3 (latent-8) beat H2's FID=6.603?

@@ -1,6 +1,6 @@
 # Findings — Ego-Conditioned Pedestrian Motion Generation
 
-*Last updated: 2026-03-27 (CFG sweep results)*
+*Last updated: 2026-03-30 (H2 epoch=4999 eval — FID regression confirmed)*
 
 ## Current Understanding
 
@@ -20,16 +20,18 @@ latent-4×256 space.
 |-----|-------|-----|-------|--------|-----------|----------|----|-------|
 | interaction_crop_weighted_1 (crashed) | ~mid | 15 | 7.503 | — | 5.665 | 0.825 | — | Latent-4, interaction crop+weighted; crashed |
 | interaction_crop_weighted_1_helma | 4399 | 15 | 7.400 | ±0.016 | 5.742 | 0.797 | 2.724 | Default CFG |
-| **interaction_crop_weighted_1_helma** | **4399** | **5** | **6.603** | **±0.067** | **5.779** | **0.671** | **3.503** | **Best FID — OPTIMAL** |
+| **interaction_crop_weighted_1_helma** | **4399** | **5** | **6.603** | **±0.067** | **5.779** | **0.671** | **3.503** | **Best FID — H2 BASELINE** |
 | interaction_crop_weighted_1_helma | 4399 | 10 | 6.963 | ±0.035 | 5.762 | 0.767 | 3.031 | CFG sweep |
 | interaction_crop_weighted_1_helma | 4399 | 20 | 7.856 | ±0.041 | 5.759 | 0.815 | 2.573 | CFG sweep |
+| interaction_crop_weighted_1_helma | 4599 | 5 | 8.400 | ±0.102 | 5.757 | 0.733 | 3.278 | REGRESSION after epoch 4399 |
+| interaction_crop_weighted_1_helma | 4999 | 5 | 7.510 | ±0.084 | 5.816 | 0.671 | 3.613 | Partial recovery — NOT back to best |
 | GT reference | — | — | — | — | 5.330 | — | — | Ground truth motion diversity |
 
 **MAJOR FINDING (2026-03-27 — H5 CFG Sweep)**: CFG guidance scale has a large, monotonic effect on FID. The original default (CFG=15) was suboptimal — **CFG=5 gives FID=6.603, a 10.8% improvement** (7.40→6.60) at zero training cost. The trade-off: R-precision drops from 0.797→0.671 (lower conditioning fidelity). Diversity is nearly constant across all CFG values (5.74–5.78) — the CFG knob primarily controls quality/conditioning tradeoff, not diversity. MultiModality increases at low CFG (3.50 vs 2.57), indicating the model is more expressive without strong guidance.
 
 **Implication**: Future evaluations should use **CFG=5** to report FID. **Best H2 checkpoint is epoch=4399** (FID=6.603).
 
-**FINDING (2026-03-30 — FID Regression)**: H2 epoch=4599 at CFG=5 gives FID=8.40 ± 0.10 — significantly worse than epoch=4399 (FID=6.60). The model degraded between epoch 4399 and 4599 during the original training run. The training loss did not diverge (~0.286–0.287 throughout), suggesting sampling quality oscillates independently of training loss. **Early stopping is critical — final checkpoint ≠ best checkpoint.** H2 epoch=4999 eval pending (job 329788) to see if recovery occurred.
+**FINDING (2026-03-30 — FID Regression CONFIRMED)**: H2 epoch trajectory: 4399→FID=6.603 (best), 4599→FID=8.400 (regression), 4999→FID=7.510 (partial recovery, but NOT back to best). The model degraded and never fully recovered. Training loss was flat (~0.286–0.287) throughout — **sampling quality oscillates independently of training loss**. Early stopping with periodic FID validation is critical. **H2 final baseline: FID=6.603 at epoch=4399, CFG=5.**
 
 ## Patterns and Insights
 
@@ -61,7 +63,7 @@ latent-4×256 space.
 
 ## Open Questions
 
-1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → YES (at CFG=15: FID=7.40; at CFG=5: FID=6.60 at epoch=4399). **But FID regressed at epoch=4599 (8.40 at CFG=5). Epoch=4399 is the best H2 checkpoint.** Final epoch=4999 eval pending.
+1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → **ANSWERED**: YES at epoch=4399 (FID=6.603), but model regressed afterward. Epoch trajectory: 4399→6.603 (best), 4599→8.400 (regression), 4999→7.510 (partial recovery). **H2 final baseline = FID=6.603 at epoch=4399, CFG=5.**
 2. **Does latent-8 VAE give better reconstruction quality?** → VAE done (loss=0.0142). Ego encoder DONE (200 epochs, cos~0.92). **H3 diffusion training started (job 329789, 2026-03-30).**
 3. ~~**What is the sensitivity to CFG guidance scale?**~~ → **ANSWERED**: FID monotonically decreases with lower CFG. CFG=5 is best for FID (6.603), CFG=20 worst (7.856). R-prec monotonically improves with higher CFG. Diversity is nearly constant. **Use CFG=5 for FID evaluation.**
 4. **Can a cross-attention ego encoder improve R-precision?** → Untested (H4). Current R-prec@1=0.797 leaves room for improvement.
