@@ -174,11 +174,31 @@ experiments:
     notes: "PARTIAL RECOVERY: epoch=4999 FID=7.510 ± 0.084. Better than epoch=4599 (FID=8.40) but worse than epoch=4399 (FID=6.603). Model did NOT fully recover. Epoch=4399 confirmed as best H2 checkpoint."
 
   - id: run_011
-    name: h3_diffusion_training_latent8
+    name: h3_diffusion_training_latent8_segment1
+    hypothesis: H3-larger-latent
+    status: finished
+    slurm_job: 329789
+    final_epoch: 2299
+    final_loss: 0.309
+    actual_epoch_rate: "~37s/epoch (faster than estimated 51.6s)"
+    notes: "DONE. H3 segment-1 training 2026-03-30 08:42 → 2026-03-31 08:23. Reached epoch=2299 with loss=0.309. Faster than estimated (37s vs 51.6s/epoch — may be H100 batch efficiency). Intermediate eval submitted as job 330924, resume for segment-2 submitted as job 330925."
+
+  - id: run_013
+    name: eval_h3_epoch2299_cfg5
     hypothesis: H3-larger-latent
     status: running
-    slurm_job: 329789
-    notes: "H3 diffusion training started 2026-03-30 08:42. ~51.6s/epoch (vs H2's ~17.6s/epoch — latent-8 is ~3x slower). Will reach ~1674 epochs at 24h wall time (vs H2 best at epoch=4399). IMPORTANT: must resume with resume_h3_diffusion_helma.sh after this job ends. Intermediate eval at epoch=1600 recommended before resuming."
+    slurm_job: 330924
+    checkpoint: epoch=2299
+    guidance_scale: 5
+    notes: "H3 intermediate eval at epoch=2299 CFG=5. Submitted 2026-03-31. Key question: is H3 already competitive with H2 FID=6.603 at only epoch=2299 vs H2's best at epoch=4399?"
+
+  - id: run_014
+    name: h3_diffusion_training_latent8_segment2
+    hypothesis: H3-larger-latent
+    status: running
+    slurm_job: 330925
+    resume_from: epoch=2299
+    notes: "H3 segment-2 training, resume from epoch=2299. At 37s/epoch over 24h → ~2340 more epochs → expected final epoch ~4639. Then one more eval at epoch~4399 for fair H2 comparison."
 
   - id: run_012
     name: eval_cfg7_h2_epoch4399
@@ -221,8 +241,13 @@ hypotheses:
   H3-larger-latent:
     description: "Latent dim 8 (vs 4) gives VAE more capacity to represent motion diversity"
     prediction: "Lower VAE reconstruction loss; when used for diffusion → better FID/diversity"
-    status: diffusion_training
-    result: "VAE done (loss=0.0142). Ego encoder DONE (200 epochs, cos~0.92). Diffusion training started (job 329789)."
+    status: eval_pending
+    result: |
+      VAE done (loss=0.0142). Ego encoder DONE (200 epochs, cos~0.92).
+      Diffusion training segment-1 DONE: epoch=2299, loss=0.309 (job 329789, faster than estimated ~37s/epoch).
+      Intermediate eval submitted (job 330924, epoch=2299, CFG=5). Result pending.
+      Segment-2 training running (job 330925, resume from epoch=2299, expected final epoch~4639).
+      H3 fair comparison to H2: eval at epoch~4399 after segment-2 completes.
 
   H4-ego-encoder-architecture:
     description: "Richer ego encoder (cross-attention instead of mean pooling) improves conditioning"
@@ -248,28 +273,29 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "H3 will reach ~epoch=1674 at 24h wall time (51.6s/epoch). Submit resume_h3_diffusion_helma.sh after job 329789 ends."
-  - "Eval H3 at epoch~1600 (intermediate): submit eval_h3_cfg5.sh after updating checkpoint path to epoch=1599.ckpt or nearest"
-  - "Resume H3 for another 24h → will reach ~epoch 3300; then resume again → epoch~4999"
-  - "H3 needs ~3× 24h job segments to reach H2's best epoch (4399). Plan accordingly."
-  - "CFG=7 is now confirmed best tradeoff: FID=6.716 (+1.7% vs CFG=5) but R-prec=0.724 (+7.9% vs CFG=5)"
-  - "H4 (cross-attn) protocol locked. Start implementation after H3 first segment completes and shows promise."
+  - "ACTIVE: Job 330924 (H3 eval epoch=2299 CFG=5) running — collect result when done (~4h ETA)"
+  - "ACTIVE: Job 330925 (H3 segment-2 training) running — collect at ~2026-04-01 09:00"
+  - "After 330924 result: update research-state + findings.md with H3 intermediate FID"
+  - "After 330925 completes: update eval script EPOCH to ~4499, submit eval + segment-3 resume"
+  - "H3 needs 2× 24h segments total (at 37s/epoch): segment-1 done (→2299), segment-2 running (→4639 est.)"
+  - "CFG=7 confirmed best tradeoff: FID=6.716, R-prec=0.724. Eval H3 at CFG=7 once fair-epoch reached."
+  - "H4 (cross-attn) protocol locked. Ready to implement after H3 segment-2 result."
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
+  CFG=7 is the best combined tradeoff: FID=6.716 (+1.7% vs CFG=5), R-prec=0.724 (+7.9%).
 
-  MAJOR FINDING 2: FID REGRESSION in H2 — CONFIRMED. Epoch=4399 (FID=6.603) is the best H2
-  checkpoint. The model regressed to FID=8.40 at epoch=4599, then partially recovered to 7.51
-  at epoch=4999 but did NOT return to its best. Early stopping is critical for this architecture.
-  Root cause: training oscillation independent of loss (loss was flat ~0.286-0.287 throughout).
-  May be aggravated by duplicate training job 327881 running in parallel.
+  MAJOR FINDING 2: FID REGRESSION in H2 — CONFIRMED. Epoch=4399 (FID=6.603) is best H2
+  checkpoint. Model regressed at epoch=4599 (FID=8.40), partially recovered at 4999 (FID=7.51).
+  Early stopping is critical. Root cause: training oscillation independent of loss.
 
   H2 BASELINE (final): FID=6.603 ± 0.067, Diversity=5.779, R-prec@1=0.671 (epoch=4399, CFG=5).
 
-  H3 RUNNING: Latent-8 diffusion training (job 329789, 24h wall). VAE loss=0.0142 (better than
-  latent-4), ego encoder cos=0.92. Will compare H3 best vs H2 best FID=6.603.
+  H3 STATUS: Segment-1 DONE (epoch=2299, loss=0.309). Faster than expected (37s/epoch).
+  Intermediate eval running (job 330924). Segment-2 training running (job 330925).
+  Expected to reach epoch~4639 after segment-2, enabling fair comparison to H2 at epoch~4399.
 
   Key remaining questions:
-  1. Does H3 (latent-8) beat H2's best FID=6.603 at CFG=5?
+  1. Does H3 (latent-8) beat H2's best FID=6.603 at comparable epoch (~4399)?
   2. Can H4 (cross-attention ego encoder) recover R-prec@1 > 0.8 without FID cost?
-  3. Is CFG=7 a better FID/R-prec tradeoff than CFG=5 (FID=6.60) or CFG=15 (R-prec=0.797)?
+  3. H3 intermediate eval (epoch=2299): will it show meaningful improvement already?

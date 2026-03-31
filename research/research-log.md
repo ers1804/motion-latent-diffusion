@@ -166,3 +166,29 @@ Actions taken:
 
 ### Job 329818 (unrelated)
 Confirmed: "h7_lower_peak_lr" job is from workspace `v103fe12-jepa` (JEPA scene encoder project) — a different project under the same user account. Not related to this research.
+
+## 2026-03-31 — H3 Segment-1 Complete: epoch=2299
+
+### H3 Training Segment-1 (Job 329789): FINISHED
+
+Job completed at ~08:23 on 2026-03-31 (started 08:42 on 2026-03-30, ~23.7h elapsed).
+
+**Key facts:**
+- Final checkpoint: `epoch=2299.ckpt`, loss=0.309
+- **Actual epoch rate: ~37s/epoch** (faster than estimated 51.6s/epoch — prior estimate was wrong)
+- Revised timing: 24h → ~2340 epochs per segment (not ~1674)
+- H3 now needs only **2 segments total** to reach epoch~4639 (past H2's best at 4399)
+
+**Revised H3 plan:**
+- Segment 1 (job 329789): done, epoch=2299
+- Segment 2 (job 330925): running, resume from epoch=2299, expected final ~epoch=4639
+- One more eval at epoch~4399 will give the fair H2 comparison
+
+### Actions Taken
+1. Updated `eval_h3_cfg5_helma.sh` EPOCH to 2299
+2. Submitted **H3 intermediate eval**: job 330924 (epoch=2299, CFG=5), running on h13-15
+3. Submitted **H3 segment-2 training**: job 330925, running on h13-23, resume from epoch=2299
+
+### Open Question
+Will H3 (latent-8, epoch=2299) show meaningful FID improvement over H2 baseline (FID=6.603)?
+At only 52% of H2's best epoch depth, we expect H3 to be undertrained — but will show training trajectory.
