@@ -77,9 +77,11 @@ extract_until_success "$STORAGE_DIR/data" "$TMPDIR/data"
 cd /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion
 
 # Evaluate H3 at CFG=5 (latent-8 VAE + new ego encoder)
-# Epoch=4399 matches H2's best checkpoint epoch — start here, then also eval epoch=4999
-# NOTE: Update CHECKPOINT path if training saves at different epoch intervals
-CHECKPOINT=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_interaction_crop_weighted_latent_8/checkpoints/epoch=4399.ckpt
+# UPDATE: Set EPOCH to the last available checkpoint before submitting
+# Segment 1 (job 329789): actual final epoch=2299 (~37s/epoch, faster than estimated 51s)
+# Segment 2 (resume): expected final epoch ~4599; use epoch=4499 for H2-comparable eval
+EPOCH=2299
+CHECKPOINT=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_interaction_crop_weighted_latent_8/checkpoints/epoch=${EPOCH}.ckpt
 
 python -m test \
 --cfg configs/config_ego_motion_new_vae_stoch_latent_8.yaml \
