@@ -186,11 +186,12 @@ experiments:
   - id: run_013
     name: eval_h3_epoch2299_cfg5
     hypothesis: H3-larger-latent
-    status: running
+    status: failed_resubmitted
     slurm_job: 330924
+    resubmit_job: 331157
     checkpoint: epoch=2299
     guidance_scale: 5
-    notes: "H3 intermediate eval at epoch=2299 CFG=5. Submitted 2026-03-31. Key question: is H3 already competitive with H2 FID=6.603 at only epoch=2299 vs H2's best at epoch=4399?"
+    notes: "Job 330924 FAILED — submitted before push, helma ran old script with epoch=4399.ckpt (doesn't exist on H3 yet). Resubmitted as job 331157 with correct epoch=2299.ckpt. Lesson: always push BEFORE sshing to submit on helma."
 
   - id: run_014
     name: h3_diffusion_training_latent8_segment2
@@ -198,7 +199,10 @@ experiments:
     status: running
     slurm_job: 330925
     resume_from: epoch=2299
-    notes: "H3 segment-2 training, resume from epoch=2299. At 37s/epoch over 24h → ~2340 more epochs → expected final epoch ~4639. Then one more eval at epoch~4399 for fair H2 comparison."
+    current_epoch_at_check: 2599
+    elapsed_h: 3.85
+    actual_epoch_rate: "~46s/epoch (300 epochs in 3.85h)"
+    notes: "H3 segment-2 training, resume from epoch=2299. At 46s/epoch over 24h → ~1878 more epochs → expected final epoch ~4477. This is very close to H2's best epoch=4399, enabling fair comparison in one segment!"
 
   - id: run_012
     name: eval_cfg7_h2_epoch4399
@@ -273,13 +277,13 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "ACTIVE: Job 330924 (H3 eval epoch=2299 CFG=5) running — collect result when done (~4h ETA)"
-  - "ACTIVE: Job 330925 (H3 segment-2 training) running — collect at ~2026-04-01 09:00"
-  - "After 330924 result: update research-state + findings.md with H3 intermediate FID"
-  - "After 330925 completes: update eval script EPOCH to ~4499, submit eval + segment-3 resume"
-  - "H3 needs 2× 24h segments total (at 37s/epoch): segment-1 done (→2299), segment-2 running (→4639 est.)"
-  - "CFG=7 confirmed best tradeoff: FID=6.716, R-prec=0.724. Eval H3 at CFG=7 once fair-epoch reached."
-  - "H4 (cross-attn) protocol locked. Ready to implement after H3 segment-2 result."
+  - "ACTIVE: Job 331157 (H3 eval epoch=2299 CFG=5, resubmit) running — collect result ~4h"
+  - "ACTIVE: Job 330925 (H3 segment-2 training) running — collect at ~2026-04-01 08:30"
+  - "After 331157 result: update research-state + findings.md with H3 intermediate FID"
+  - "After 330925 completes (~epoch=4477): update eval script EPOCH, submit eval at CFG=5 AND CFG=7"
+  - "H3 segment-2 expected final epoch ~4477 — close enough to H2's epoch=4399 for fair comparison"
+  - "LESSON LEARNED: Always git push BEFORE sshing to helma to submit slurm jobs"
+  - "H4 (cross-attn) protocol locked. Start after H3 segment-2 result shows H3 FID."
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
