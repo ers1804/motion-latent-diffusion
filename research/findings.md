@@ -44,6 +44,19 @@ latent-4×256 space.
 
 **FINDING (2026-03-30 — FID Regression CONFIRMED)**: H2 epoch trajectory: 4399→FID=6.603 (best), 4599→FID=8.400 (regression), 4999→FID=7.510 (partial recovery, but NOT back to best). The model degraded and never fully recovered. Training loss was flat (~0.286–0.287) throughout — **sampling quality oscillates independently of training loss**. Early stopping with periodic FID validation is critical. **H2 final baseline: FID=6.603 at epoch=4399, CFG=5.**
 
+### H3 Intermediate Eval (epoch=2299, job 331157)
+
+| Run | Epoch | CFG | FID ↓ | FID CI | Diversity | R-prec@1 | MM | Notes |
+|-----|-------|-----|-------|--------|-----------|----------|----|-------|
+| H3 latent-8 (intermediate) | 2299 | 5 | 7.475 | ±0.048 | 5.718 | 0.576 | 3.631 | Segment-1 final; only 52% of H2 best epoch |
+
+**H3 at epoch=2299 is undertrained** — this is expected. At epoch=2299, H3 has seen only 52% of the training that H2 needed to reach its best performance (epoch=4399). FID=7.475 is 13.2% worse than H2's best (6.603), but no strong conclusion can be drawn from this. The H3 definitive eval at epoch=4399 (submitted as jobs 333132/333133 on 2026-04-01) will provide the fair comparison.
+
+**Compared to H2 at similar epochs**:
+- H2 at epoch=4399 (segment-1 equivalent for H3): FID=6.603
+- H3 at epoch=2299 (52% of H2's best): FID=7.475
+- Trajectory suggests H3 may catch up or surpass H2 with more training.
+
 ## Patterns and Insights
 
 1. **Interaction-aware training helps**: Cropping to the interaction window and up-weighting

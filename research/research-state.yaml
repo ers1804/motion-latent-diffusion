@@ -1,6 +1,6 @@
 project: "Ego-Conditioned Pedestrian Motion Generation via Latent Diffusion"
 started: "2026-03-27"
-last_updated: "2026-03-27"
+last_updated: "2026-04-01"
 
 research_question: |
   Can interaction-aware training (ego-pedestrian proximity-based cropping + weighted sampling)
