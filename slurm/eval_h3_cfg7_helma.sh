@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --job-name=eval_h3_cfg5
-#SBATCH --output=/hnvme/workspace/v103fe12-ped_gen/outputs/eval_h3_cfg5_%j.txt
+#SBATCH --job-name=eval_h3_cfg7
+#SBATCH --output=/hnvme/workspace/v103fe12-ped_gen/outputs/eval_h3_cfg7_%j.txt
 #SBATCH --time=4:00:00
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:h100:1
@@ -76,7 +76,7 @@ extract_until_success "$STORAGE_DIR/data" "$TMPDIR/data"
 
 cd /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion
 
-# Evaluate H3 at CFG=5 (latent-8 VAE + new ego encoder)
+# Evaluate H3 at CFG=7 (latent-8 VAE + new ego encoder)
 # Segment 2 (job 330925): epoch=4399 already saved — exact H2-comparable checkpoint
 # Final epoch of segment 2 estimated ~4537; submit separate eval after job completes
 EPOCH=4399
@@ -93,4 +93,4 @@ python -m test \
     "METRIC.TYPE=['EgoMotionMetrics']" \
     "TEST.REPLICATION_TIMES=3" \
     "TEST.SPLIT=val" \
-    "model.guidance_scale=5"
+    "model.guidance_scale=7"
