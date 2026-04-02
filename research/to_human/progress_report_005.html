@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress Report #005 — H3 Definitive Results & H4 Direction</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 960px; margin: 0 auto; padding: 2rem; background: #f8f9fa; color: #212529; }
+  h1 { font-size: 1.8rem; color: #1a1a2e; border-bottom: 3px solid #e63946; padding-bottom: 0.5rem; }
+  h2 { font-size: 1.3rem; color: #1a1a2e; margin-top: 2rem; }
+  h3 { font-size: 1.1rem; color: #457b9d; }
+  .card { background: white; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; box-shadow: 0 1px 4px rgba(0,0,0,0.1); }
+  .card.rejected { border-left: 4px solid #e63946; }
+  .card.success { border-left: 4px solid #2a9d8f; }
+  .card.next { border-left: 4px solid #f4a261; }
+  .card.info { border-left: 4px solid #457b9d; }
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .metric { background: #f1f3f5; border-radius: 6px; padding: 0.8rem; text-align: center; }
+  .metric .value { font-size: 1.6rem; font-weight: 700; color: #1a1a2e; }
+  .metric .label { font-size: 0.75rem; color: #6c757d; margin-top: 0.2rem; }
+  .metric.worse .value { color: #e63946; }
+  .metric.better .value { color: #2a9d8f; }
+  .metric.neutral .value { color: #f4a261; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 1rem 0; }
+  th { background: #1a1a2e; color: white; padding: 0.6rem; text-align: left; }
+  td { padding: 0.5rem 0.6rem; border-bottom: 1px solid #dee2e6; }
+  tr.highlight { background: #fff3cd; font-weight: 600; }
+  tr.rejected-row { background: #fde8e8; }
+  tr.baseline { background: #d4edda; }
+  .tag { display: inline-block; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.75rem; font-weight: 600; margin-left: 0.3rem; }
+  .tag.rejected { background: #fde8e8; color: #e63946; }
+  .tag.baseline { background: #d4edda; color: #2a9d8f; }
+  .tag.next { background: #fff3cd; color: #856404; }
+  .insight { background: #e8f4f8; border-radius: 6px; padding: 0.8rem 1rem; margin: 0.5rem 0; }
+  .insight::before { content: "💡 "; }
+  .warning { background: #fff3cd; border-radius: 6px; padding: 0.8rem 1rem; margin: 0.5rem 0; }
+  .warning::before { content: "⚠️ "; }
+  svg { display: block; margin: 0 auto; }
+  .delta-bad { color: #e63946; font-weight: 600; }
+  .delta-good { color: #2a9d8f; font-weight: 600; }
+  footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #dee2e6; color: #6c757d; font-size: 0.85rem; }
+</style>
+</head>
+<body>
+
+<h1>Research Progress Report #005</h1>
+<p><strong>Date:</strong> 2026-04-01 &nbsp;|&nbsp; <strong>Project:</strong> Ego-Conditioned Pedestrian Motion Generation &nbsp;|&nbsp; <strong>Status:</strong> H3 Complete → H4 Next</p>
+
+<div class="card rejected">
+  <h2>🔴 H3 Result: Latent-8 Hypothesis REJECTED</h2>
+  <p>We evaluated the H3 hypothesis — that a larger VAE latent dimension (8 vs 4) would improve motion generation quality — at the exact same training depth as the H2 baseline (epoch=4399).</p>
+  <p><strong>Verdict: Latent-8 is significantly WORSE than latent-4.</strong></p>
+
+  <div class="metric-grid">
+    <div class="metric worse">
+      <div class="value">7.56</div>
+      <div class="label">H3 FID (CFG=5) ↑ worse</div>
+    </div>
+    <div class="metric better">
+      <div class="value">6.60</div>
+      <div class="label">H2 FID (CFG=5) ← baseline</div>
+    </div>
+    <div class="metric worse">
+      <div class="value">+14.5%</div>
+      <div class="label">H3 FID degradation</div>
+    </div>
+    <div class="metric neutral">
+      <div class="value">≈0</div>
+      <div class="label">R-prec@1 change (0.676→0.671)</div>
+    </div>
+  </div>
+</div>
+
+<h2>Full Comparison: H3 vs H2 Baseline</h2>
+<div class="card info">
+  <table>
+    <tr>
+      <th>Model</th><th>Epoch</th><th>CFG</th><th>FID ↓</th><th>FID CI</th><th>R-prec@1</th><th>Diversity</th><th>MM</th>
+    </tr>
+    <tr class="baseline">
+      <td><strong>H2 latent-4</strong> <span class="tag baseline">BASELINE</span></td>
+      <td>4399</td><td>5</td><td><strong>6.603</strong></td><td>±0.067</td><td>0.671</td><td>5.779</td><td>3.503</td>
+    </tr>
+    <tr class="baseline">
+      <td>H2 latent-4</td>
+      <td>4399</td><td>7</td><td>6.716</td><td>±0.068</td><td>0.724</td><td>5.771</td><td>3.291</td>
+    </tr>
+    <tr class="rejected-row">
+      <td>H3 latent-8 <span class="tag rejected">REJECTED</span></td>
+      <td>4399</td><td>5</td><td>7.563</td><td>±0.078</td><td>0.676</td><td>5.842</td><td>3.245</td>
+    </tr>
+    <tr class="rejected-row">
+      <td>H3 latent-8 <span class="tag rejected">REJECTED</span></td>
+      <td>4399</td><td>7</td><td>8.131</td><td>±0.103</td><td>0.733</td><td>5.830</td><td>2.989</td>
+    </tr>
+  </table>
+  <p style="font-size: 0.85rem; color: #6c757d;">Both H3 evals are well outside H2 confidence intervals. CIs do not overlap. H3 rejection is statistically robust.</p>
+</div>
+
+<h2>Experiment Trajectory</h2>
+<div class="card info">
+  <svg width="780" height="260" viewBox="0 0 780 260" xmlns="http://www.w3.org/2000/svg">
+    <!-- Background -->
+    <rect width="780" height="260" fill="#fff" rx="8"/>
+    <!-- Grid lines -->
+    <line x1="80" y1="20" x2="80" y2="210" stroke="#dee2e6" stroke-width="1"/>
+    <line x1="80" y1="210" x2="750" y2="210" stroke="#dee2e6" stroke-width="1"/>
+    <!-- Y axis labels (FID) -->
+    <text x="70" y="214" text-anchor="end" font-size="11" fill="#6c757d">6.0</text>
+    <line x1="80" y1="210" x2="750" y2="210" stroke="#e9ecef" stroke-width="1"/>
+    <text x="70" y="183" text-anchor="end" font-size="11" fill="#6c757d">6.5</text>
+    <line x1="80" y1="180" x2="750" y2="180" stroke="#e9ecef" stroke-width="1"/>
+    <text x="70" y="153" text-anchor="end" font-size="11" fill="#6c757d">7.0</text>
+    <line x1="80" y1="150" x2="750" y2="150" stroke="#e9ecef" stroke-width="1"/>
+    <text x="70" y="123" text-anchor="end" font-size="11" fill="#6c757d">7.5</text>
+    <line x1="80" y1="120" x2="750" y2="120" stroke="#e9ecef" stroke-width="1"/>
+    <text x="70" y="93" text-anchor="end" font-size="11" fill="#6c757d">8.0</text>
+    <line x1="80" y1="90" x2="750" y2="90" stroke="#e9ecef" stroke-width="1"/>
+    <text x="70" y="63" text-anchor="end" font-size="11" fill="#6c757d">8.5</text>
+    <line x1="80" y1="60" x2="750" y2="60" stroke="#e9ecef" stroke-width="1"/>
+
+    <!-- CFG sweep H2 (plotted as bar cluster at CFG values) -->
+    <!-- CFG=20: FID=7.856 → y = 210 - (7.856-6.0)*60 = 210-111.4=98.6 -->
+    <!-- CFG=15: FID=7.400 → y = 210 - (7.400-6.0)*60 = 210-84=126 -->
+    <!-- CFG=10: FID=6.963 → y = 210 - (6.963-6.0)*60 = 210-57.8=152.2 -->
+    <!-- CFG=7:  FID=6.716 → y = 210 - (6.716-6.0)*60 = 210-42.96=167 -->
+    <!-- CFG=5:  FID=6.603 → y = 210 - (6.603-6.0)*60 = 210-36.2=173.8 -->
+    <!-- H3 CFG=5: FID=7.563 → y = 210 - (7.563-6.0)*60 = 210-93.8=116.2 -->
+    <!-- H3 CFG=7: FID=8.131 → y = 210 - (8.131-6.0)*60 = 210-127.9=82.1 -->
+
+    <!-- H2 CFG sweep line -->
+    <polyline points="160,98.6 260,126 380,152.2 470,167 570,173.8"
+              fill="none" stroke="#457b9d" stroke-width="2.5" stroke-dasharray="6,3"/>
+    <!-- H2 points -->
+    <circle cx="160" cy="98.6" r="5" fill="#457b9d"/>
+    <circle cx="260" cy="126" r="5" fill="#457b9d"/>
+    <circle cx="380" cy="152.2" r="5" fill="#457b9d"/>
+    <circle cx="470" cy="167" r="5" fill="#457b9d"/>
+    <circle cx="570" cy="173.8" r="6" fill="#2a9d8f" stroke="#1a1a2e" stroke-width="2"/>
+    <text x="575" y="168" font-size="10" fill="#2a9d8f" font-weight="bold">H2 best</text>
+    <text x="575" y="180" font-size="10" fill="#2a9d8f">FID=6.603</text>
+
+    <!-- H3 points -->
+    <circle cx="570" cy="116.2" r="6" fill="#e63946" stroke="#1a1a2e" stroke-width="2"/>
+    <circle cx="470" cy="82.1" r="6" fill="#e63946" stroke="#1a1a2e" stroke-width="2"/>
+    <text x="575" y="112" font-size="10" fill="#e63946" font-weight="bold">H3 CFG=5</text>
+    <text x="575" y="124" font-size="10" fill="#e63946">FID=7.563</text>
+    <text x="475" y="77" font-size="10" fill="#e63946" font-weight="bold">H3 CFG=7</text>
+    <text x="475" y="89" font-size="10" fill="#e63946">FID=8.131</text>
+
+    <!-- X-axis labels -->
+    <text x="160" y="225" text-anchor="middle" font-size="11" fill="#6c757d">CFG=20</text>
+    <text x="260" y="225" text-anchor="middle" font-size="11" fill="#6c757d">CFG=15</text>
+    <text x="380" y="225" text-anchor="middle" font-size="11" fill="#6c757d">CFG=10</text>
+    <text x="470" y="225" text-anchor="middle" font-size="11" fill="#6c757d">CFG=7</text>
+    <text x="570" y="225" text-anchor="middle" font-size="11" fill="#6c757d">CFG=5</text>
+
+    <!-- Legend -->
+    <line x1="90" y1="238" x2="115" y2="238" stroke="#457b9d" stroke-width="2.5" stroke-dasharray="6,3"/>
+    <circle cx="102" cy="238" r="4" fill="#457b9d"/>
+    <text x="120" y="242" font-size="11" fill="#1a1a2e">H2 latent-4 (CFG sweep)</text>
+    <circle cx="320" cy="238" r="4" fill="#e63946" stroke="#1a1a2e" stroke-width="1.5"/>
+    <text x="330" y="242" font-size="11" fill="#1a1a2e">H3 latent-8 (eval points)</text>
+
+    <!-- Title -->
+    <text x="390" y="15" text-anchor="middle" font-size="12" fill="#6c757d">FID vs CFG — H2 (latent-4) curve and H3 (latent-8) eval points</text>
+  </svg>
+  <p style="font-size: 0.85rem; color: #6c757d; text-align: center;">H3 points fall well above the H2 curve at the same CFG values — latent-8 is strictly worse.</p>
+</div>
+
+<h2>Why Did H3 Fail?</h2>
+<div class="card info">
+  <div class="insight">
+    The diffusion denoiser (fixed transformer architecture) must model the latent distribution. With latent-8, it has to model twice as many dimensions — a harder task with the same model capacity. The denoiser is the bottleneck, not the VAE.
+  </div>
+  <div class="insight">
+    Crucially, <strong>R-prec@1 barely changed</strong> (H3=0.676 vs H2=0.671 at CFG=5). This reveals that the conditioning quality bottleneck is the <em>ego encoder architecture</em> — specifically, mean-pooling 196 timesteps into a single token — not the latent dimension.
+  </div>
+  <div class="insight">
+    H3 diversity was marginally higher (5.842 vs 5.779), consistent with the larger latent space capturing more variety. But the FID cost (+14.5%) far outweighs this tiny diversity gain.
+  </div>
+</div>
+
+<h2>Complete Experiment History</h2>
+<div class="card info">
+  <table>
+    <tr><th>Run</th><th>Epoch</th><th>CFG</th><th>FID ↓</th><th>R-prec@1</th><th>Status</th></tr>
+    <tr><td>H0 (crashed)</td><td>~mid</td><td>15</td><td>7.503</td><td>0.825</td><td>Baseline (incomplete)</td></tr>
+    <tr class="baseline">
+      <td>H2 latent-4</td><td>4399</td><td>20</td><td>7.856</td><td>0.815</td><td>✓</td>
+    </tr>
+    <tr class="baseline">
+      <td>H2 latent-4</td><td>4399</td><td>15</td><td>7.400</td><td>0.797</td><td>✓</td>
+    </tr>
+    <tr class="baseline">
+      <td>H2 latent-4</td><td>4399</td><td>10</td><td>6.963</td><td>0.767</td><td>✓</td>
+    </tr>
+    <tr class="baseline">
+      <td>H2 latent-4</td><td>4399</td><td>7</td><td>6.716</td><td>0.724</td><td>✓</td>
+    </tr>
+    <tr class="highlight">
+      <td><strong>H2 latent-4 ← BEST</strong></td><td>4399</td><td>5</td><td><strong>6.603</strong></td><td>0.671</td><td>✓ confirmed best</td>
+    </tr>
+    <tr><td>H2 latent-4 (overfit)</td><td>4599</td><td>5</td><td>8.400</td><td>0.733</td><td>✗ regression</td></tr>
+    <tr><td>H2 latent-4 (recovery)</td><td>4999</td><td>5</td><td>7.510</td><td>0.671</td><td>✗ partial recovery</td></tr>
+    <tr><td>H3 latent-8 (mid)</td><td>2299</td><td>5</td><td>7.475</td><td>0.576</td><td>intermediate</td></tr>
+    <tr class="rejected-row">
+      <td>H3 latent-8</td><td>4399</td><td>5</td><td>7.563</td><td>0.676</td><td>✗ rejected</td>
+    </tr>
+    <tr class="rejected-row">
+      <td>H3 latent-8</td><td>4399</td><td>7</td><td>8.131</td><td>0.733</td><td>✗ rejected</td>
+    </tr>
+  </table>
+</div>
+
+<h2 style="color: #f4a261;">🟡 Next: H4 — Cross-Attention Ego Encoder</h2>
+<div class="card next">
+  <h3>Hypothesis</h3>
+  <p>Replace <code>EgoEncoderPooled</code> (mean-pool 196 timesteps → 1 token) with full cross-attention conditioning (<code>trans_dec</code> arch, all 196 timesteps as key/value). The denoiser gets full temporal ego context at each denoising step instead of a compressed summary.</p>
+
+  <h3>Why This Should Work</h3>
+  <ul>
+    <li>H3 proved R-prec is decoupled from latent dim — the bottleneck is the ego encoder, not the latent space</li>
+    <li>Mean pooling destroys temporal structure (speed profiles, acceleration, approach angles)</li>
+    <li>Cross-attention allows the model to attend to specific ego timesteps relevant to each latent token</li>
+    <li>Literature: WoSAD (2024) uses cross-attention for polyline conditioning with strong results</li>
+  </ul>
+
+  <h3>Prediction</h3>
+  <ul>
+    <li><strong>R-prec@1 ↑</strong>: expected significant improvement (current 0.671 → target >0.700 at CFG=5)</li>
+    <li><strong>FID</strong>: uncertain — may improve if temporal conditioning helps generate more realistic motion; may be neutral if FID is dominated by other factors</li>
+    <li><strong>Diversity</strong>: likely stable (same latent-4 VAE)</li>
+  </ul>
+
+  <h3>Implementation Plan</h3>
+  <ol>
+    <li><strong>Pre-train EgoEncoder</strong> (no pooling, full sequence T=196) with contrastive loss — ~1 day on helma</li>
+    <li><strong>Train MLD diffusion</strong> with <code>arch=trans_dec</code>, passing full ego sequence as K/V — ~2 days on helma (latent-4, same as H2)</li>
+    <li><strong>Eval</strong> at H2-comparable epoch with CFG=5 and CFG=7</li>
+  </ol>
+
+  <div class="warning">The pretrained ego encoder weights from H2 (<code>EgoEncoderPooled</code>) cannot be reused for H4 — the output shape differs (B,1,D) vs (B,T,D). H4 requires fresh encoder pretraining.</div>
+</div>
+
+<h2>Key Learnings</h2>
+<div class="card success">
+  <ol>
+    <li><strong>FID is highly sensitive to CFG</strong> (H5, confirmed): 10.8% improvement just from CFG=5 vs CFG=15. Best operating points: CFG=5 (FID), CFG=7 (balanced).</li>
+    <li><strong>Latent dimension is not the bottleneck</strong> (H3, confirmed): Same-capacity denoiser performs worse with larger latent. Don't increase latent dim without scaling denoiser.</li>
+    <li><strong>R-prec is controlled by ego encoder, not latent dim</strong> (H3 insight): Mean-pooling to a single token is the likely bottleneck for conditioning quality.</li>
+    <li><strong>FID doesn't monotonically improve with epochs</strong> (H2, confirmed): Best checkpoint ≠ final checkpoint. Periodic FID validation and checkpoint selection critical.</li>
+    <li><strong>Interaction crop + weighted sampling</strong> (H2): Focusing training on ego-ped interaction windows gives FID=6.603 — best result so far.</li>
+  </ol>
+</div>
+
+<footer>
+  <p>Generated: 2026-04-01 | Branch: local-dev-erik | Commit: 096c68a | Next: H4 cross-attention ego encoder</p>
+</footer>
+</body>
+</html>
