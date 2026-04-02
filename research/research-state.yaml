@@ -205,30 +205,48 @@ experiments:
   - id: run_014
     name: h3_diffusion_training_latent8_segment2
     hypothesis: H3-larger-latent
-    status: running
+    status: finished
     slurm_job: 330925
     resume_from: epoch=2299
-    current_epoch_at_check: 4399
-    elapsed_h: 22.2
-    notes: "H3 segment-2 running, 22h11m elapsed. epoch=4399 checkpoint saved. Expected final epoch ~4537 (at ~46s/epoch with ~1.8h remaining). Eval at epoch=4399 submitted (jobs 333132 CFG=5, 333133 CFG=7) — exact H2 comparison."
+    final_epoch: "~4537 (estimated)"
+    notes: "H3 segment-2 completed. Final checkpoint ~4537. Eval done at epoch=4399 for H2 comparison."
 
   - id: run_015
     name: eval_h3_epoch4399_cfg5
     hypothesis: H3-larger-latent
-    status: running
+    status: finished
     slurm_job: 333132
     checkpoint: epoch=4399
     guidance_scale: 5
-    notes: "H3 definitive eval at H2-comparable epoch=4399. CFG=5 for FID comparison vs H2 baseline FID=6.603."
+    metrics:
+      FID: 7.563
+      FID_ci: 0.078
+      Diversity: 5.842
+      R_precision_top_1: 0.676
+      R_precision_top_1_ci: 0.003
+      R_precision_top_2: 0.785
+      R_precision_top_3: 0.839
+      MultiModality: 3.245
+      MultiModality_ci: 0.386
+    notes: "H3 REJECTED — FID=7.563 is 14.5% WORSE than H2 baseline FID=6.603. Same-capacity denoiser cannot model 8D latent as well as 4D."
 
   - id: run_016
     name: eval_h3_epoch4399_cfg7
     hypothesis: H3-larger-latent
-    status: running
+    status: finished
     slurm_job: 333133
     checkpoint: epoch=4399
     guidance_scale: 7
-    notes: "H3 definitive eval at epoch=4399. CFG=7 for FID/R-prec tradeoff comparison vs H2 CFG=7 baseline (FID=6.716, R-prec=0.724)."
+    metrics:
+      FID: 8.131
+      FID_ci: 0.103
+      Diversity: 5.830
+      R_precision_top_1: 0.733
+      R_precision_top_1_ci: 0.001
+      R_precision_top_2: 0.828
+      R_precision_top_3: 0.873
+      MultiModality: 2.989
+    notes: "H3 CFG=7: FID=8.131 vs H2 FID=6.716 — H3 is 21.1% worse. R-prec@1=0.733 vs H2 0.724 — marginal (+1.2%). H3 hypothesis fully rejected."
 
   - id: run_012
     name: eval_cfg7_h2_epoch4399
@@ -271,19 +289,21 @@ hypotheses:
   H3-larger-latent:
     description: "Latent dim 8 (vs 4) gives VAE more capacity to represent motion diversity"
     prediction: "Lower VAE reconstruction loss; when used for diffusion → better FID/diversity"
-    status: eval_running
+    status: rejected
     result: |
-      VAE done (loss=0.0142). Ego encoder DONE (200 epochs, cos~0.92).
-      Diffusion segment-1 DONE: epoch=2299, loss=0.309 (~37s/epoch).
-      Diffusion segment-2 RUNNING (job 330925): epoch=4399 checkpoint SAVED, expected final ~4537.
-      Intermediate eval (epoch=2299, CFG=5): FID=7.475 — undertrained at 52% of H2 best epoch.
-      DEFINITIVE EVAL SUBMITTED: epoch=4399, CFG=5 (job 333132) + CFG=7 (job 333133).
-      Results pending. H2 baseline to beat: FID=6.603 (CFG=5), FID=6.716 (CFG=7).
+      REJECTED: Latent-8 is significantly WORSE than latent-4 at equal epoch=4399.
+      CFG=5: H3 FID=7.563 ± 0.078 vs H2 FID=6.603 ± 0.067 → -14.5% (worse FID)
+      CFG=7: H3 FID=8.131 ± 0.103 vs H2 FID=6.716 ± 0.068 → -21.1% (worse FID)
+      R-prec@1: H3=0.676 vs H2=0.671 (CFG=5) — essentially identical.
+      Diversity: H3=5.842 vs H2=5.779 (+1.1%) — marginal improvement not worth FID cost.
+      Root cause: Same-capacity denoiser cannot model 8D latent distribution as well as 4D.
+      Lesson: Increasing latent dim without scaling denoiser capacity is counterproductive.
 
   H4-ego-encoder-architecture:
-    description: "Richer ego encoder (cross-attention instead of mean pooling) improves conditioning"
-    prediction: "Better R-precision (ego↔motion alignment)"
-    status: untested
+    description: "Cross-attention ego conditioning (trans_dec arch, full T=196 ego sequence as K/V) instead of mean-pooled single token"
+    prediction: "R-prec@1 improves significantly (>0.700 at CFG=5); FID may improve too due to better temporal alignment. Mechanism: denoiser sees full ego temporal context per denoising step."
+    status: next
+    motivation: "H3 showed R-prec is decoupled from latent dim — the bottleneck is ego encoder quality, not latent capacity. EgoEncoderPooled compresses 196 timesteps to 1 token, losing temporal structure. trans_dec lets z query the full 196-step sequence."
 
   H5-guidance-scale:
     description: "Guidance scale sweep {5,10,15,20} affects quality-diversity tradeoff"
@@ -304,10 +324,12 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "RUNNING: Jobs 333132 (H3 CFG=5) and 333133 (H3 CFG=7) at epoch=4399 — await results"
-  - "After 330925 completes: check final epoch (~4537), optionally submit eval at final checkpoint too"
-  - "On results: update findings.md with H3 vs H2 comparison, run outer loop reflection"
-  - "Decide H4 direction based on H3 result: if H3 improves FID, proceed with H4 cross-attention"
+  - "DIRECTION: H4 — cross-attention ego encoder with latent-4 (trans_dec arch, full T=196 ego sequence)"
+  - "H4 step 1: Pre-train new EgoEncoder (no pooling, full sequence output) with contrastive loss"
+  - "H4 step 2: Train MLD diffusion with trans_dec arch using full ego sequence as key/value"
+  - "H4 prediction: R-prec@1 improves significantly; FID may improve due to better temporal alignment"
+  - "H4 cost: ~1 day ego encoder pre-training + ~2-3 days diffusion training (latent-4, same as H2)"
+  - "Before starting H4: review trans_dec arch in mld_denoiser.py and EgoEncoder base class"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.

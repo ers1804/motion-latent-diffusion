@@ -192,3 +192,37 @@ Job completed at ~08:23 on 2026-03-31 (started 08:42 on 2026-03-30, ~23.7h elaps
 ### Open Question
 Will H3 (latent-8, epoch=2299) show meaningful FID improvement over H2 baseline (FID=6.603)?
 At only 52% of H2's best epoch depth, we expect H3 to be undertrained — but will show training trajectory.
+
+## 2026-04-01 — H3 Definitive Eval: REJECTED; Direction Set to H4
+
+### H3 Definitive Eval Results (epoch=4399, jobs 333132/333133)
+
+Both eval jobs completed in ~5 minutes each. Results:
+
+| Config | FID | FID CI | R-prec@1 | Diversity | MM |
+|--------|-----|--------|----------|-----------|-----|
+| H3 CFG=5 | 7.563 | ±0.078 | 0.676 | 5.842 | 3.245 |
+| H3 CFG=7 | 8.131 | ±0.103 | 0.733 | 5.830 | 2.989 |
+| H2 CFG=5 (baseline) | 6.603 | ±0.067 | 0.671 | 5.779 | 3.503 |
+| H2 CFG=7 | 6.716 | ±0.068 | 0.724 | 5.771 | 3.291 |
+
+**H3 HYPOTHESIS REJECTED**: Latent-8 is 14.5% worse FID than latent-4 at the same epoch. The same-capacity denoiser cannot model an 8D latent distribution as well as 4D.
+
+Key observation: R-prec@1 is essentially identical (H3=0.676 vs H2=0.671 at CFG=5). This tells us the bottleneck for conditioning quality is NOT the latent dimension — it's the ego encoder architecture.
+
+### Outer Loop Reflection: Direction → H4
+
+With H3 rejected, the next hypothesis is H4 — cross-attention ego conditioning:
+- **What**: Use `trans_dec` arch in the diffusion denoiser so the latent `z` queries the full T=196 ego sequence via cross-attention (instead of a single mean-pooled token)
+- **Why**: H3 showed R-prec is decoupled from latent dim; EgoEncoderPooled (196→1 token) compresses away temporal structure
+- **Prediction**: R-prec@1 improves (>0.700 at CFG=5); FID may also improve via better temporal alignment
+- **Cost**: ~1 day ego encoder pretraining + ~2 days diffusion training (latent-4, same as H2)
+
+The `trans_dec` arch already exists in `mld_denoiser.py:130`. H4 requires:
+1. Pre-train `EgoEncoder` (no pooling, full sequence) with contrastive loss
+2. Train MLD with `arch=trans_dec`, passing full ego sequence as K/V
+
+### Current State
+- **H2** (best): FID=6.603, epoch=4399, CFG=5 — confirmed best latent-4 result
+- **H3** (rejected): latent-8 is consistently worse
+- **H4** (next): cross-attention ego conditioning — implementation planning pending
