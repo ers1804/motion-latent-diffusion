@@ -226,3 +226,40 @@ The `trans_dec` arch already exists in `mld_denoiser.py:130`. H4 requires:
 - **H2** (best): FID=6.603, epoch=4399, CFG=5 — confirmed best latent-4 result
 - **H3** (rejected): latent-8 is consistently worse
 - **H4** (next): cross-attention ego conditioning — implementation planning pending
+
+## 2026-04-02 — H4 Implementation: Code Changes + Protocol Commit + Job Submitted
+
+### Code Changes for H4
+
+Three files modified to support `EgoEncoder` (full T=196 sequence, no pooling):
+
+1. **`pretrain_ego_encoder.py`** (×2 fixes): `squeeze(1)` → `mean(dim=1)` for EgoEncoder compatibility.
+   - `squeeze(1)` only works for T=1 (EgoEncoderPooled). For EgoEncoder, T=196, squeeze does nothing → wrong shape (B, 196, 256) instead of (B, 256).
+   - `mean(dim=1)` works for both T=1 (EgoEncoderPooled) and T=196 (EgoEncoder) — backward-compatible.
+
+2. **`mld/models/modeltype/mld.py:1002`**: `squeeze(1)` → `mean(dim=1)` for `ego_emb` in `rs_set`.
+   - Same issue: R-precision metric needs `ego_emb` to be (B, 256) for cosine similarity.
+
+3. **New files created**:
+   - `configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml`: H4 config (EgoEncoder target, arch=trans_dec, same latent-4 VAE as H2)
+   - `slurm/pretrain_ego_encoder_h4_helma.sh`: 4h ego encoder pretraining job
+   - `slurm/diffusion_training_h4_trans_dec_helma.sh`: 24h diffusion training segment-1
+   - `slurm/resume_h4_diffusion_helma.sh`: segment-2 resume
+   - `slurm/eval_h4_cfg5_helma.sh`, `slurm/eval_h4_cfg7_helma.sh`: eval at epoch=4399
+
+### Architectural Detail: trans_dec with EgoEncoder
+
+H4 changes the conditioning from 2 K/V tokens (time_emb + 1 mean-pooled ego token) to 197 K/V tokens (time_emb + 196 ego timestep tokens). The denoiser latent `z` (queries) now attends to the full temporal ego sequence at every denoising step. This preserves spatial-temporal structure that EgoEncoderPooled discards.
+
+### Protocol Commit + Job Submitted
+
+- Protocol committed: `f63c596 research(protocol): H4 cross-attention ego conditioning (trans_dec arch)`
+- Pushed to `local-dev-erik`
+- Submitted H4 ego encoder pretraining: **job 343502** (helma, 4h, h100)
+  - Output: `/hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt`
+
+### Plan After Pretraining
+1. Wait for job 343502 to complete (~4h)
+2. Submit `diffusion_training_h4_trans_dec_helma.sh` for segment-1 (~24h, ~2300 epochs)
+3. After segment-1: eval at intermediate checkpoint, resume for segment-2
+4. Eval at epoch~4399: compare R-prec@1 and FID vs H2 baseline

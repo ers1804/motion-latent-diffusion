@@ -248,6 +248,19 @@ experiments:
       MultiModality: 2.989
     notes: "H3 CFG=7: FID=8.131 vs H2 FID=6.716 — H3 is 21.1% worse. R-prec@1=0.733 vs H2 0.724 — marginal (+1.2%). H3 hypothesis fully rejected."
 
+  - id: run_017
+    name: ego_encoder_h4_trans_dec_pretrain
+    hypothesis: H4-ego-encoder-architecture
+    status: running
+    slurm_job: 343502
+    submitted: "2026-04-02"
+    expected_completion: "~4h from 2026-04-02"
+    notes: |
+      H4 ego encoder pretraining: EgoEncoder (full T=196 sequence, no pooling).
+      Contrastive loss: mean-pooled EgoEncoder output vs VAE latent z.
+      Output: best.pt at /hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt
+      After completion: submit diffusion_training_h4_trans_dec_helma.sh for segment-1.
+
   - id: run_012
     name: eval_cfg7_h2_epoch4399
     hypothesis: H5-guidance-scale
@@ -301,9 +314,16 @@ hypotheses:
 
   H4-ego-encoder-architecture:
     description: "Cross-attention ego conditioning (trans_dec arch, full T=196 ego sequence as K/V) instead of mean-pooled single token"
-    prediction: "R-prec@1 improves significantly (>0.700 at CFG=5); FID may improve too due to better temporal alignment. Mechanism: denoiser sees full ego temporal context per denoising step."
-    status: next
+    prediction: "R-prec@1 improves significantly (>=0.80 at CFG=5); FID may improve too due to better temporal alignment. Mechanism: denoiser sees full ego temporal context per denoising step."
+    status: running
     motivation: "H3 showed R-prec is decoupled from latent dim — the bottleneck is ego encoder quality, not latent capacity. EgoEncoderPooled compresses 196 timesteps to 1 token, losing temporal structure. trans_dec lets z query the full 196-step sequence."
+    implementation:
+      code_changes:
+        - "pretrain_ego_encoder.py: squeeze(1) → mean(dim=1) (×2) for EgoEncoder compatibility (T=196)"
+        - "mld/models/modeltype/mld.py:1002: squeeze(1) → mean(dim=1) for ego_emb (B,256) in rs_set"
+        - "configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml: new H4 config (EgoEncoder, arch=trans_dec)"
+        - "slurm/pretrain_ego_encoder_h4_helma.sh, diffusion_training_h4_trans_dec_helma.sh, resume_h4_diffusion_helma.sh, eval_h4_cfg{5,7}_helma.sh"
+      commit: "f63c596 research(protocol): H4 cross-attention ego conditioning (trans_dec arch)"
 
   H5-guidance-scale:
     description: "Guidance scale sweep {5,10,15,20} affects quality-diversity tradeoff"
@@ -324,12 +344,13 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "DIRECTION: H4 — cross-attention ego encoder with latent-4 (trans_dec arch, full T=196 ego sequence)"
-  - "H4 step 1: Pre-train new EgoEncoder (no pooling, full sequence output) with contrastive loss"
-  - "H4 step 2: Train MLD diffusion with trans_dec arch using full ego sequence as key/value"
-  - "H4 prediction: R-prec@1 improves significantly; FID may improve due to better temporal alignment"
-  - "H4 cost: ~1 day ego encoder pre-training + ~2-3 days diffusion training (latent-4, same as H2)"
-  - "Before starting H4: review trans_dec arch in mld_denoiser.py and EgoEncoder base class"
+  - "Wait for run_017 (job 343502) H4 ego encoder pretraining to complete (~4h from 2026-04-02)"
+  - "After pretraining: submit slurm/diffusion_training_h4_trans_dec_helma.sh for segment-1 (~24h)"
+  - "After segment-1: eval at epoch=2299-ish and submit resume_h4_diffusion_helma.sh for segment-2"
+  - "After reaching epoch~4399: submit eval_h4_cfg5_helma.sh and eval_h4_cfg7_helma.sh"
+  - "Compare H4 vs H2: target R-prec@1 >= 0.80, FID <= 6.60"
+
+last_updated: "2026-04-02"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
@@ -341,11 +362,14 @@ current_understanding: |
 
   H2 BASELINE (final): FID=6.603 ± 0.067, Diversity=5.779, R-prec@1=0.671 (epoch=4399, CFG=5).
 
-  H3 STATUS: Segment-1 DONE (epoch=2299, loss=0.309). Faster than expected (37s/epoch).
-  Intermediate eval running (job 330924). Segment-2 training running (job 330925).
-  Expected to reach epoch~4639 after segment-2, enabling fair comparison to H2 at epoch~4399.
+  H3 REJECTED: Latent-8 is 14.5% worse FID than latent-4 at epoch=4399. R-prec essentially
+  unchanged (0.676 vs 0.671). Key insight: R-prec bottleneck is ego encoder architecture, NOT
+  latent dimension. EgoEncoderPooled compresses 196 timesteps → 1 token, discarding temporal structure.
 
-  Key remaining questions:
-  1. Does H3 (latent-8) beat H2's best FID=6.603 at comparable epoch (~4399)?
-  2. Can H4 (cross-attention ego encoder) recover R-prec@1 > 0.8 without FID cost?
-  3. H3 intermediate eval (epoch=2299): will it show meaningful improvement already?
+  H4 UNDERWAY: Cross-attention ego conditioning (trans_dec arch). EgoEncoder pretraining job
+  343502 running on helma (~4h, submitted 2026-04-02). Key code changes: squeeze(1)→mean(dim=1)
+  in pretrain_ego_encoder.py and mld.py for EgoEncoder (T=196) compatibility.
+
+  Key remaining question:
+  1. Can H4 (cross-attention ego encoder, full T=196) improve R-prec@1 >= 0.80 without FID cost?
+     Prediction: yes — denoiser will see full temporal ego context per denoising step.
