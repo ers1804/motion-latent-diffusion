@@ -25,7 +25,7 @@ TRAIN:
 
   RESUME: ''
   # Latent-4 VAE — same as H2 baseline
-  PRETRAINED_VAE: '/mnt/md0/erik/nas/methods/methods/diffusion_gen/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt'
+  PRETRAINED_VAE: '/hnvme/workspace/v103fe12-ped_gen/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt'
   # H4 ego encoder (full sequence, no pooling) — created by pretrain_ego_encoder_h4_helma.sh
   PRETRAINED_EGO: '/hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt'
   PRETRAINED: ''
