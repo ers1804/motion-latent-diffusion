@@ -1000,7 +1000,8 @@ class MLD(BaseModel):
         # cond_emb is (2B, 1, 256) with CFG or (B, 1, 256) without.
         # The last len(lengths) entries are always the real (non-zero) embeddings.
         if self.condition in ['ego']:
-            rs_set["ego_emb"] = cond_emb[-len(lengths):].squeeze(1).detach()  # (B, 256)
+            # mean(dim=1): works for EgoEncoderPooled (T=1) and EgoEncoder/H4 (T=196)
+            rs_set["ego_emb"] = cond_emb[-len(lengths):].mean(dim=1).detach()  # (B, 256)
 
         # prepare gt/refer for metric
         if "motion" in batch.keys() and not finetune_decoder:

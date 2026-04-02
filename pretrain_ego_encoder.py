@@ -271,9 +271,10 @@ def run_pretraining(args):
                 # Average over latent tokens (handles multi-token VAEs, e.g. latent_dim=[4,256])
                 z_target = z_target.mean(dim=0)  # (B, z_dim)
 
-            # ── Student: ego encoder → pooled embedding (includes projection) ─
-            ego_emb = ego_encoder(ego)           # (B, 1, z_dim) for pooled
-            z_pred = ego_emb.squeeze(1)          # (B, z_dim)
+            # ── Student: ego encoder → pooled embedding ─────────────────────
+            # EgoEncoderPooled: (B, 1, z_dim); EgoEncoder (H4): (B, T, z_dim)
+            ego_emb = ego_encoder(ego)
+            z_pred = ego_emb.mean(dim=1)         # (B, z_dim) — works for T=1 or T=196
 
             # ── Loss ──────────────────────────────────────────────────
             mse_loss = F.mse_loss(z_pred, z_target)
@@ -368,7 +369,7 @@ def evaluate(ego_encoder, vae, val_loader, device, use_mean):
         z_gt, dist_gt = vae.encode(motion, lengths)
         z_target = (dist_gt.loc if use_mean else z_gt).mean(dim=0)
 
-        z_pred = ego_encoder(ego).squeeze(1)  # includes built-in projection
+        z_pred = ego_encoder(ego).mean(dim=1)  # mean-pool: works for T=1 (Pooled) or T=196 (H4)
 
         total_mse += F.mse_loss(z_pred, z_target).item()
         total_cos += F.cosine_similarity(z_pred, z_target, dim=-1).mean().item()
