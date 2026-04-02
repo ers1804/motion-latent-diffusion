@@ -251,16 +251,29 @@ experiments:
   - id: run_017
     name: ego_encoder_h4_trans_dec_pretrain
     hypothesis: H4-ego-encoder-architecture
-    status: running
+    status: finished
     slurm_job: 343503  # 343502 failed: NAS not mounted on h11-02; fixed VAE path to /hnvme/
     submitted: "2026-04-02"
-    expected_completion: "~4h from 2026-04-02"
+    elapsed: "01:34:26"
+    metrics:
+      best_val_mse: 1.919030
     notes: |
-      H4 ego encoder pretraining: EgoEncoder (full T=196 sequence, no pooling).
-      Contrastive loss: mean-pooled EgoEncoder output vs VAE latent z.
-      Fix: config PRETRAINED_VAE changed from /mnt/md0/erik/nas (not always mounted) to /hnvme/.
-      Output: best.pt at /hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt
-      After completion: submit diffusion_training_h4_trans_dec_helma.sh for segment-1.
+      DONE. H4 ego encoder pretraining completed 200 epochs. Finished in ~1.5h.
+      best.pt saved to /hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt
+      Best val MSE: 1.919. (H3 ego encoder achieved cos~0.92 at epoch 200.)
+      Note: val metric is MSE (not cosine) — hard to compare directly with H3.
+
+  - id: run_018
+    name: h4_diffusion_training_segment1
+    hypothesis: H4-ego-encoder-architecture
+    status: running
+    slurm_job: 345130
+    submitted: "2026-04-02"
+    expected_completion: "~24h from 2026-04-02"
+    notes: |
+      H4 diffusion training segment-1: trans_dec arch, EgoEncoder (T=196), latent-4 VAE.
+      Expected ~2300 epochs in 24h (same as H3 segment-1 rate ~17s/epoch).
+      After completion: eval intermediate checkpoint + submit segment-2.
 
   - id: run_012
     name: eval_cfg7_h2_epoch4399
@@ -345,9 +358,8 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "Wait for run_017 (job 343502) H4 ego encoder pretraining to complete (~4h from 2026-04-02)"
-  - "After pretraining: submit slurm/diffusion_training_h4_trans_dec_helma.sh for segment-1 (~24h)"
-  - "After segment-1: eval at epoch=2299-ish and submit resume_h4_diffusion_helma.sh for segment-2"
+  - "Wait for run_018 (job 345130) H4 diffusion training segment-1 (~24h, ~2300 epochs)"
+  - "After segment-1: eval at ~epoch=2299, then submit resume_h4_diffusion_helma.sh for segment-2"
   - "After reaching epoch~4399: submit eval_h4_cfg5_helma.sh and eval_h4_cfg7_helma.sh"
   - "Compare H4 vs H2: target R-prec@1 >= 0.80, FID <= 6.60"
 

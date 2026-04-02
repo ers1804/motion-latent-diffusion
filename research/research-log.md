@@ -283,3 +283,23 @@ This also fixes the H4 diffusion training which uses the same config.
 **Resubmitted**: Job **343503** (same script, fixed config). Expected completion ~4h.
 
 **Lesson**: Always use `/hnvme/` paths in configs for helma jobs. NAS paths are node-dependent.
+
+## 2026-04-02 — H4 Ego Encoder Pretraining DONE; Diffusion Training Submitted
+
+### Job 343503: COMPLETED (1h34m)
+
+H4 `EgoEncoder` pretraining completed successfully in ~1.5h (much faster than the 4h budget).
+
+- **Best val MSE**: 1.919030
+- **Checkpoints saved**: `best.pt`, `epoch=50/100/150/200.pt`, `last.pt`
+- **Location**: `/hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/`
+
+Note: The pretraining loss uses cosine similarity (maximize alignment between mean-pooled EgoEncoder output and VAE latent). The "Best val MSE: 1.919" metric is the MSE loss component. For H3 ego encoder (EgoEncoderPooled), we saw cos~0.92 at epoch 200 — the H4 metric is not directly comparable since EgoEncoder outputs T=196 tokens vs T=1.
+
+### H4 Diffusion Training: Job 345130 Submitted
+
+Submitted `slurm/diffusion_training_h4_trans_dec_helma.sh` as job **345130** (24h, H100).
+
+Expected:
+- ~17s/epoch (same as H2 latent-4), ~2300 epochs in 24h
+- Next step: eval at ~epoch=2299 + segment-2 resume after completion
