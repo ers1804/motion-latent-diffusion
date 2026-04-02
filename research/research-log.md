@@ -263,3 +263,23 @@ H4 changes the conditioning from 2 K/V tokens (time_emb + 1 mean-pooled ego toke
 2. Submit `diffusion_training_h4_trans_dec_helma.sh` for segment-1 (~24h, ~2300 epochs)
 3. After segment-1: eval at intermediate checkpoint, resume for segment-2
 4. Eval at epoch~4399: compare R-prec@1 and FID vs H2 baseline
+
+## 2026-04-02 — H4 Pretraining Fix: NAS Not Mounted on All Helma Nodes
+
+### Job 343502 Failed (3 min)
+
+```
+FileNotFoundError: /mnt/md0/erik/nas/methods/methods/diffusion_gen/models/vae/
+  ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt
+```
+
+The NAS mount `/mnt/md0/erik/nas` is not accessible from node h11-02. The H4 config had the NAS
+path for `PRETRAINED_VAE`. The helma workspace already has the same checkpoint at:
+`/hnvme/workspace/v103fe12-ped_gen/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt`
+
+**Fix**: Updated `configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml` to use helma path.
+This also fixes the H4 diffusion training which uses the same config.
+
+**Resubmitted**: Job **343503** (same script, fixed config). Expected completion ~4h.
+
+**Lesson**: Always use `/hnvme/` paths in configs for helma jobs. NAS paths are node-dependent.

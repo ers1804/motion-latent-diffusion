@@ -252,12 +252,13 @@ experiments:
     name: ego_encoder_h4_trans_dec_pretrain
     hypothesis: H4-ego-encoder-architecture
     status: running
-    slurm_job: 343502
+    slurm_job: 343503  # 343502 failed: NAS not mounted on h11-02; fixed VAE path to /hnvme/
     submitted: "2026-04-02"
     expected_completion: "~4h from 2026-04-02"
     notes: |
       H4 ego encoder pretraining: EgoEncoder (full T=196 sequence, no pooling).
       Contrastive loss: mean-pooled EgoEncoder output vs VAE latent z.
+      Fix: config PRETRAINED_VAE changed from /mnt/md0/erik/nas (not always mounted) to /hnvme/.
       Output: best.pt at /hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt
       After completion: submit diffusion_training_h4_trans_dec_helma.sh for segment-1.
 
