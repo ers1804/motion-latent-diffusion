@@ -1,6 +1,6 @@
 project: "Ego-Conditioned Pedestrian Motion Generation via Latent Diffusion"
 started: "2026-03-27"
-last_updated: "2026-04-01"
+last_updated: "2026-04-02"
 
 research_question: |
   Can interaction-aware training (ego-pedestrian proximity-based cropping + weighted sampling)
@@ -272,8 +272,10 @@ experiments:
     expected_completion: "~24h from 2026-04-02"
     notes: |
       H4 diffusion training segment-1: trans_dec arch, EgoEncoder (T=196), latent-4 VAE.
-      Expected ~2300 epochs in 24h (same as H3 segment-1 rate ~17s/epoch).
-      After completion: eval intermediate checkpoint + submit segment-2.
+      Observed rate: ~32s/epoch (faster than H3 37s/epoch; cross-attention overhead
+      balanced by H100 efficiency). Expected ~2699 epochs in 24h (not 2300 as H3 ref).
+      epoch=2299 intermediate checkpoint will exist. After completion: eval at epoch=2299
+      + submit segment-2 to reach epoch=5000.
 
   - id: run_012
     name: eval_cfg7_h2_epoch4399
@@ -358,9 +360,11 @@ hypotheses:
     status: untested
 
 next_actions:
-  - "Wait for run_018 (job 345130) H4 diffusion training segment-1 (~24h, ~2300 epochs)"
-  - "After segment-1: eval at ~epoch=2299, then submit resume_h4_diffusion_helma.sh for segment-2"
-  - "After reaching epoch~4399: submit eval_h4_cfg5_helma.sh and eval_h4_cfg7_helma.sh"
+  - "Wait for run_018 (job 345130) H4 diffusion training segment-1 (~24h, expected ~epoch 2699)"
+  - "After segment-1: check final epoch, update eval script if needed, submit eval + segment-2"
+  - "Eval: eval_h4_intermediate_cfg5_helma.sh at epoch=2299 (checkpoint will exist)"
+  - "Segment-2 resume via resume_h4_diffusion_helma.sh → continue to END_EPOCH=5000"
+  - "At epoch~4399: submit eval_h4_cfg5_helma.sh and eval_h4_cfg7_helma.sh for definitive eval"
   - "Compare H4 vs H2: target R-prec@1 >= 0.80, FID <= 6.60"
 
 last_updated: "2026-04-02"
@@ -379,8 +383,9 @@ current_understanding: |
   unchanged (0.676 vs 0.671). Key insight: R-prec bottleneck is ego encoder architecture, NOT
   latent dimension. EgoEncoderPooled compresses 196 timesteps → 1 token, discarding temporal structure.
 
-  H4 UNDERWAY: Cross-attention ego conditioning (trans_dec arch). EgoEncoder pretraining job
-  343502 running on helma (~4h, submitted 2026-04-02). Key code changes: squeeze(1)→mean(dim=1)
+  H4 UNDERWAY: Cross-attention ego conditioning (trans_dec arch). Ego encoder pretraining
+  done (job 343503, best val MSE=1.919, ~1.5h). H4 diffusion training job 345130 running
+  at ~32s/epoch, expected ~epoch 2699 after 24h. Key fix: squeeze(1)→mean(dim=1)
   in pretrain_ego_encoder.py and mld.py for EgoEncoder (T=196) compatibility.
 
   Key remaining question:
