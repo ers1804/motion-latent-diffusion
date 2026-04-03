@@ -354,10 +354,28 @@ hypotheses:
       Current CFG=15 was suboptimal for FID. CFG=5 gives 10.8% FID improvement.
       Diversity barely changes across CFG values (5.74-5.78).
 
-  H6-joint-vae-diffusion:
-    description: "Fine-tuning VAE jointly with diffusion (unfreeze ego encoder) improves alignment"
-    prediction: "Better R-precision"
+  H6-unfreeze-ego-encoder:
+    description: "Unfreeze ego encoder during diffusion training so encoder co-adapts with denoiser"
+    prediction: "Better R-precision and potentially FID, because encoder specializes for cross-attention use case rather than frozen contrastive-pretrained features"
     status: untested
+    motivation: |
+      H4 freezes the ego encoder (contrastive-pretrained). The frozen encoder was trained to align
+      mean-pooled ego output with VAE latents — a coarser objective than what the denoiser needs
+      (attend to specific timesteps via cross-attention). Unfreezing lets the encoder's per-timestep
+      representations adapt to the denoiser's attention patterns. Risk: encoder drift from pretrained
+      alignment; mitigate with lower LR for encoder vs denoiser.
+    priority: medium  # activate if H4 R-prec doesn't reach 0.80
+
+  H7-larger-denoiser:
+    description: "Increase denoiser transformer capacity (more layers, or larger hidden dim) to handle 196 K/V tokens better"
+    prediction: "Better FID and potentially R-precision. H3 showed denoiser capacity is the FID bottleneck; H4 adds 196 K/V tokens which requires more capacity to leverage."
+    status: untested
+    motivation: |
+      Current denoiser: ~6 layers, 256d, 4 heads (same as H2). H4 increases K/V from 2 to 197 tokens
+      per denoising step. The denoiser may not have enough capacity to learn fine-grained attention
+      over 196 timesteps. Doubling layers or hidden dim could improve utilization.
+      Risk: increased compute cost (~2× per step); may need shorter training.
+    priority: low  # expensive; activate only after H4 + H6 explored
 
 next_actions:
   - "Wait for run_018 (job 345130) H4 diffusion training segment-1 (~24h, expected ~epoch 2699)"
@@ -367,7 +385,7 @@ next_actions:
   - "At epoch~4399: submit eval_h4_cfg5_helma.sh and eval_h4_cfg7_helma.sh for definitive eval"
   - "Compare H4 vs H2: target R-prec@1 >= 0.80, FID <= 6.60"
 
-last_updated: "2026-04-02"
+last_updated: "2026-04-03"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.

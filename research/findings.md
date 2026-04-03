@@ -1,6 +1,6 @@
 # Findings — Ego-Conditioned Pedestrian Motion Generation
 
-*Last updated: 2026-04-01 (H3 definitive eval — latent-8 rejected; H4 direction set)*
+*Last updated: 2026-04-03 (H4 diffusion training running — job 345130, ~epoch 14 of ~2699, rate ~32s/epoch)*
 
 ## Current Understanding
 
@@ -94,13 +94,15 @@ latent-4×256 space.
 - **Increasing latent dim degrades FID without increasing denoiser capacity** — H3 latent-8 is 14.5% worse FID than H2 latent-4 at the same epoch. Do not change latent dim as a primary lever.
 - **CFG=7 is the best operating point** for balanced FID/R-prec evaluation (FID=6.716, R-prec=0.724). CFG=5 for FID-only comparisons (FID=6.603).
 - **Helma submit order**: always `git push` locally BEFORE `ssh helma "... sbatch"` — helma pulls before the push if done wrong order (caused job 330924 to fail with wrong checkpoint).
+- **NAS paths unreliable on helma**: `/mnt/md0/erik/nas` is not mounted on all compute nodes. Always use `/hnvme/workspace/v103fe12-ped_gen/` paths in configs. H4 job 343502 failed for this reason; fixed to use `/hnvme/` in config.
+- **H4 EgoEncoder compatibility**: `EgoEncoder` (T=196) requires `.mean(dim=1)` instead of `.squeeze(1)` to get (B, 256) embeddings. Squeeze does nothing on dim=1 when T=196. Fixed in `pretrain_ego_encoder.py` (×2) and `mld.py` (×1). Backward-compatible with EgoEncoderPooled (T=1).
 
 ## Open Questions
 
 1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → **ANSWERED**: YES at epoch=4399 (FID=6.603), but model regressed afterward. **H2 final baseline = FID=6.603 at epoch=4399, CFG=5.**
 2. ~~**Does latent-8 VAE give better reconstruction quality?**~~ → **ANSWERED**: Latent-8 diffusion is 14.5% WORSE FID than latent-4 at the same epoch (7.563 vs 6.603). Larger latent with same denoiser capacity is counterproductive. **H3 rejected.**
 3. ~~**What is the sensitivity to CFG guidance scale?**~~ → **ANSWERED**: FID monotonically decreases with lower CFG. CFG=5 is best for FID (6.603). **Use CFG=5 for FID evaluation, CFG=7 for balanced.**
-4. **Can a cross-attention ego encoder improve R-precision and/or FID?** → Untested (H4). H3 showed R-prec@1 barely changes with different latent dims (0.671 vs 0.676). The ego encoder architecture (mean-pooling → single token) is the suspected bottleneck. H4 would use `trans_dec` cross-attention with full T=196 ego sequence.
+4. **Can a cross-attention ego encoder improve R-precision and/or FID?** → **H4 IN PROGRESS**. H3 showed R-prec@1 barely changes with different latent dims (0.671 vs 0.676). The ego encoder architecture (mean-pooling → single token) is the suspected bottleneck. H4 uses `trans_dec` cross-attention with full T=196 ego sequence. Ego encoder pretraining done (job 343503, ~1.5h). Diffusion training running (job 345130, ~24h). Expected eval at epoch~4399 in ~2-3 days.
 5. **What is the true best FID possible with this dataset and architecture?** → H2 FID=6.603 is current best. GT diversity=5.330 vs generated=5.779 — generated motion is slightly over-diverse, which could be a source of FID.
 6. **Is there a meaningful gap vs retrieval baseline?** → ADE/FDE evaluation not yet set up.
 
@@ -128,9 +130,25 @@ This would use `arch=trans_dec` (already exists in the denoiser) with:
 2. Use `trans_dec` arch so z queries the ego sequence via cross-attention
 3. Expected benefit: better temporal alignment — R-precision should improve
 
-**Practical constraint**: The pretrained ego encoder weights (from contrastive pretraining)
-are for the `EgoEncoderPooled` arch. H4 would require re-pretraining the ego encoder +
-re-training the diffusion model. Cost: ~2-3 days on H100.
+**H4 implementation cost**: Ego encoder pretraining took ~1.5h (job 343503). Full diffusion
+training segment-1 (~24h, ~2699 epochs) + segment-2 (~24h, epochs 2699-5000) = ~2.5 days total.
+
+**Key architectural differences H2 vs H4**:
+| Aspect | H2 (trans_enc + EgoEncoderPooled) | H4 (trans_dec + EgoEncoder) |
+|--------|-----------------------------------|------------------------------|
+| Ego encoder output | (B, 1, 256) — single pooled token | (B, 196, 256) — full sequence |
+| Projection head | Yes (2-layer MLP inside encoder) | No |
+| Denoiser conditioning | 2 tokens: [time_emb, ego_pooled] → self-attn | 197 K/V tokens: [time_emb, ego_seq(196)] |
+| Attention type | Self-attention over concat [z, cond] | Cross-attention: z queries ego sequence |
+| Pretrain val MSE | ~1.92 (same order; projection head doesn't help) | 1.919 |
+
+**Insight from pretrain MSE comparison**: EgoEncoderPooled (with 2-layer projection head) achieves
+val MSE ~1.92, essentially identical to EgoEncoder (no projection head) at 1.92. This suggests
+that the 2-layer projection head isn't significantly improving the encoder's ability to predict
+VAE latents from ego trajectory. The irreducible uncertainty is inherent in the ego→motion prediction
+task (vehicle trajectory is a weak predictor of pedestrian body pose). The projection head doesn't
+add meaningful capacity. **Implication**: H4 dropping the projection head loses nothing in alignment quality,
+while gaining richer temporal conditioning from the full sequence.
 
 ### CFG Sweep Results (H5 — COMPLETED)
 
@@ -150,6 +168,33 @@ Evaluated H2 epoch=4399 checkpoint at CFG ∈ {5, 10, 15, 20}:
 - MultiModality: increases at lower CFG → consistent with less-constrained generation
 
 **Mechanism hypothesis**: In this model, CFG guidance primarily constrains the output distribution toward conditioning-aligned samples, reducing FID by allowing more diverse motion generation rather than "quality polishing." The ego conditioning signal may be weak enough that high CFG causes over-constraint (mode collapse toward a few conditioning-aligned modes), hurting FID.
+
+## H4 Outcome Scenarios and Next Steps
+
+H4 results will arrive at epoch ~2299 (intermediate) and ~4399 (definitive). Pre-analysis:
+
+### If H4 strongly improves R-prec (≥ 0.80, target):
+- Confirms that EgoEncoderPooled was the bottleneck for conditioning quality
+- Cross-attention over 196 K/V tokens provides the temporal granularity needed
+- Check FID: if FID ≤ 6.60, H4 dominates H2 on all metrics → proceed to paper
+- If FID increases slightly: analyze optimal epoch (H2 regressed at 4599; H4 may too)
+- Consider CFG sweep at best epoch to find H4's optimal operating point
+
+### If H4 partially improves R-prec (0.71–0.79):
+- Marginal gain despite richer conditioning → conditioning architecture isn't the sole bottleneck
+- Consider H6: unfreeze ego encoder during diffusion training (co-adapt encoder + denoiser)
+- Consider H7: larger denoiser (more capacity to leverage 196 K/V tokens)
+- The R-prec metric itself may have limited sensitivity (based on mean-pooled comparison)
+
+### If H4 shows no improvement in R-prec (~0.67, same as H2):
+- Cross-attention over full sequence does NOT help → conditioning architecture not the bottleneck
+- Suggests the R-prec metric is measuring something else (or the ego-motion alignment is inherently weak)
+- Pivot: investigate alternative conditioning signals (relative pedestrian position, speed, heading)
+- Or: investigate whether R-prec is even the right metric for this task
+
+### Key diagnostic signal (available from intermediate eval at epoch ~2299):
+- R-prec@1 > 0.70? → H4 is working, continue to full training
+- R-prec@1 ≈ 0.671? → H4 not working, consider pivot after segment-1
 
 ## Related Work (see literature/)
 
