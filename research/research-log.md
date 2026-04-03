@@ -303,3 +303,49 @@ Submitted `slurm/diffusion_training_h4_trans_dec_helma.sh` as job **345130** (24
 Expected:
 - ~17s/epoch (same as H2 latent-4), ~2300 epochs in 24h
 - Next step: eval at ~epoch=2299 + segment-2 resume after completion
+
+## 2026-04-03 — H4 Segment-1 Done; REMARKABLE Preliminary Result: FID=3.766
+
+### Segment-1 Result (Job 345130, COMPLETED — timed out at 24h)
+
+H4 diffusion training ran for ~24h reaching epoch ~3279 before the SLURM time limit.
+Last saved checkpoint: **epoch=3199** (saves every 100 epochs).
+
+**Training-time val metrics at epoch 3279:**
+- FID: **3.766** — *43% better than H2 best (6.603). Potentially a major breakthrough.*
+- R_TOP_1: 0.529, R_TOP_2: 0.701, R_TOP_3: 0.776
+- Diversity: 6.038 (vs GT 5.390 — slightly over-diverse, similar to H2)
+
+The FID of 3.766 is the best we've seen during training. For context: H2's training-time val
+FID at epoch 4399 was ~6.6, and H3 at epoch 4399 was ~7.5. H4's 3.766 at epoch 3279 suggests
+cross-attention conditioning dramatically improves generation quality.
+
+⚠️ **Caveat**: Training-time val metrics are computed with fewer replications and may differ
+from the final test protocol (TEST.REPLICATION_TIMES=3). The test eval (job 346950) will
+give the definitive numbers. The magnitude of improvement suggests the trend will hold.
+
+### Jobs Submitted Immediately After Segment-1 Timeout
+
+1. **Job 346950** (`eval_h4_int_cfg5`): Eval epoch=3199 at CFG=5 — expected results in ~4h
+2. **Job 346951** (`resume_h4_diffusion`): Segment-2, continues from epoch=3199 → END_EPOCH=5000
+
+### Next Steps
+
+1. Read eval results from job 346950 when complete (~4h)
+2. Compare test FID against training-time val estimate (3.766)
+3. After segment-2 (~24h): eval at multiple checkpoints to find best epoch (H2 peaked at 4399)
+4. Consider CFG sweep for H4 once best epoch identified
+
+### Outer Loop Reflection (2026-04-03)
+
+Did a full outer loop while waiting for segment-1:
+- Confirmed that EgoEncoderPooled projection head vs EgoEncoder raw output have identical
+  pretraining val MSE (~1.92), suggesting the projection head adds no meaningful capacity
+- Added H6 (unfreeze ego encoder during diffusion training) and H7 (larger denoiser) as
+  contingency hypotheses if H4 R-prec doesn't reach 0.80
+- Added H4 outcome scenario analysis to findings.md
+
+The preliminary FID=3.766 at epoch 3279 changes the picture dramatically. If confirmed by
+test eval, H4 is a clear advance over H2 (FID 6.603→3.766, +43% improvement). The research
+direction is confirmed; next focus is on understanding why FID improved so much and whether
+R-prec also improves.

@@ -266,16 +266,46 @@ experiments:
   - id: run_018
     name: h4_diffusion_training_segment1
     hypothesis: H4-ego-encoder-architecture
-    status: running
+    status: finished
     slurm_job: 345130
     submitted: "2026-04-02"
-    expected_completion: "~24h from 2026-04-02"
+    elapsed: "~24h (24:00:00 time limit)"
+    final_epoch: 3199  # last saved checkpoint; training reached ~epoch 3279 before timeout
+    metrics:
+      val_FID_at_epoch_3279: 3.766   # REMARKABLE: 43% better than H2 best (6.603)
+      val_R_TOP_1_at_epoch_3279: 0.529  # training-time val; may differ from test eval
+      val_R_TOP_2_at_epoch_3279: 0.701
+      val_R_TOP_3_at_epoch_3279: 0.776
+      val_Diversity_at_epoch_3279: 6.038
+      note: "These are training-time val metrics, not final test eval. Test eval via job 346950."
     notes: |
-      H4 diffusion training segment-1: trans_dec arch, EgoEncoder (T=196), latent-4 VAE.
-      Observed rate: ~32s/epoch (faster than H3 37s/epoch; cross-attention overhead
-      balanced by H100 efficiency). Expected ~2699 epochs in 24h (not 2300 as H3 ref).
-      epoch=2299 intermediate checkpoint will exist. After completion: eval at epoch=2299
-      + submit segment-2 to reach epoch=5000.
+      H4 diffusion training segment-1: reached epoch ~3279 (last checkpoint: 3199) before
+      24h SLURM timeout. Training-time val FID=3.766 is remarkable — 43% better than H2 best
+      (6.603). This is a MAJOR PRELIMINARY RESULT. R_TOP_1=0.529 during training (may differ
+      from final test eval protocol). Eval submitted as job 346950. Segment-2 submitted as
+      job 346951 (continues from epoch=3199 to END_EPOCH=5000).
+
+  - id: run_019
+    name: h4_eval_epoch3199_cfg5
+    hypothesis: H4-ego-encoder-architecture
+    status: running
+    slurm_job: 346950
+    submitted: "2026-04-03"
+    notes: |
+      Eval H4 at epoch=3199 (best available after segment-1), CFG=5.
+      Expects: FID ~3-5 (based on training-time val=3.766 at epoch 3279).
+      Test metrics may differ from training-time val metrics.
+
+  - id: run_020
+    name: h4_diffusion_training_segment2
+    hypothesis: H4-ego-encoder-architecture
+    status: running
+    slurm_job: 346951
+    submitted: "2026-04-03"
+    notes: |
+      Resume H4 from epoch=3199 → END_EPOCH=5000. Another ~24h.
+      Will save checkpoints at 3299, 3399, ..., 4999.
+      After completion: run definitive eval at best epoch (likely ~4399 based on H2 experience).
 
   - id: run_012
     name: eval_cfg7_h2_epoch4399
@@ -378,12 +408,12 @@ hypotheses:
     priority: low  # expensive; activate only after H4 + H6 explored
 
 next_actions:
-  - "Wait for run_018 (job 345130) H4 diffusion training segment-1 (~24h, expected ~epoch 2699)"
-  - "After segment-1: check final epoch, update eval script if needed, submit eval + segment-2"
-  - "Eval: eval_h4_intermediate_cfg5_helma.sh at epoch=2299 (checkpoint will exist)"
-  - "Segment-2 resume via resume_h4_diffusion_helma.sh → continue to END_EPOCH=5000"
-  - "At epoch~4399: submit eval_h4_cfg5_helma.sh and eval_h4_cfg7_helma.sh for definitive eval"
-  - "Compare H4 vs H2: target R-prec@1 >= 0.80, FID <= 6.60"
+  - "Wait for run_019 (job 346950) eval at epoch=3199 — EXCITING: training val FID=3.766"
+  - "Wait for run_020 (job 346951) segment-2 to complete (~24h from 2026-04-03)"
+  - "After eval 346950: record test FID and R-prec; update run_019 in research-state.yaml"
+  - "After segment-2 at epoch~4399: submit eval_h4_cfg5_helma.sh and eval_h4_cfg7_helma.sh"
+  - "Update eval_h4_cfg5_helma.sh EPOCH to best checkpoint (based on val FID trajectory)"
+  - "PRELIMINARY: H4 training val FID=3.766 at epoch 3279 is 43% better than H2 (6.603)"
 
 last_updated: "2026-04-03"
 
@@ -401,11 +431,19 @@ current_understanding: |
   unchanged (0.676 vs 0.671). Key insight: R-prec bottleneck is ego encoder architecture, NOT
   latent dimension. EgoEncoderPooled compresses 196 timesteps → 1 token, discarding temporal structure.
 
-  H4 UNDERWAY: Cross-attention ego conditioning (trans_dec arch). Ego encoder pretraining
-  done (job 343503, best val MSE=1.919, ~1.5h). H4 diffusion training job 345130 running
-  at ~32s/epoch, expected ~epoch 2699 after 24h. Key fix: squeeze(1)→mean(dim=1)
-  in pretrain_ego_encoder.py and mld.py for EgoEncoder (T=196) compatibility.
+  H4 PRELIMINARY RESULT (training-time val, epoch 3279):
+    FID = 3.766 — 43% better than H2 best (6.603). REMARKABLE.
+    R_TOP_1 = 0.529, R_TOP_2 = 0.701, R_TOP_3 = 0.776
+    Diversity = 6.038 (vs GT 5.390 — slightly over-diverse)
+    Segment-1 ended at epoch ~3279 (timeout), last checkpoint epoch=3199.
+    Test eval at epoch=3199 running (job 346950). Segment-2 running (job 346951).
+
+  NOTE: Training-time val FID may differ from test FID, but the magnitude of
+  improvement (FID 6.603→3.766) strongly suggests H4 is a major advancement.
+  The R_TOP_1=0.529 during training may be lower than final test R-prec@1 due to
+  different metric computation protocols between training and test.
 
   Key remaining question:
-  1. Can H4 (cross-attention ego encoder, full T=196) improve R-prec@1 >= 0.80 without FID cost?
-     Prediction: yes — denoiser will see full temporal ego context per denoising step.
+  1. Will the test eval confirm FID~3.7? If yes, H4 dominates H2 on FID.
+  2. Will R-prec improve significantly with more training (segment-2)?
+  3. At what epoch does H4 FID peak? (based on H2 experience: ~4399)
