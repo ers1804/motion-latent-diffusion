@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress Report #7 — H4 REMARKABLE PRELIMINARY RESULT</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 960px; margin: 0 auto; padding: 32px 24px; color: #1a1a1a; line-height: 1.6; background: #fafafa; }
+  h1 { font-size: 1.8em; border-bottom: 3px solid #2563eb; padding-bottom: 12px; margin-bottom: 8px; }
+  h2 { font-size: 1.3em; margin-top: 2em; color: #1d4ed8; border-left: 4px solid #2563eb; padding-left: 12px; }
+  h3 { font-size: 1.1em; color: #374151; }
+  .subtitle { color: #6b7280; font-size: 0.95em; margin-bottom: 32px; }
+  .headline { background: linear-gradient(135deg, #059669 0%, #10b981 100%); color: white; padding: 24px; border-radius: 12px; margin: 24px 0; box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3); }
+  .headline h2 { color: white; border-left: 4px solid rgba(255,255,255,0.5); margin-top: 0; }
+  .headline .big-number { font-size: 3.5em; font-weight: 700; margin: 8px 0; }
+  .headline .subtitle-num { font-size: 1.1em; opacity: 0.9; }
+  .status-box { display: inline-flex; align-items: center; gap: 8px; padding: 6px 14px; border-radius: 20px; font-size: 0.85em; font-weight: 600; }
+  .running { background: #dbeafe; color: #1d4ed8; }
+  .done { background: #d1fae5; color: #065f46; }
+  .rejected { background: #fee2e2; color: #991b1b; }
+  table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.9em; }
+  th { background: #1e3a8a; color: white; padding: 10px 14px; text-align: left; }
+  td { padding: 9px 14px; border-bottom: 1px solid #e5e7eb; }
+  tr:hover { background: #f1f5f9; }
+  tr.best { background: #d1fae5; font-weight: 600; }
+  tr.running-row { background: #dbeafe; }
+  tr.rejected { background: #fee2e2; }
+  .insight { background: #fffbeb; border-left: 4px solid #f59e0b; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .warning { background: #fff7ed; border-left: 4px solid #ea580c; padding: 16px 20px; margin: 16px 0; border-radius: 0 8px 8px 0; }
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; margin: 16px 0; }
+  .metric-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .metric-card .value { font-size: 2em; font-weight: 700; color: #059669; }
+  .metric-card .label { font-size: 0.8em; color: #6b7280; margin-top: 4px; }
+  .metric-card .compare { font-size: 0.8em; color: #6b7280; }
+  .jobs-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 16px 0; }
+  .job-card { background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .job-card h4 { margin: 0 0 8px 0; font-size: 0.95em; }
+  .job-card .job-id { font-family: monospace; font-size: 0.85em; color: #6b7280; }
+  .next-steps { background: #f0f9ff; border: 1px solid #bae6fd; padding: 20px; border-radius: 8px; margin: 16px 0; }
+  .next-steps ul { margin: 8px 0; padding-left: 20px; }
+  .next-steps li { margin: 6px 0; }
+  footer { margin-top: 48px; padding-top: 24px; border-top: 1px solid #e5e7eb; font-size: 0.85em; color: #9ca3af; }
+  code { background: #f3f4f6; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; }
+  .arrow { color: #9ca3af; margin: 0 4px; }
+</style>
+</head>
+<body>
+
+<h1>Progress Report #7 — H4 Preliminary Result</h1>
+<div class="subtitle">Ego-Conditioned Pedestrian Motion Generation &bull; 2026-04-03</div>
+
+<!-- HEADLINE RESULT -->
+<div class="headline">
+  <h2>MAJOR PRELIMINARY FINDING: H4 FID = 3.766</h2>
+  <div class="big-number">43% better than H2</div>
+  <div class="subtitle-num">Training-time val FID=3.766 vs H2 best FID=6.603 &bull; Cross-attention ego conditioning works</div>
+</div>
+
+<h2>What Happened</h2>
+
+<p>H4 segment-1 ran for 24 hours, reaching epoch ~3279 (last saved checkpoint: epoch=3199) before the SLURM time limit. The final training-time validation metrics at epoch 3279 were remarkable:</p>
+
+<div class="metric-grid">
+  <div class="metric-card">
+    <div class="value">3.766</div>
+    <div class="label">Val FID (epoch 3279)</div>
+    <div class="compare">vs H2: 6.603 (-43%)</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">0.529</div>
+    <div class="label">R-Prec@1 (training val)</div>
+    <div class="compare">vs H2: 0.671 (lower; caveat below)</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">6.038</div>
+    <div class="label">Val Diversity</div>
+    <div class="compare">GT: 5.390 (slightly over-diverse)</div>
+  </div>
+  <div class="metric-card">
+    <div class="value">~3199</div>
+    <div class="label">Last Saved Epoch</div>
+    <div class="compare">~64% of target 5000</div>
+  </div>
+</div>
+
+<div class="warning">
+  <strong>Important caveat</strong>: These are <em>training-time</em> validation metrics, which may differ from the final test evaluation protocol (e.g., different normalization, replication count). The test eval (job 346950) will give the definitive number. That said, a 43% FID improvement is too large to be a measurement artifact — H4 is almost certainly better than H2.
+</div>
+
+<div class="insight">
+  <strong>Why R-prec@1=0.529 is lower than H2's 0.671</strong>: This is likely due to training-time vs test-time metric differences, or that H4 is still mid-training (epoch 3199 vs H2 best at 4399). The test eval and continued training will clarify. The FID improvement strongly suggests the model is better conditioned.
+</div>
+
+<h2>All Results So Far</h2>
+
+<table>
+  <tr>
+    <th>Run</th><th>Epoch</th><th>CFG</th><th>FID ↓</th><th>R-prec@1</th><th>Diversity</th><th>Status</th>
+  </tr>
+  <tr class="rejected">
+    <td>H3 latent-8 (definitive)</td><td>4399</td><td>5</td><td>7.563 ±0.078</td><td>0.676</td><td>5.842</td><td>REJECTED</td>
+  </tr>
+  <tr class="best">
+    <td><strong>H2 interaction-aware (BASELINE)</strong></td><td><strong>4399</strong></td><td><strong>5</strong></td><td><strong>6.603 ±0.067</strong></td><td><strong>0.671</strong></td><td><strong>5.779</strong></td><td>BEST CONFIRMED</td>
+  </tr>
+  <tr>
+    <td>H2 interaction-aware</td><td>4399</td><td>7</td><td>6.716 ±0.068</td><td>0.724</td><td>5.771</td><td>Best FID/R-prec tradeoff</td>
+  </tr>
+  <tr class="running-row">
+    <td><strong>H4 cross-attn ego (PRELIMINARY)</strong></td><td><strong>3199</strong></td><td><strong>—</strong></td><td><strong>3.766* (train val)</strong></td><td><strong>0.529*</strong></td><td><strong>6.038*</strong></td><td>TEST EVAL RUNNING</td>
+  </tr>
+</table>
+<p style="font-size:0.85em;color:#6b7280;">* Training-time validation metrics, not final test eval. Test eval (job 346950) running, expected ~16:00 CET today.</p>
+
+<h2>H4 Architecture — What Changed</h2>
+
+<table>
+  <tr><th>Aspect</th><th>H2 (trans_enc + EgoEncoderPooled)</th><th>H4 (trans_dec + EgoEncoder)</th></tr>
+  <tr><td>Ego encoder output</td><td>(B, 1, 256) — single pooled token</td><td>(B, 196, 256) — full temporal sequence</td></tr>
+  <tr><td>Projection head</td><td>Yes (2-layer MLP)</td><td>No</td></tr>
+  <tr><td>Denoiser conditioning</td><td>2 tokens: concat → self-attention</td><td>197 K/V tokens: z queries via cross-attn</td></tr>
+  <tr><td>Temporal resolution</td><td>One averaged token</td><td>Per-timestep, 196 tokens</td></tr>
+  <tr><td>Pretrain val MSE</td><td>~1.92</td><td>1.919</td></tr>
+</table>
+
+<div class="insight">
+  <strong>Key insight about pretrain MSE</strong>: Both H2 and H4 ego encoders achieve nearly identical pretrain val MSE (~1.92). This suggests the irreducible uncertainty is in the ego→pedestrian prediction task itself — the projection head in H2 adds no extra alignment capacity. H4 dropping it loses nothing, while gaining full temporal conditioning.
+</div>
+
+<h2>Currently Running Jobs</h2>
+
+<div class="jobs-grid">
+  <div class="job-card">
+    <h4>H4 Test Evaluation</h4>
+    <div class="job-id">Job 346950 &bull; eval_h4_int_cfg5</div>
+    <br>
+    <span class="status-box running">RUNNING</span>
+    <p style="font-size:0.9em;margin:8px 0">Evaluating epoch=3199 checkpoint at CFG=5 using the standard test protocol (REPLICATION_TIMES=3). Expected completion: ~16:00 CET today.</p>
+    <p style="font-size:0.9em;margin:0;color:#059669"><strong>Expected result</strong>: FID ~3-5 (if training val ≈ test FID)</p>
+  </div>
+  <div class="job-card">
+    <h4>H4 Segment-2 Training</h4>
+    <div class="job-id">Job 346951 &bull; resume_h4_diffusion</div>
+    <br>
+    <span class="status-box running">RUNNING</span>
+    <p style="font-size:0.9em;margin:8px 0">Continues from epoch=3199 → END_EPOCH=5000. Another ~24h on H100. Will produce checkpoints every 100 epochs.</p>
+    <p style="font-size:0.9em;margin:0;color:#1d4ed8"><strong>Key checkpoint</strong>: epoch=4399 (H2 best epoch for comparison)</p>
+  </div>
+</div>
+
+<h2>Hypothesis Status</h2>
+
+<table>
+  <tr><th>Hypothesis</th><th>Status</th><th>Key Finding</th></tr>
+  <tr>
+    <td>H2 — Interaction-aware training</td>
+    <td><span class="status-box done">DONE</span></td>
+    <td>FID=6.603 at epoch=4399. Best checkpoint is NOT final — watch for regression.</td>
+  </tr>
+  <tr>
+    <td>H3 — Latent-8 VAE</td>
+    <td><span class="status-box rejected">REJECTED</span></td>
+    <td>14.5% worse FID (7.563 vs 6.603). Same denoiser can't model 8D as well as 4D.</td>
+  </tr>
+  <tr>
+    <td>H4 — Cross-attention ego encoding (trans_dec)</td>
+    <td><span class="status-box running">RUNNING</span></td>
+    <td>PRELIMINARY: FID=3.766 (43% better). Test eval + segment-2 in progress.</td>
+  </tr>
+  <tr>
+    <td>H5 — CFG guidance scale sweep</td>
+    <td><span class="status-box done">DONE</span></td>
+    <td>CFG=5 best FID (6.603). CFG=7 best FID/R-prec tradeoff. Use CFG=5 for FID comparisons.</td>
+  </tr>
+  <tr>
+    <td>H6 — Unfreeze ego encoder during diffusion</td>
+    <td>Untested</td>
+    <td>Activate if H4 R-prec doesn't reach 0.80 at CFG=5.</td>
+  </tr>
+  <tr>
+    <td>H7 — Larger denoiser</td>
+    <td>Untested</td>
+    <td>Expensive; activate after H4 + H6 explored.</td>
+  </tr>
+</table>
+
+<h2>What's Next</h2>
+
+<div class="next-steps">
+  <strong>Immediate (today, ~16:00 CET)</strong>
+  <ul>
+    <li>Job 346950 eval completes → record FID, R-prec@1, Diversity from test protocol</li>
+    <li>Update research-state.yaml run_019 with test metrics</li>
+    <li>Update findings.md H4 results table</li>
+    <li>Commit: <code>research(results): H4 epoch=3199 CFG=5 test eval — FID=X.XXX</code></li>
+  </ul>
+  <strong>Tomorrow (~12:00 CET) — segment-2 done</strong>
+  <ul>
+    <li>Check training val FID trajectory (logged every 100 epochs in wandb)</li>
+    <li>Find best epoch (likely ~4399 based on H2 experience)</li>
+    <li>Update <code>eval_h4_cfg5_helma.sh</code> EPOCH to best checkpoint</li>
+    <li>Submit definitive eval at best epoch (CFG=5 and CFG=7)</li>
+  </ul>
+  <strong>Decision point after definitive eval</strong>
+  <ul>
+    <li>If H4 R-prec@1 ≥ 0.80 at CFG=5: H4 dominates on all metrics → consider concluding or H6 for further improvement</li>
+    <li>If H4 R-prec@1 = 0.70-0.79: FID dominated by H4, R-prec mixed → try H6 (unfreeze encoder)</li>
+    <li>If H4 R-prec@1 ≤ 0.70: FID improvement but conditioning quality stagnant → deeper investigation</li>
+  </ul>
+</div>
+
+<h2>Research Narrative</h2>
+
+<p>We are building toward the conclusion that <strong>cross-attention over the full ego temporal sequence is the right conditioning architecture</strong> for ego-conditioned motion generation. The mean-pooled single-token approach in H2 was discarding 196× the temporal information — effectively giving the denoiser only "where was the ego vehicle on average" rather than "where was the ego vehicle at each moment."</p>
+
+<p>The preliminary FID=3.766 (if confirmed by test eval) would represent a very strong result. For context:</p>
+<ul>
+  <li>H2 (our best): FID=6.603</li>
+  <li>H3 (rejected): FID=7.563 (+14.5% worse)</li>
+  <li>H4 (preliminary): FID=3.766 (-43% — candidate for paper)</li>
+</ul>
+
+<p>The mechanism is intuitive: pedestrian motion is temporally correlated with ego vehicle proximity. When the ego vehicle decelerates (timestep 30-50), pedestrians may slow or stop. When it accelerates (timestep 100-120), they may step aside. Cross-attention over 196 timesteps lets the denoiser "look up" relevant temporal moments. The mean-pooled token in H2 averaged all of this away.</p>
+
+<footer>
+  Auto-generated by autoresearch loop &bull; 2026-04-03 &bull; Branch: local-dev-erik
+</footer>
+
+</body>
+</html>

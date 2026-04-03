@@ -288,13 +288,31 @@ experiments:
   - id: run_019
     name: h4_eval_epoch3199_cfg5
     hypothesis: H4-ego-encoder-architecture
-    status: running
+    status: finished
     slurm_job: 346950
     submitted: "2026-04-03"
+    elapsed: "7m47s"
+    metrics:
+      FID: 3.9683
+      FID_ci: 0.2094
+      Diversity: 5.8905
+      Diversity_ci: 0.0569
+      gt_Diversity: 5.4958
+      R_precision_top_1: 0.5097
+      R_precision_top_1_ci: 0.0093
+      R_precision_top_2: 0.6722
+      R_precision_top_3: 0.7479
+      MultiModality: 4.1172
+      MultiModality_ci: 0.4318
     notes: |
-      Eval H4 at epoch=3199 (best available after segment-1), CFG=5.
-      Expects: FID ~3-5 (based on training-time val=3.766 at epoch 3279).
-      Test metrics may differ from training-time val metrics.
+      H4 CONFIRMED: FID=3.968 ± 0.209 — 40% better than H2 best (6.603 ± 0.067).
+      Non-overlapping CIs: this is a significant improvement.
+      R-prec@1=0.510 vs H2=0.671 — 24% LOWER. But epoch=3199 is early (64% of target).
+      Training-time val at epoch 3279 showed R_TOP_1=0.529 — slightly better.
+      MultiModality=4.117 vs H2=3.503 (+17%) — H4 generates more diverse motions per condition.
+      Diversity=5.891 vs H2=5.779 — slightly over-diverse vs GT=5.496.
+      Key pattern: H4 has FID/R-prec tradeoff — lower FID but lower conditioning alignment.
+      Segment-2 (job 346951) in progress — R-prec expected to improve with more training.
 
   - id: run_020
     name: h4_diffusion_training_segment2
@@ -408,14 +426,14 @@ hypotheses:
     priority: low  # expensive; activate only after H4 + H6 explored
 
 next_actions:
-  - "Wait for run_019 (job 346950) eval at epoch=3199 — EXCITING: training val FID=3.766"
-  - "Wait for run_020 (job 346951) segment-2 to complete (~24h from 2026-04-03)"
-  - "After eval 346950: record test FID and R-prec; update run_019 in research-state.yaml"
-  - "After segment-2 at epoch~4399: submit eval_h4_cfg5_helma.sh and eval_h4_cfg7_helma.sh"
-  - "Update eval_h4_cfg5_helma.sh EPOCH to best checkpoint (based on val FID trajectory)"
-  - "PRELIMINARY: H4 training val FID=3.766 at epoch 3279 is 43% better than H2 (6.603)"
+  - "H4 test eval DONE (run_019): FID=3.968 ±0.209 — 40% better than H2. R-prec@1=0.510 (lower, but early training)."
+  - "Wait for run_020 (job 346951) segment-2 to complete (~24h from 2026-04-03 12:00 CET, i.e. 2026-04-04 ~12:00)"
+  - "Monitor training val FID from wandb during segment-2 to identify best epoch"
+  - "After segment-2: update eval_h4_cfg5_helma.sh EPOCH to best checkpoint, submit definitive eval"
+  - "Consider H6 (unfreeze ego encoder) if R-prec@1 at best epoch remains < 0.67 (below H2)"
+  - "PATTERN: H4 shows FID/R-prec tradeoff — higher diversity (MM=4.117) but lower conditioning alignment at epoch=3199"
 
-last_updated: "2026-04-03"
+last_updated: "2026-04-03 12:05 CET"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
@@ -431,19 +449,23 @@ current_understanding: |
   unchanged (0.676 vs 0.671). Key insight: R-prec bottleneck is ego encoder architecture, NOT
   latent dimension. EgoEncoderPooled compresses 196 timesteps → 1 token, discarding temporal structure.
 
-  H4 PRELIMINARY RESULT (training-time val, epoch 3279):
-    FID = 3.766 — 43% better than H2 best (6.603). REMARKABLE.
-    R_TOP_1 = 0.529, R_TOP_2 = 0.701, R_TOP_3 = 0.776
-    Diversity = 6.038 (vs GT 5.390 — slightly over-diverse)
-    Segment-1 ended at epoch ~3279 (timeout), last checkpoint epoch=3199.
-    Test eval at epoch=3199 running (job 346950). Segment-2 running (job 346951).
+  H4 CONFIRMED RESULT (test eval, epoch 3199, CFG=5, job 346950):
+    FID = 3.968 ± 0.209 — 40% better than H2 best (6.603 ± 0.067). NON-OVERLAPPING CIs.
+    R-prec@1 = 0.510 ± 0.009 — 24% LOWER than H2 (0.671). H4 is still mid-training.
+    R-prec@2 = 0.672, R-prec@3 = 0.748
+    MultiModality = 4.117 ± 0.432 — 17% HIGHER than H2 (3.503). More diverse per condition.
+    Diversity = 5.891 ± 0.057 (vs GT 5.496 — slightly over-diverse)
+    Epoch=3199 is only 64% of H2's best epoch (4399). R-prec expected to improve.
+    Segment-2 training (job 346951) continues to epoch=5000.
 
-  NOTE: Training-time val FID may differ from test FID, but the magnitude of
-  improvement (FID 6.603→3.766) strongly suggests H4 is a major advancement.
-  The R_TOP_1=0.529 during training may be lower than final test R-prec@1 due to
-  different metric computation protocols between training and test.
+  H4 FID/R-PREC TRADEOFF PATTERN:
+    H4 generates more diverse samples per condition (MM=4.117 > 3.503), which is
+    reflected in lower FID (more varied distribution) but also lower R-prec (generated
+    motions are more spread out, harder to retrieve by ego condition).
+    This is an architectural-level version of the CFG tradeoff: H4 is like a lower-CFG model.
 
-  Key remaining question:
-  1. Will the test eval confirm FID~3.7? If yes, H4 dominates H2 on FID.
-  2. Will R-prec improve significantly with more training (segment-2)?
-  3. At what epoch does H4 FID peak? (based on H2 experience: ~4399)
+  Key remaining questions:
+  1. Will R-prec@1 recover to ≥ 0.671 (H2) at best epoch (likely ~4399)?
+  2. Will FID remain below 4.0 at the best epoch, or will it regress like H2 did?
+  3. Is there a CFG setting for H4 that achieves FID ~4 AND R-prec ≥ 0.70?
+     (H4 CFG=5 currently gives FID=3.968, R-prec=0.510; CFG=7+ might improve R-prec)

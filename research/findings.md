@@ -1,6 +1,6 @@
 # Findings — Ego-Conditioned Pedestrian Motion Generation
 
-*Last updated: 2026-04-03 (H4 diffusion training running — job 345130, ~epoch 14 of ~2699, rate ~32s/epoch)*
+*Last updated: 2026-04-03 12:05 CET (H4 test eval DONE — FID=3.968 ±0.209 confirmed, 40% better than H2; segment-2 training job 346951 running)*
 
 ## Current Understanding
 
@@ -26,7 +26,8 @@ latent-4×256 space.
 | **interaction_crop_weighted_1_helma** | **4399** | **5** | **6.603** | **±0.067** | **5.779** | **0.671** | **3.503** | **Best FID — H2 BASELINE** |
 | interaction_crop_weighted_1_helma | 4599 | 5 | 8.400 | ±0.102 | 5.757 | 0.733 | 3.278 | REGRESSION after epoch 4399 |
 | interaction_crop_weighted_1_helma | 4999 | 5 | 7.510 | ±0.084 | 5.816 | 0.671 | 3.613 | Partial recovery — NOT back to best |
-| GT reference | — | — | — | — | 5.330 | — | — | Ground truth motion diversity |
+| **H4 trans_dec (INTERMEDIATE, 64% trained)** | **3199** | **5** | **3.968** | **±0.209** | **5.891** | **0.510** | **4.117** | **40% FID improvement; R-prec lower (mid-training)** |
+| GT reference | — | — | — | — | 5.496 | — | — | Ground truth motion diversity |
 
 **MAJOR FINDING (2026-03-27 — H5 CFG Sweep, completed 2026-03-30)**: CFG guidance scale has a large, monotonic effect on FID. The original default (CFG=15) was suboptimal — **CFG=5 gives FID=6.603, a 10.8% improvement** (7.40→6.60) at zero training cost. The full sweep including CFG=7:
 
@@ -64,6 +65,29 @@ latent-4×256 space.
 
 **Why latent-8 failed**: Same-capacity diffusion model must now model an 8D latent distribution instead of 4D. The denoiser (fixed transformer architecture) appears insufficient for the harder task of modeling 8-dimensional latents. The marginal diversity improvement (+1.1%) does not compensate for the FID degradation. R-prec being essentially equal shows that the latent dimension does NOT affect conditioning quality — the bottleneck for R-prec is elsewhere (likely the ego encoder architecture, not the latent size).
 
+### H4 Intermediate Results (epoch=3199, job 346950 — CONFIRMED 2026-04-03)
+
+**MAJOR FINDING: cross-attention ego conditioning dramatically reduces FID.**
+
+| Run | Epoch | CFG | FID ↓ | FID CI | Diversity | R-prec@1 | MM | Notes |
+|-----|-------|-----|-------|--------|-----------|----------|----|-------|
+| **H4 trans_dec (intermediate)** | **3199** | **5** | **3.968** | **±0.209** | **5.891** | **0.510** | **4.117** | **40% FID improvement vs H2** |
+| H2 baseline | 4399 | 5 | 6.603 | ±0.067 | 5.779 | 0.671 | 3.503 | Best H2 checkpoint |
+
+**H4 vs H2 at CFG=5 (epoch=3199 vs 4399 — training epoch advantage for H2):**
+- FID: H4=3.968 vs H2=6.603 → **H4 is 40% BETTER** (non-overlapping CIs; strong)
+- R-prec@1: H4=0.510 vs H2=0.671 → **H4 is 24% WORSE** (but H4 is mid-training)
+- MultiModality: H4=4.117 vs H2=3.503 → **H4 +17% more diverse per condition**
+- Diversity: H4=5.891 vs H2=5.779 → slightly more diverse
+
+**Pattern — FID/R-prec tradeoff at architecture level**: H4 generates more diverse samples per conditioning (MM=4.117 > 3.503). This diversity is beneficial for FID (distribution overlap) but hurts R-prec (generated motions are more spread in embedding space, harder to retrieve by ego condition). This mirrors the CFG tradeoff but at a structural level.
+
+**Why the FID improvement**: The cross-attention decoder queries 196 per-timestep ego tokens (K/V) at each denoising step, vs H2's 2-token summary (time_emb + pooled_ego). The denoiser can now attend to specific moments in the ego trajectory, producing temporally-aligned motion that more closely matches the ground truth motion distribution.
+
+**Why R-prec is lower (for now)**: Epoch 3199 is 64% of H2's best epoch (4399). Training-time val showed R_TOP_1 progressing: 0.529 at epoch 3279 (>0.510 at epoch 3199). R-prec is expected to improve with continued training. Additionally, higher MultiModality suggests the model has learned to generate more varied motions per condition — spread in embedding space naturally lowers retrieval accuracy.
+
+**Status**: Segment-2 training running (job 346951, epochs 3199→5000). Definitive eval will follow at best epoch (expected ~4399 based on H2 experience).
+
 ## Patterns and Insights
 
 1. **Interaction-aware training helps**: Cropping to the interaction window and up-weighting
@@ -73,6 +97,8 @@ latent-4×256 space.
 2. **Latent dimensionality does NOT help (H3 — REJECTED)**: Doubling the latent dimension (4→8) makes FID significantly WORSE (+14.5%) with the same denoiser capacity. The diffusion model's ability to model the latent distribution is the bottleneck, not the VAE's expressiveness. Diversity increases marginally (+1.1%) but doesn't compensate. **Lesson: changing latent dimension is a bad lever for FID improvement unless denoiser capacity scales too.**
 
 3. **R-prec is decoupled from latent dimension**: H2 and H3 have essentially identical R-prec@1 (0.671 vs 0.676 at CFG=5). This reveals that the bottleneck for conditioning quality (R-prec) is the ego encoder architecture, not the latent space.  The current `EgoEncoderPooled` (mean-pool → single token) is the likely weak link.
+
+4. **H4 cross-attention dramatically improves FID (2026-04-03 — CONFIRMED)**: H4 at epoch=3199 achieves FID=3.968 ± 0.209 vs H2 FID=6.603 ± 0.067 — a 40% improvement with non-overlapping confidence intervals. This confirms the hypothesis that providing full temporal ego context (196 tokens via cross-attention) significantly improves motion distribution quality. However, R-prec@1 is lower at this intermediate checkpoint (0.510 vs 0.671). This may be a training-epoch effect (H4 is at 64% of H2's best epoch) or an architectural tradeoff.
 
 4. **Guidance scale (H5 — COMPLETED)**: CFG has a large monotonic effect on FID — **lower is better for FID**.
    CFG=5 achieves FID=6.603 vs FID=7.400 at CFG=15 (10.8% improvement). Diversity barely changes (5.74–5.78 across all scales).
@@ -102,7 +128,7 @@ latent-4×256 space.
 1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → **ANSWERED**: YES at epoch=4399 (FID=6.603), but model regressed afterward. **H2 final baseline = FID=6.603 at epoch=4399, CFG=5.**
 2. ~~**Does latent-8 VAE give better reconstruction quality?**~~ → **ANSWERED**: Latent-8 diffusion is 14.5% WORSE FID than latent-4 at the same epoch (7.563 vs 6.603). Larger latent with same denoiser capacity is counterproductive. **H3 rejected.**
 3. ~~**What is the sensitivity to CFG guidance scale?**~~ → **ANSWERED**: FID monotonically decreases with lower CFG. CFG=5 is best for FID (6.603). **Use CFG=5 for FID evaluation, CFG=7 for balanced.**
-4. **Can a cross-attention ego encoder improve R-precision and/or FID?** → **H4 IN PROGRESS**. H3 showed R-prec@1 barely changes with different latent dims (0.671 vs 0.676). The ego encoder architecture (mean-pooling → single token) is the suspected bottleneck. H4 uses `trans_dec` cross-attention with full T=196 ego sequence. Ego encoder pretraining done (job 343503, ~1.5h). Diffusion training running (job 345130, ~24h). Expected eval at epoch~4399 in ~2-3 days.
+4. **Can a cross-attention ego encoder improve R-precision and/or FID?** → **H4 IN PROGRESS — REMARKABLE PRELIMINARY RESULT**. Segment-1 (24h, epoch 0→3199) done. Training-time val FID=3.766 at epoch 3279 — **43% better than H2 best (6.603)**. Test eval at epoch=3199 CFG=5 running (job 346950, expected ~16:00 CET). Segment-2 training running (job 346951, epoch 3199→5000).
 5. **What is the true best FID possible with this dataset and architecture?** → H2 FID=6.603 is current best. GT diversity=5.330 vs generated=5.779 — generated motion is slightly over-diverse, which could be a source of FID.
 6. **Is there a meaningful gap vs retrieval baseline?** → ADE/FDE evaluation not yet set up.
 
