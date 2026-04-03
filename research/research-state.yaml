@@ -325,6 +325,47 @@ experiments:
       Will save checkpoints at 3299, 3399, ..., 4999.
       After completion: run definitive eval at best epoch (likely ~4399 based on H2 experience).
 
+  - id: run_021
+    name: h4_eval_epoch3199_cfg10
+    hypothesis: H4-ego-encoder-architecture
+    status: finished
+    slurm_job: 346961
+    submitted: "2026-04-03"
+    elapsed: "~8min"
+    metrics:
+      FID: 3.6438
+      FID_ci: 0.1452
+      Diversity: 5.9390
+      R_precision_top_1: 0.5403
+      R_precision_top_1_ci: 0.0037
+      MultiModality: 3.9363
+      MultiModality_ci: 0.4293
+    notes: |
+      H4 CFG=10: FID=3.644 ±0.145. Essentially same as CFG=5 (3.968) — H4 FID is flat w.r.t. CFG.
+      R-prec@1=0.540 (+6% vs CFG=5 0.510) but still far below H2 (0.767 at CFG=10).
+      Key finding: H4 FID doesn't degrade with higher CFG unlike H2 (3.644 vs H2 6.963 at CFG=10).
+
+  - id: run_022
+    name: h4_eval_epoch3199_cfg15
+    hypothesis: H4-ego-encoder-architecture
+    status: finished
+    slurm_job: 346962
+    submitted: "2026-04-03"
+    elapsed: "~8min"
+    metrics:
+      FID: 3.6170
+      FID_ci: 0.1311
+      Diversity: 6.0436
+      R_precision_top_1: 0.5150
+      R_precision_top_1_ci: 0.0033
+      MultiModality: 3.9383
+      MultiModality_ci: 0.4308
+    notes: |
+      H4 CFG=15: FID=3.617 ±0.131. H4 FID at CFG=15 is 51% better than H2 CFG=15 (7.400)!
+      R-prec@1=0.515 — no improvement over CFG=5. CFG barely affects R-prec at epoch=3199.
+      MAJOR INSIGHT: H4 FID is insensitive to CFG (3.617–3.968 across CFG=5–15).
+      This means cross-attention doesn't suffer from "over-conditioning mode collapse" seen in H2.
+
   - id: run_012
     name: eval_cfg7_h2_epoch4399
     hypothesis: H5-guidance-scale
@@ -426,12 +467,12 @@ hypotheses:
     priority: low  # expensive; activate only after H4 + H6 explored
 
 next_actions:
-  - "H4 test eval DONE (run_019): FID=3.968 ±0.209 — 40% better than H2. R-prec@1=0.510 (lower, but early training)."
-  - "Wait for run_020 (job 346951) segment-2 to complete (~24h from 2026-04-03 12:00 CET, i.e. 2026-04-04 ~12:00)"
-  - "Monitor training val FID from wandb during segment-2 to identify best epoch"
-  - "After segment-2: update eval_h4_cfg5_helma.sh EPOCH to best checkpoint, submit definitive eval"
-  - "Consider H6 (unfreeze ego encoder) if R-prec@1 at best epoch remains < 0.67 (below H2)"
-  - "PATTERN: H4 shows FID/R-prec tradeoff — higher diversity (MM=4.117) but lower conditioning alignment at epoch=3199"
+  - "H4 intermediate CFG sweep DONE: FID=3.6-4.0 flat across CFG=5,10,15 at epoch=3199."
+  - "Wait for run_020 (job 346951) segment-2 to complete (~2026-04-04 ~12:00 CET)"
+  - "Monitor training val FID/R-prec from wandb during segment-2 to identify best epoch"
+  - "After segment-2: update eval_h4_cfg5_helma.sh EPOCH to best checkpoint, submit definitive eval (CFG=5, CFG=10, CFG=15)"
+  - "KEY QUESTION: will R-prec@1 climb to ≥ 0.671 (H2 level) with more training?"
+  - "If R-prec < 0.671 at best epoch: try H6 (unfreeze ego encoder during diffusion)"
 
 last_updated: "2026-04-03 12:05 CET"
 
@@ -458,14 +499,20 @@ current_understanding: |
     Epoch=3199 is only 64% of H2's best epoch (4399). R-prec expected to improve.
     Segment-2 training (job 346951) continues to epoch=5000.
 
-  H4 FID/R-PREC TRADEOFF PATTERN:
-    H4 generates more diverse samples per condition (MM=4.117 > 3.503), which is
-    reflected in lower FID (more varied distribution) but also lower R-prec (generated
-    motions are more spread out, harder to retrieve by ego condition).
-    This is an architectural-level version of the CFG tradeoff: H4 is like a lower-CFG model.
+  H4 CFG SWEEP RESULTS (epoch=3199, jobs 346950/346961/346962):
+    CFG=5:  FID=3.968 ±0.209, R-prec@1=0.510, MM=4.117  [H2 CFG=5:  FID=6.603, R-prec=0.671]
+    CFG=10: FID=3.644 ±0.145, R-prec@1=0.540, MM=3.936  [H2 CFG=10: FID=6.963, R-prec=0.767]
+    CFG=15: FID=3.617 ±0.131, R-prec@1=0.515, MM=3.938  [H2 CFG=15: FID=7.400, R-prec=0.797]
+
+  MAJOR NEW INSIGHT: H4 FID is FLAT across CFG (3.617–3.968), while H2 FID increases
+  steeply (6.603→7.400). Cross-attention does NOT suffer from over-conditioning mode
+  collapse. This is a fundamentally different architecture behavior.
+
+  H4 R-prec is flat at ~0.51–0.54 across CFG levels at epoch=3199. This is a TRAINING
+  EPOCH effect, not a CFG effect. The model hasn't learned strong conditioning alignment yet.
+  Expected to improve significantly with segment-2 training (epoch 3199→5000).
 
   Key remaining questions:
   1. Will R-prec@1 recover to ≥ 0.671 (H2) at best epoch (likely ~4399)?
   2. Will FID remain below 4.0 at the best epoch, or will it regress like H2 did?
-  3. Is there a CFG setting for H4 that achieves FID ~4 AND R-prec ≥ 0.70?
-     (H4 CFG=5 currently gives FID=3.968, R-prec=0.510; CFG=7+ might improve R-prec)
+  3. Does H4 R-prec eventually respond to CFG with more training?
