@@ -1,6 +1,6 @@
 # Findings — Ego-Conditioned Pedestrian Motion Generation
 
-*Last updated: 2026-04-03 12:30 CET (H4 CFG sweep DONE at epoch=3199 — FID=3.62–3.97 flat across CFG=5/10/15, all 40–51% better than H2; segment-2 job 346951 running)*
+*Last updated: 2026-04-07 (H4 segment-2 complete — best epoch=3399, R@1 ceiling=0.535 with FREEZE_EGO; H6 unfreeze-ego ready to submit; definitive evals epoch=3399 running jobs 351794/795/796)*
 
 ## Current Understanding
 
@@ -96,7 +96,27 @@ latent-4×256 space.
 
 **Why R-prec is lower (for now)**: Epoch 3199 is 64% of H2's best epoch (4399). Training-time val showed R_TOP_1 progressing: 0.529 at epoch 3279 (>0.510 at epoch 3199). R-prec is expected to improve with continued training. Additionally, higher MultiModality suggests the model has learned to generate more varied motions per condition — spread in embedding space naturally lowers retrieval accuracy.
 
-**Status**: Segment-2 training running (job 346951, epochs 3199→5000). Definitive eval will follow at best epoch (expected ~4399 based on H2 experience).
+**H4 Training Complete — Segment-2 Finished 2026-04-04 (CRITICAL NEW FINDING)**:
+
+H4 segment-2 completed in ~13h (hit END_EPOCH=5000). Extracted full training trajectory:
+
+| Epoch | Training-time Val FID ↓ | Training-time R@1 |
+|-------|------------------------|-------------------|
+| 3199 | 3.766 | 0.529 |
+| **3399** | **3.770** | **0.535** ← BEST |
+| 3499 | 3.805 | 0.531 |
+| 3799 | 3.955 | 0.522 |
+| 3999 | 4.087 | 0.515 |
+| 4399 | 4.241 | 0.516 |
+| 4999 | 4.508 | 0.511 |
+
+**Epoch=3399 is the best checkpoint on BOTH metrics.** After 3399, FID and R@1 degrade monotonically. This is opposite to H2 (which had R-prec improve through epoch 4399). The pattern suggests the model finds its optimal balance early then loses diversity calibration.
+
+**R@1 CEILING = 0.535. H4 R@1 NEVER approaches H2's 0.671.** This is not a training epoch effect — 1800 more epochs of training failed to push R@1 above 0.535. The frozen ego encoder is the bottleneck.
+
+**Diagnosis**: FREEZE_EGO=True means the ego encoder remains optimized for its pretraining objective (contrastive alignment of mean-pooled ego → VAE latent). The cross-attention denoiser needs per-timestep discriminative features — something the frozen encoder was never trained to provide. The encoder cannot adapt; R@1 stagnates.
+
+**Next step**: H6 (FREEZE_EGO=False) — ego encoder co-adapts with denoiser during diffusion training. Config and SLURM script created. Definitive evals at epoch=3399 submitted (jobs 351794/795/796).
 
 ## Patterns and Insights
 
@@ -108,7 +128,7 @@ latent-4×256 space.
 
 3. **R-prec is decoupled from latent dimension**: H2 and H3 have essentially identical R-prec@1 (0.671 vs 0.676 at CFG=5). This reveals that the bottleneck for conditioning quality (R-prec) is the ego encoder architecture, not the latent space.  The current `EgoEncoderPooled` (mean-pool → single token) is the likely weak link.
 
-4. **H4 cross-attention dramatically improves FID (2026-04-03 — CONFIRMED)**: H4 at epoch=3199 achieves FID=3.968–3.617 ± CI across CFG=5–15 vs H2 FID=6.603–7.400 — a 40–51% improvement depending on CFG. This confirms the hypothesis that full temporal ego context (196 K/V tokens via cross-attention) significantly improves motion distribution quality. R-prec@1 is lower at this intermediate checkpoint (0.510–0.540 vs H2 0.671–0.797) — training epoch effect expected to resolve with segment-2.
+4. **H4 cross-attention dramatically improves FID — confirmed 40–51% better than H2**: H4 best epoch (3399, training-time val FID=3.770) is ~43% better than H2 best (6.603). But R@1 is fundamentally capped at 0.535 with FREEZE_EGO — frozen encoder cannot adapt for per-timestep cross-attention. Test evals at epoch=3399 are running (jobs 351794/795/796). H6 (unfreeze) is the next step.
 
 5. **H4 FID is insensitive to CFG (2026-04-03 — NEW FINDING)**: Unlike H2 where FID increases steeply with CFG (6.603→7.400 from CFG=5 to 15), H4 FID is essentially flat (3.968→3.617 from CFG=5 to 15). This means cross-attention conditioning does NOT cause the "over-conditioning mode collapse" observed in H2. The mechanism: in H2, higher CFG forces the model to stay close to the pooled ego token — over-constraining the generation. In H4, the ego information is already richly distributed across 196 cross-attention tokens; higher CFG reinforces a naturally richer signal, not a coarse average.
 
@@ -140,7 +160,7 @@ latent-4×256 space.
 1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → **ANSWERED**: YES at epoch=4399 (FID=6.603), but model regressed afterward. **H2 final baseline = FID=6.603 at epoch=4399, CFG=5.**
 2. ~~**Does latent-8 VAE give better reconstruction quality?**~~ → **ANSWERED**: Latent-8 diffusion is 14.5% WORSE FID than latent-4 at the same epoch (7.563 vs 6.603). Larger latent with same denoiser capacity is counterproductive. **H3 rejected.**
 3. ~~**What is the sensitivity to CFG guidance scale?**~~ → **ANSWERED**: FID monotonically decreases with lower CFG. CFG=5 is best for FID (6.603). **Use CFG=5 for FID evaluation, CFG=7 for balanced.**
-4. **Can a cross-attention ego encoder improve R-precision and/or FID?** → **H4 IN PROGRESS — REMARKABLE PRELIMINARY RESULT**. Segment-1 (24h, epoch 0→3199) done. Training-time val FID=3.766 at epoch 3279 — **43% better than H2 best (6.603)**. Test eval at epoch=3199 CFG=5 running (job 346950, expected ~16:00 CET). Segment-2 training running (job 346951, epoch 3199→5000).
+4. **Can a cross-attention ego encoder improve R-precision and/or FID?** → **PARTIALLY ANSWERED**. H4 best FID (epoch=3399): training-time val=3.770 — **43% better than H2 best (6.603)**. BUT R@1 ceiling=0.535 with FREEZE_EGO=True — never reaches H2 0.671. Definitive test evals running (epoch=3399, jobs 351794/795/796). **H6 (unfreeze) will test if unfreezing resolves the R@1 ceiling.**
 5. **What is the true best FID possible with this dataset and architecture?** → H2 FID=6.603 is current best. GT diversity=5.330 vs generated=5.779 — generated motion is slightly over-diverse, which could be a source of FID.
 6. **Is there a meaningful gap vs retrieval baseline?** → ADE/FDE evaluation not yet set up.
 

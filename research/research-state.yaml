@@ -317,13 +317,33 @@ experiments:
   - id: run_020
     name: h4_diffusion_training_segment2
     hypothesis: H4-ego-encoder-architecture
-    status: running
+    status: finished
     slurm_job: 346951
     submitted: "2026-04-03"
+    completed: "2026-04-04"
+    elapsed: "~13h (hit END_EPOCH=5000 before 24h wall time)"
+    final_epoch: 4999
+    best_epoch: 3399
+    training_trajectory:
+      epoch_3199: {FID: 3.766, R_TOP_1: 0.529}
+      epoch_3399: {FID: 3.770, R_TOP_1: 0.535}  # BEST on both metrics
+      epoch_3499: {FID: 3.805, R_TOP_1: 0.531}
+      epoch_3599: {FID: 3.882, R_TOP_1: 0.530}
+      epoch_3799: {FID: 3.955, R_TOP_1: 0.522}
+      epoch_3999: {FID: 4.087, R_TOP_1: 0.515}
+      epoch_4199: {FID: 4.178, R_TOP_1: 0.514}
+      epoch_4399: {FID: 4.241, R_TOP_1: 0.516}
+      epoch_4599: {FID: 4.272, R_TOP_1: 0.512}
+      epoch_4799: {FID: 4.382, R_TOP_1: 0.510}
+      epoch_4999: {FID: 4.508, R_TOP_1: 0.511}
     notes: |
-      Resume H4 from epoch=3199 → END_EPOCH=5000. Another ~24h.
-      Will save checkpoints at 3299, 3399, ..., 4999.
-      After completion: run definitive eval at best epoch (likely ~4399 based on H2 experience).
+      DONE. H4 segment-2 completed in ~13h (hit END_EPOCH=5000 before wall time limit).
+      CRITICAL FINDING: Best checkpoint is epoch=3399 (FID=3.770, R@1=0.535).
+      After epoch=3399, BOTH FID and R@1 degrade MONOTONICALLY through epoch=4999.
+      R@1 ceiling: max is 0.535 (epoch=3399), never approaches H2 best (0.671).
+      This is strong evidence that the frozen ego encoder BOTTLENECKS R@1.
+      Definitive evals at epoch=3399 submitted: job 351794 (CFG=5), 351795 (CFG=10), 351796 (CFG=15).
+      H6 (unfreeze ego encoder) motivated: FREEZE_EGO:False config + training script created.
 
   - id: run_021
     name: h4_eval_epoch3199_cfg10
@@ -420,7 +440,7 @@ hypotheses:
   H4-ego-encoder-architecture:
     description: "Cross-attention ego conditioning (trans_dec arch, full T=196 ego sequence as K/V) instead of mean-pooled single token"
     prediction: "R-prec@1 improves significantly (>=0.80 at CFG=5); FID may improve too due to better temporal alignment. Mechanism: denoiser sees full ego temporal context per denoising step."
-    status: running
+    status: completed_awaiting_definitive_eval
     motivation: "H3 showed R-prec is decoupled from latent dim — the bottleneck is ego encoder quality, not latent capacity. EgoEncoderPooled compresses 196 timesteps to 1 token, losing temporal structure. trans_dec lets z query the full 196-step sequence."
     implementation:
       code_changes:
@@ -445,15 +465,17 @@ hypotheses:
 
   H6-unfreeze-ego-encoder:
     description: "Unfreeze ego encoder during diffusion training so encoder co-adapts with denoiser"
-    prediction: "Better R-precision and potentially FID, because encoder specializes for cross-attention use case rather than frozen contrastive-pretrained features"
-    status: untested
+    prediction: "R-prec@1 improves toward or beyond H2 (0.671); FID may remain low because architecture is same"
+    status: ready_to_run
     motivation: |
-      H4 freezes the ego encoder (contrastive-pretrained). The frozen encoder was trained to align
-      mean-pooled ego output with VAE latents — a coarser objective than what the denoiser needs
-      (attend to specific timesteps via cross-attention). Unfreezing lets the encoder's per-timestep
-      representations adapt to the denoiser's attention patterns. Risk: encoder drift from pretrained
-      alignment; mitigate with lower LR for encoder vs denoiser.
-    priority: medium  # activate if H4 R-prec doesn't reach 0.80
+      H4 R@1 ceiling: max is 0.535 at epoch=3399 (both metrics DEGRADE after this epoch).
+      H2 R@1=0.671. H4 FREEZE_EGO=True prevents encoder from adapting to cross-attention use case.
+      The pretrained ego encoder was trained for contrastive alignment (mean-pooled → VAE latent),
+      not for per-timestep cross-attention. Unfreezing allows it to specialize for this role.
+      Config: configs/config_ego_motion_new_vae_stoch_latent_4_h6_unfreeze_ego.yaml
+      Script: slurm/diffusion_training_h6_unfreeze_ego_helma.sh
+      Warm-start: loads pretrained H4 ego encoder, then unfreezes all params for joint training.
+    priority: high  # H4 R@1 ceiling confirmed — H6 is the next logical step
 
   H7-larger-denoiser:
     description: "Increase denoiser transformer capacity (more layers, or larger hidden dim) to handle 196 K/V tokens better"
@@ -467,14 +489,13 @@ hypotheses:
     priority: low  # expensive; activate only after H4 + H6 explored
 
 next_actions:
-  - "H4 intermediate CFG sweep DONE: FID=3.6-4.0 flat across CFG=5,10,15 at epoch=3199."
-  - "Wait for run_020 (job 346951) segment-2 to complete (~2026-04-04 ~12:00 CET)"
-  - "Monitor training val FID/R-prec from wandb during segment-2 to identify best epoch"
-  - "After segment-2: update eval_h4_cfg5_helma.sh EPOCH to best checkpoint, submit definitive eval (CFG=5, CFG=10, CFG=15)"
-  - "KEY QUESTION: will R-prec@1 climb to ≥ 0.671 (H2 level) with more training?"
-  - "If R-prec < 0.671 at best epoch: try H6 (unfreeze ego encoder during diffusion)"
+  - "Wait for H4 definitive evals at epoch=3399: jobs 351794 (CFG=5), 351795 (CFG=10), 351796 (CFG=15) — ~8min each"
+  - "Record definitive FID/R-prec numbers, update findings.md"
+  - "Submit H6 training: git push then ssh helma sbatch slurm/diffusion_training_h6_unfreeze_ego_helma.sh"
+  - "Monitor H6 training-time val metrics via wandb (project: diffusion_gen, run: ego_motion_diffusion_h6_unfreeze_ego)"
+  - "KEY QUESTION: does H6 R@1 approach/exceed H2=0.671? Can FID stay below H4=3.770?"
 
-last_updated: "2026-04-03 12:05 CET"
+last_updated: "2026-04-07 (session resumed — segment-2 completed 2026-04-04)"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
@@ -488,31 +509,26 @@ current_understanding: |
 
   H3 REJECTED: Latent-8 is 14.5% worse FID than latent-4 at epoch=4399. R-prec essentially
   unchanged (0.676 vs 0.671). Key insight: R-prec bottleneck is ego encoder architecture, NOT
-  latent dimension. EgoEncoderPooled compresses 196 timesteps → 1 token, discarding temporal structure.
+  latent dimension.
 
-  H4 CONFIRMED RESULT (test eval, epoch 3199, CFG=5, job 346950):
-    FID = 3.968 ± 0.209 — 40% better than H2 best (6.603 ± 0.067). NON-OVERLAPPING CIs.
-    R-prec@1 = 0.510 ± 0.009 — 24% LOWER than H2 (0.671). H4 is still mid-training.
-    R-prec@2 = 0.672, R-prec@3 = 0.748
-    MultiModality = 4.117 ± 0.432 — 17% HIGHER than H2 (3.503). More diverse per condition.
-    Diversity = 5.891 ± 0.057 (vs GT 5.496 — slightly over-diverse)
-    Epoch=3199 is only 64% of H2's best epoch (4399). R-prec expected to improve.
-    Segment-2 training (job 346951) continues to epoch=5000.
+  H4 TRAINING COMPLETE (segment-2 finished 2026-04-04):
+    BEST CHECKPOINT: epoch=3399 — FID=3.770 (training-time val), R@1=0.535 (training-time val)
+    MONOTONIC DEGRADATION after epoch=3399: both FID and R@1 worsen through epoch=4999
+    Training trajectory: FID 3.766(ep3199)→3.770(ep3399)→4.508(ep4999), R@1 0.529→0.535→0.511
+    R@1 CEILING: max R@1 = 0.535, never reaches H2=0.671 → FROZEN EGO ENCODER IS BOTTLENECK
+    Definitive test evals submitted (epoch=3399 CFG=5/10/15): jobs 351794/351795/351796
 
-  H4 CFG SWEEP RESULTS (epoch=3199, jobs 346950/346961/346962):
-    CFG=5:  FID=3.968 ±0.209, R-prec@1=0.510, MM=4.117  [H2 CFG=5:  FID=6.603, R-prec=0.671]
-    CFG=10: FID=3.644 ±0.145, R-prec@1=0.540, MM=3.936  [H2 CFG=10: FID=6.963, R-prec=0.767]
-    CFG=15: FID=3.617 ±0.131, R-prec@1=0.515, MM=3.938  [H2 CFG=15: FID=7.400, R-prec=0.797]
+  H4 INTERMEDIATE EVALS (epoch=3199, confirmed 2026-04-03):
+    CFG=5:  FID=3.968 ±0.209, R-prec@1=0.510, MM=4.117
+    CFG=10: FID=3.644 ±0.145, R-prec@1=0.540, MM=3.936
+    CFG=15: FID=3.617 ±0.131, R-prec@1=0.515, MM=3.938
+    H4 FID FLAT ACROSS CFG (unlike H2 where FID rises steeply 6.60→7.40)
 
-  MAJOR NEW INSIGHT: H4 FID is FLAT across CFG (3.617–3.968), while H2 FID increases
-  steeply (6.603→7.400). Cross-attention does NOT suffer from over-conditioning mode
-  collapse. This is a fundamentally different architecture behavior.
+  KEY INSIGHT — FROZEN EGO ENCODER BOTTLENECK:
+    H4 uses FREEZE_EGO=True. The ego encoder was pretrained for contrastive alignment
+    (mean-pooled output → VAE latent). Frozen, it cannot adapt its per-timestep representations
+    to the cross-attention use case the denoiser needs. This explains the R@1 ceiling.
+    H6 (FREEZE_EGO=False) is the next logical step. Config + script created.
 
-  H4 R-prec is flat at ~0.51–0.54 across CFG levels at epoch=3199. This is a TRAINING
-  EPOCH effect, not a CFG effect. The model hasn't learned strong conditioning alignment yet.
-  Expected to improve significantly with segment-2 training (epoch 3199→5000).
-
-  Key remaining questions:
-  1. Will R-prec@1 recover to ≥ 0.671 (H2) at best epoch (likely ~4399)?
-  2. Will FID remain below 4.0 at the best epoch, or will it regress like H2 did?
-  3. Does H4 R-prec eventually respond to CFG with more training?
+  H6 READY TO SUBMIT: configs/config_ego_motion_new_vae_stoch_latent_4_h6_unfreeze_ego.yaml
+  H6 prediction: R@1 approaches/exceeds H2=0.671; FID may stay near H4=3.770 level.
