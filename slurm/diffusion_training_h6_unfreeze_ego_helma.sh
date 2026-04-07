@@ -1,7 +1,7 @@
 #!/bin/bash -l
-#SBATCH --job-name=eval_h4_cfg5
-#SBATCH --output=/hnvme/workspace/v103fe12-ped_gen/outputs/eval_h4_cfg5_%j.txt
-#SBATCH --time=4:00:00
+#SBATCH --job-name=diffusion_h6_unfreeze_ego
+#SBATCH --output=/hnvme/workspace/v103fe12-ped_gen/outputs/diffusion_h6_unfreeze_ego_%j.txt
+#SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:h100:1
 #SBATCH --partition=h100
@@ -75,21 +75,16 @@ mkdir -p $TMPDIR/data
 extract_until_success "$STORAGE_DIR/data" "$TMPDIR/data"
 
 cd /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion
+wandb sync --clean-force
 
-# Evaluate H4 (trans_dec) at CFG=5 — best FID operating point
-# EPOCH=3399: best training-time val checkpoint (FID=3.770, R@1=0.535, both peak here)
-EPOCH=3399
-CHECKPOINT=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_h4_trans_dec/checkpoints/epoch=${EPOCH}.ckpt
-
-python -m test \
---cfg configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml \
+# H6 diffusion training: same trans_dec arch as H4 but with FREEZE_EGO=False
+# Ego encoder co-adapts with diffusion denoiser — tests whether frozen encoder bottlenecks R@1
+# Hypothesis: H4 R@1 ceiling (0.535 vs H2's 0.671) caused by frozen ego encoder misalignment
+# Fresh training from scratch (warm-start ego encoder from H4 pretrained weights, then unfreeze)
+python -m train \
+--cfg configs/config_ego_motion_new_vae_stoch_latent_4_h6_unfreeze_ego.yaml \
 --nodebug \
 --overrides \
     "DATASET.EGOMOTION.ROOT=[$TMPDIR/data/diffusion/ava, $TMPDIR/data/diffusion/nuscenes, $TMPDIR/data/diffusion/waymo]" \
     "DATASET.EGOMOTION.MEAN_STD_PATH=$TMPDIR/data/vae/mean_std_txt/ava_nuscenes_waymo" \
-    "DATASET.EGOMOTION.EGO_MEAN_STD_PATH=$TMPDIR/data/vae/mean_std_txt/ava_nuscenes_waymo" \
-    "TEST.CHECKPOINTS=$CHECKPOINT" \
-    "METRIC.TYPE=['EgoMotionMetrics']" \
-    "TEST.REPLICATION_TIMES=3" \
-    "TEST.SPLIT=val" \
-    "model.guidance_scale=5"
+    "DATASET.EGOMOTION.EGO_MEAN_STD_PATH=$TMPDIR/data/vae/mean_std_txt/ava_nuscenes_waymo"

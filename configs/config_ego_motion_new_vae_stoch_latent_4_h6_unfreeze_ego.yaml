@@ -1,0 +1,224 @@
+####################################
+# Ego-Conditioned Motion Generation
+# Diffusion training config — H6: Cross-Attention Ego Conditioning (trans_dec) + Unfrozen Ego Encoder
+# H4 architecture with FREEZE_EGO: False — ego encoder co-adapts with diffusion denoiser
+# Hypothesis: frozen ego encoder (H4) bottlenecks R@1; unfreezing allows co-adaptation
+####################################
+
+NAME: ego_motion_diffusion_h6_unfreeze_ego
+SEED_VALUE: 1234
+
+DEBUG: False
+OVERFIT: False
+ACCELERATOR: 'gpu'
+DEVICE: [0]
+
+#####################################
+# Training Settings
+#####################################
+TRAIN:
+  # Train diffusion (VAE should be pre-trained)
+  STAGE: diffusion
+  DATASETS: ['egomotion']
+  NUM_WORKERS: 8
+  BATCH_SIZE: 128
+  END_EPOCH: 5000
+
+  RESUME: ''
+  # Latent-4 VAE — same as H2/H4 baseline
+  PRETRAINED_VAE: '/hnvme/workspace/v103fe12-ped_gen/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt'
+  # H4 ego encoder (full sequence, no pooling) — warm-start from pretrained, then unfreeze
+  PRETRAINED_EGO: '/hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt'
+  PRETRAINED: ''
+  FREEZE_EGO: False         # KEY DIFFERENCE vs H4 — ego encoder co-adapts with denoiser
+  DETERMINISTIC_Z: False
+
+  OPTIM:
+    TYPE: AdamW
+    LR: 1e-4
+
+  ABLATION:
+    SKIP_CONNECT: True
+    PE_TYPE: mld
+    DIFF_PE_TYPE: mld
+    PREDICT_EPSILON: True
+    VAE_TYPE: mld
+    MLP_DIST: False
+    IS_DIST: False
+
+#####################################
+# Validation Settings
+#####################################
+EVAL:
+  DATASETS: ['egomotion']
+  BATCH_SIZE: 32
+  SPLIT: test
+
+#####################################
+# Testing Settings
+#####################################
+TEST:
+  CHECKPOINTS: ''
+  DATASETS: ['egomotion']
+  SPLIT: val
+  BATCH_SIZE: 1
+  MEAN: False
+  NUM_SAMPLES: 1
+  FACT: 1
+  COUNT_TIME: False
+  REPLICATION_TIMES: 3
+  DIVERSITY_TIMES: 300
+  MM_NUM_SAMPLES: 100
+  MM_NUM_TIMES: 10
+
+#####################################
+# Dataset Settings
+#####################################
+DATASET:
+  JOINT_TYPE: 'humanml3d'
+  NFEATS: 263
+  NJOINTS: 22
+
+  HUMANML3D:
+    ROOT: 'datasets/humanml3d'
+    UNIT_LEN: 4
+
+  EGOMOTION:
+    ROOT:
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava'
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/nuscenes'
+      - '/home/erik/NAS/methods/diffusion_gen/data/diffusion/waymo'
+
+    MAX_EGO_LEN: 196
+    FPS: 20
+    EGO_SCALE: 50.0
+
+    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive'
+    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive'
+
+  SAMPLER:
+    MAX_LEN: 196
+    MIN_LEN: 40
+    MAX_TEXT_LEN: 20
+
+#####################################
+# Model Settings
+#####################################
+model:
+  vae: true
+  model_type: mld
+  condition: 'ego'
+  latent_dim: [4, 256]             # Same as H2/H4 (latent-4)
+  ff_size: 1024
+  num_layers: 9
+  num_heads: 4
+  dropout: 0.1
+  activation: gelu
+  guidance_scale: 7.5              # Will override via CLI during eval
+  guidance_uncondp: 0.1
+
+  # H6 ego encoder: same architecture as H4, but NOT frozen during training
+  ego_encoder:
+    target: mld.models.architectures.ego_encoder.EgoEncoder
+    params:
+      input_dim: 2                 # (x, z) lateral motion
+      latent_dim: 256
+      num_layers: 4
+      num_heads: 4
+      ff_size: 1024
+      dropout: 0.1
+      activation: gelu
+      # No pool_type — EgoEncoder returns full (B, T, 256) sequence
+
+  # VAE settings (same as H2/H4)
+  motion_vae:
+    target: mld.models.architectures.mld_vae.MldVae
+    params:
+      nfeats: ${DATASET.NFEATS}
+      latent_dim: ${model.latent_dim}
+      ff_size: 1024
+      num_layers: 9
+      num_heads: 4
+      dropout: 0.1
+      activation: gelu
+      ablation: ${TRAIN.ABLATION}
+
+  # H6 denoiser: same trans_dec arch as H4 — latent z queries ego sequence via cross-attention
+  denoiser:
+    target: mld.models.architectures.mld_denoiser.MldDenoiser
+    params:
+      latent_dim: ${model.latent_dim}
+      text_encoded_dim: 256        # Ego encoder output dim
+      ff_size: ${model.ff_size}
+      num_layers: ${model.num_layers}
+      num_heads: ${model.num_heads}
+      dropout: ${model.dropout}
+      activation: ${model.activation}
+      guidance_scale: ${model.guidance_scale}
+      guidance_uncondp: ${model.guidance_uncondp}
+      ablation: ${TRAIN.ABLATION}
+      condition: ${model.condition}
+      nfeats: ${DATASET.NFEATS}
+      arch: trans_dec              # Same as H4: cross-attention (z queries full ego sequence)
+
+  # Scheduler settings (same as H2/H4)
+  scheduler:
+    target: diffusers.DDIMScheduler
+    params:
+      num_train_timesteps: 1000
+      beta_start: 0.00085
+      beta_end: 0.012
+      beta_schedule: scaled_linear
+      clip_sample: false
+      set_alpha_to_one: false
+      steps_offset: 0
+      prediction_type: epsilon
+    num_inference_timesteps: 50
+    eta: 0.0
+
+  noise_scheduler:
+    target: diffusers.DDPMScheduler
+    params:
+      num_train_timesteps: 1000
+      beta_start: 0.00085
+      beta_end: 0.012
+      beta_schedule: scaled_linear
+      variance_type: fixed_small
+      clip_sample: false
+      prediction_type: epsilon
+
+#####################################
+# Loss Settings
+#####################################
+LOSS:
+  TYPE: mld
+  LAMBDA_LATENT: 1.0e-5
+  LAMBDA_KL: 1.0e-4
+  LAMBDA_REC: 1.0
+  LAMBDA_GEN: 1.0
+  LAMBDA_CROSS: 1.0
+  LAMBDA_CYCLE: 0.0
+  LAMBDA_PRIOR: 0.0
+  DIST_SYNC_ON_STEP: False
+
+#####################################
+# Metric Settings
+#####################################
+METRIC:
+  TYPE: ['EgoMotionMetrics']
+  FORCE_IN_METER: True
+  DIST_SYNC_ON_STEP: False
+
+#####################################
+# Logger Settings
+#####################################
+LOGGER:
+  SACE_CHECKPOINT_EPOCH: 100
+  LOG_EVERY_STEPS: 1
+  VAL_EVERY_STEPS: 100
+  TENSORBOARD: True
+  WANDB:
+    PROJECT: diffusion_gen
+    ENTITY: erik_hm
+    OFFLINE: False
+    RESUME_ID: ego_motion_diffusion_h6_unfreeze_ego

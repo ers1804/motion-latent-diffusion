@@ -77,9 +77,9 @@ extract_until_success "$STORAGE_DIR/data" "$TMPDIR/data"
 cd /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion
 
 # Evaluate H4 (trans_dec) at CFG=15 — definitive eval at best epoch
-# Update EPOCH after segment-2 completes and best checkpoint is identified from wandb
+# EPOCH=3399: best training-time val checkpoint (FID=3.770, R@1=0.535, both peak here)
 # Goal: characterize H4 FID/R-prec at high guidance vs H2 (FID=7.400, R-prec=0.797)
-EPOCH=4399
+EPOCH=3399
 CHECKPOINT=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_h4_trans_dec/checkpoints/epoch=${EPOCH}.ckpt
 
 python -m test \
