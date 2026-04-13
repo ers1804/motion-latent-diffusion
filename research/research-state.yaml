@@ -345,6 +345,75 @@ experiments:
       Definitive evals at epoch=3399 submitted: job 351794 (CFG=5), 351795 (CFG=10), 351796 (CFG=15).
       H6 (unfreeze ego encoder) motivated: FREEZE_EGO:False config + training script created.
 
+  - id: run_023
+    name: h4_definitive_eval_epoch3399_cfg5
+    hypothesis: H4-ego-encoder-architecture
+    status: finished
+    slurm_job: 351794
+    submitted: "2026-04-07"
+    elapsed: "6m20s"
+    checkpoint: epoch=3399
+    guidance_scale: 5
+    metrics:
+      FID: 3.8424
+      FID_ci: 0.1075
+      Diversity: 5.8318
+      gt_Diversity: 5.4958
+      R_precision_top_1: 0.5057
+      R_precision_top_1_ci: 0.0089
+      R_precision_top_2: 0.6650
+      R_precision_top_3: 0.7419
+      MultiModality: 4.1411
+      MultiModality_ci: 0.4370
+    notes: "H4 definitive eval at best epoch=3399, CFG=5."
+
+  - id: run_024
+    name: h4_definitive_eval_epoch3399_cfg10
+    hypothesis: H4-ego-encoder-architecture
+    status: finished
+    slurm_job: 351795
+    submitted: "2026-04-07"
+    elapsed: "6m19s"
+    checkpoint: epoch=3399
+    guidance_scale: 10
+    metrics:
+      FID: 3.3917
+      FID_ci: 0.1794
+      Diversity: 5.7940
+      gt_Diversity: 5.4958
+      R_precision_top_1: 0.5479
+      R_precision_top_1_ci: 0.0024
+      R_precision_top_2: 0.7131
+      R_precision_top_3: 0.7915
+      MultiModality: 3.9556
+      MultiModality_ci: 0.4055
+    notes: |
+      H4 definitive eval at best epoch=3399, CFG=10. BEST OPERATING POINT:
+      FID=3.392 — 48.6% better than H2 best (6.603 at CFG=5). NON-OVERLAPPING CIs.
+      R@1=0.548 — 18.3% below H2 (0.671 at CFG=5). R@1 CEILING confirmed.
+
+  - id: run_025
+    name: h4_definitive_eval_epoch3399_cfg15
+    hypothesis: H4-ego-encoder-architecture
+    status: finished
+    slurm_job: 351796
+    submitted: "2026-04-07"
+    elapsed: "6m32s"
+    checkpoint: epoch=3399
+    guidance_scale: 15
+    metrics:
+      FID: 3.5471
+      FID_ci: 0.1222
+      Diversity: 5.8482
+      gt_Diversity: 5.4958
+      R_precision_top_1: 0.5360
+      R_precision_top_1_ci: 0.0026
+      R_precision_top_2: 0.7074
+      R_precision_top_3: 0.7882
+      MultiModality: 3.9105
+      MultiModality_ci: 0.4032
+    notes: "H4 definitive eval at best epoch=3399, CFG=15."
+
   - id: run_021
     name: h4_eval_epoch3199_cfg10
     hypothesis: H4-ego-encoder-architecture
@@ -440,7 +509,16 @@ hypotheses:
   H4-ego-encoder-architecture:
     description: "Cross-attention ego conditioning (trans_dec arch, full T=196 ego sequence as K/V) instead of mean-pooled single token"
     prediction: "R-prec@1 improves significantly (>=0.80 at CFG=5); FID may improve too due to better temporal alignment. Mechanism: denoiser sees full ego temporal context per denoising step."
-    status: completed_awaiting_definitive_eval
+    status: completed
+    result: |
+      DEFINITIVE RESULTS (epoch=3399 best checkpoint):
+      CFG=5:  FID=3.842 ±0.108, R@1=0.506 ±0.009, MM=4.141  [H2: FID=6.603, R@1=0.671]
+      CFG=10: FID=3.392 ±0.179, R@1=0.548 ±0.002, MM=3.956  [H2: FID=6.963, R@1=0.767]
+      CFG=15: FID=3.547 ±0.122, R@1=0.536 ±0.003, MM=3.910  [H2: FID=7.400, R@1=0.797]
+      Best point: CFG=10 — FID=3.392 (48.6% better than H2), R@1=0.548 (18.3% below H2).
+      PREDICTION PARTIALLY CONFIRMED: FID improved dramatically. R@1 did NOT reach H2 level.
+      R@1 CEILING: max=0.548 across all CFG and all epochs. FREEZE_EGO=True is the bottleneck.
+      FID still flat across CFG (H4 characteristic behavior).
     motivation: "H3 showed R-prec is decoupled from latent dim — the bottleneck is ego encoder quality, not latent capacity. EgoEncoderPooled compresses 196 timesteps to 1 token, losing temporal structure. trans_dec lets z query the full 196-step sequence."
     implementation:
       code_changes:
@@ -489,13 +567,13 @@ hypotheses:
     priority: low  # expensive; activate only after H4 + H6 explored
 
 next_actions:
-  - "Wait for H4 definitive evals at epoch=3399: jobs 351794 (CFG=5), 351795 (CFG=10), 351796 (CFG=15) — ~8min each"
-  - "Record definitive FID/R-prec numbers, update findings.md"
-  - "Submit H6 training: git push then ssh helma sbatch slurm/diffusion_training_h6_unfreeze_ego_helma.sh"
+  - "H4 definitive results RECORDED (jobs 351794/795/796, epoch=3399): best at CFG=10 FID=3.392, R@1=0.548"
+  - "SUBMIT H6 TRAINING: ssh helma sbatch slurm/diffusion_training_h6_unfreeze_ego_helma.sh (FREEZE_EGO=False)"
   - "Monitor H6 training-time val metrics via wandb (project: diffusion_gen, run: ego_motion_diffusion_h6_unfreeze_ego)"
-  - "KEY QUESTION: does H6 R@1 approach/exceed H2=0.671? Can FID stay below H4=3.770?"
+  - "KEY QUESTION: does H6 R@1 approach/exceed H2=0.671? Can FID stay near H4 level?"
+  - "After H6 first 24h: run intermediate eval + check training trajectory"
 
-last_updated: "2026-04-07 (session resumed — segment-2 completed 2026-04-04)"
+last_updated: "2026-04-13 (H4 definitive results recorded; H6 ready to submit)"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.

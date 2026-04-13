@@ -71,8 +71,14 @@ latent-4×256 space.
 
 | Run | Epoch | CFG | FID ↓ | FID CI | Diversity | R-prec@1 | MM | Notes |
 |-----|-------|-----|-------|--------|-----------|----------|----|-------|
-| **H4 trans_dec (intermediate)** | **3199** | **5** | **3.968** | **±0.209** | **5.891** | **0.510** | **4.117** | **40% FID improvement vs H2** |
+| H4 trans_dec (intermediate) | 3199 | 5 | 3.968 | ±0.209 | 5.891 | 0.510 | 4.117 | 40% FID improvement vs H2 |
+| H4 trans_dec (intermediate) | 3199 | 10 | 3.644 | ±0.145 | 5.939 | 0.540 | 3.936 | — |
+| H4 trans_dec (intermediate) | 3199 | 15 | 3.617 | ±0.131 | 6.044 | 0.515 | 3.938 | FID flat across CFG |
+| **H4 trans_dec (DEFINITIVE best ep=3399)** | **3399** | **5** | **3.842** | **±0.108** | **5.832** | **0.506** | **4.141** | — |
+| **H4 trans_dec (DEFINITIVE best ep=3399)** | **3399** | **10** | **3.392** | **±0.179** | **5.794** | **0.548** | **3.956** | **BEST: 48.6% FID↓; R@1 ceiling=0.548** |
+| **H4 trans_dec (DEFINITIVE best ep=3399)** | **3399** | **15** | **3.547** | **±0.122** | **5.848** | **0.536** | **3.910** | — |
 | H2 baseline | 4399 | 5 | 6.603 | ±0.067 | 5.779 | 0.671 | 3.503 | Best H2 checkpoint |
+| H2 baseline | 4399 | 10 | 6.963 | ±0.035 | 5.762 | 0.767 | 3.031 | — |
 
 **H4 vs H2 at CFG=5 (epoch=3199 vs 4399 — training epoch advantage for H2):**
 - FID: H4=3.968 vs H2=6.603 → **H4 is 40% BETTER** (non-overlapping CIs; strong)
