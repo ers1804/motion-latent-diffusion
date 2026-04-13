@@ -544,7 +544,9 @@ hypotheses:
   H6-unfreeze-ego-encoder:
     description: "Unfreeze ego encoder during diffusion training so encoder co-adapts with denoiser"
     prediction: "R-prec@1 improves toward or beyond H2 (0.671); FID may remain low because architecture is same"
-    status: ready_to_run
+    status: running
+    slurm_job_id: 365378
+    submitted: "2026-04-13"
     motivation: |
       H4 R@1 ceiling: max is 0.535 at epoch=3399 (both metrics DEGRADE after this epoch).
       H2 R@1=0.671. H4 FREEZE_EGO=True prevents encoder from adapting to cross-attention use case.
@@ -568,12 +570,13 @@ hypotheses:
 
 next_actions:
   - "H4 definitive results RECORDED (jobs 351794/795/796, epoch=3399): best at CFG=10 FID=3.392, R@1=0.548"
-  - "SUBMIT H6 TRAINING: ssh helma sbatch slurm/diffusion_training_h6_unfreeze_ego_helma.sh (FREEZE_EGO=False)"
+  - "H6 TRAINING SUBMITTED: job 365378 (FREEZE_EGO=False, trans_dec arch, 5000 epochs)"
   - "Monitor H6 training-time val metrics via wandb (project: diffusion_gen, run: ego_motion_diffusion_h6_unfreeze_ego)"
   - "KEY QUESTION: does H6 R@1 approach/exceed H2=0.671? Can FID stay near H4 level?"
-  - "After H6 first 24h: run intermediate eval + check training trajectory"
+  - "After H6 first 24h: identify best training-time checkpoint, submit CFG=5/10/15 eval"
+  - "Outer loop reflection: synthesize H1-H4 findings into coherent narrative for paper"
 
-last_updated: "2026-04-13 (H4 definitive results recorded; H6 ready to submit)"
+last_updated: "2026-04-13 (H6 training submitted as job 365378)"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
@@ -608,5 +611,5 @@ current_understanding: |
     to the cross-attention use case the denoiser needs. This explains the R@1 ceiling.
     H6 (FREEZE_EGO=False) is the next logical step. Config + script created.
 
-  H6 READY TO SUBMIT: configs/config_ego_motion_new_vae_stoch_latent_4_h6_unfreeze_ego.yaml
+  H6 RUNNING (job 365378): configs/config_ego_motion_new_vae_stoch_latent_4_h6_unfreeze_ego.yaml
   H6 prediction: R@1 approaches/exceeds H2=0.671; FID may stay near H4=3.770 level.
