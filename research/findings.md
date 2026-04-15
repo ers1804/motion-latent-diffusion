@@ -146,9 +146,19 @@ H6 seg-1 ran as job 365378, timed out after 24h at epoch ~3359. Last saved check
 - BUT H6 R@1 is strongly ascending (0.273→0.398 over 1200 epochs). H4's R@1 plateaued at 0.535.
 - H6 R@1 may exceed H4's ceiling with more training — seg-2 submitted (job 368862, resume from ep=3299)
 
-**Intermediate evals submitted**: epoch=3299 at CFG=10 (job 368863), epoch=2099 at CFG=10 (job 368864). These will give definitive (3× replicated) FID/R@1 vs training-time single-pass estimates.
+**Definitive evals completed** (3× replicated, CFG=10):
 
-**Mechanism**: When FREEZE_EGO=False, the ego encoder's representations evolve to match the cross-attention decoder's needs. Early in training, the encoder produces general ego features (low R@1). As training progresses, the encoder becomes increasingly task-specialized — better at discriminating ego conditions for denoising (R@1 rises) — but this specialization pulls the generated motion distribution away from the natural motion distribution (FID rises). This is a classic discriminative vs generative tension: optimizing ego discrimination comes at a cost to unconditional generation quality.
+| Checkpoint | FID↓ | R@1↑ | Diversity | MM |
+|---|---|---|---|---|
+| ep=2099 (best train FID) | 4.952 ±0.088 | 0.263 ±0.009 | 5.957 | 2.455 |
+| ep=3299 (best train R@1) | 5.311 ±0.060 | 0.348 ±0.004 | 6.034 | 2.581 |
+| **H4 ep=3399 (CFG=10)** | **3.392 ±0.179** | **0.548 ±0.002** | **5.794** | **3.956** |
+
+**H6 is currently WORSE than H4 on ALL metrics at both checkpoints.** Key pattern: MultiModality=2.5 vs H4 4.0 — the ego encoder's specialization is over-constraining generation, reducing output diversity. This is a more severe form of the discriminative-vs-generative tension than expected.
+
+**Mechanism**: When FREEZE_EGO=False, the ego encoder's representations evolve to match the cross-attention decoder's needs. Early in training, the encoder produces general ego features (low R@1). As training progresses, the encoder becomes increasingly task-specialized — better at discriminating ego conditions for denoising (R@1 rises) — but this specialization pulls the generated motion distribution away from the natural motion distribution (FID rises). The MultiModality collapse (2.5) suggests the model is "collapsing" to near-deterministic outputs for each ego condition — the encoder encodes fine-grained discriminative information that constrains generation to a narrow region per condition.
+
+**H6 seg-2 submitted** (job 368901, resumes from ep=3299). Key question: does H6 R@1 eventually surpass H4's 0.548 ceiling? And if so, at what FID cost?
 
 ## Patterns and Insights
 
@@ -171,6 +181,8 @@ H6 seg-1 ran as job 365378, timed out after 24h at epoch ~3359. Last saved check
    **Recommendation**: Use CFG=5 for FID-focused evaluation; CFG=7 for balanced FID/R-prec.
 
 5. **FID does not monotonically improve with training**: H2 epoch trajectory peaked at 4399 (FID=6.603), regressed at 4599 (FID=8.400), partially recovered at 4999 (FID=7.510). Training loss was flat — FID oscillates independently. **Critical lesson: checkpoint selection with periodic FID validation is required; the final checkpoint is NOT the best checkpoint.**
+
+6. **Unfreezing the ego encoder causes MultiModality collapse (H6 — NEW FINDING)**: H6 MM=2.5 vs H4 MM=4.0 at same architecture. The ego encoder co-adapting with the denoiser learns highly discriminative (low-entropy) per-condition representations — each ego trajectory maps to a narrow distribution of motions rather than diverse plausible ones. This is a symptom of "mode collapse per condition": the model learns to be deterministic rather than generative. The implication is that **full unfreezing may not be the right approach** — an intermediate strategy (partial freeze, weight decay on ego encoder, or separate learning rates) might be needed to balance discriminative specialization vs generative diversity.
 
 ## Lessons and Constraints
 
