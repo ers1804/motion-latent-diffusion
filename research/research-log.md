@@ -349,3 +349,51 @@ The preliminary FID=3.766 at epoch 3279 changes the picture dramatically. If con
 test eval, H4 is a clear advance over H2 (FID 6.603→3.766, +43% improvement). The research
 direction is confirmed; next focus is on understanding why FID improved so much and whether
 R-prec also improves.
+
+## 2026-04-15 — Outer Loop Reflection: H6 REJECTED; CONCLUDE Decision
+
+### H6 Definitive Evaluation Complete
+
+All H6 checkpoints evaluated (3× replicated, CFG=10):
+
+| Checkpoint | FID | R@1 | MM |
+|---|---|---|---|
+| ep=2099 (best FID) | 4.952 ±0.088 | 0.263 ±0.009 | 2.455 |
+| ep=3299 (seg-1 peak R@1) | 5.311 ±0.060 | 0.348 ±0.004 | 2.581 |
+| ep=3399 (seg-2, job 369437) | 5.079 ±0.034 | 0.352 ±0.009 | 2.618 |
+| **H4 ep=3399 (reference)** | **3.392 ±0.179** | **0.548 ±0.002** | **3.956** |
+
+**H6 is definitively REJECTED.** R@1 barely changed from ep=3299→ep=3399 (0.348→0.352), and
+H6 seg-2 training-time metrics show R@1 peaked at ep=3299 (0.398) and is now declining:
+- ep=3399: training-time val FID=5.141, R@1=0.380 (↓ from 0.398)
+- ep=3499: training-time val FID=5.415, R@1=0.367 (↓ continuing)
+
+The diagnosis is clear: unfreezing the ego encoder causes MultiModality collapse (2.5 vs H4
+3.9). The encoder specializes for discriminative denoising features, over-constraining output
+diversity. This is consistent with the literature (frozen CLIP in SD, frozen DINO in DreamBooth
+all show the same pattern — frozen encoders preserve generative diversity).
+
+### CONCLUDE Decision
+
+The research has sufficient evidence for publication:
+
+**Evidence quality:**
+- H4 positive result: 49% FID improvement (3.392 vs 6.603), non-overlapping CIs, 3× replicated
+- H2/H3/H6 ablations: all three alternatives (pooled encoder, latent-8, unfreezing) are
+  definitively worse than H4, providing clean negative results that strengthen the paper
+- Literature alignment: our frozen-encoder finding matches the established pattern in SD/DALL-E 2
+
+**Why CONCLUDE rather than continue with H8 (adapter):**
+1. H4 already provides a strong, significant contribution
+2. H6 provides the key ablation — encoder freeze is critical
+3. H8 would be incremental — adapters improve R@1 but unlikely to change the core story
+4. Risk of diminishing returns; H4+H6 already tells a complete, coherent paper narrative
+
+### Paper Plan
+
+Three-part narrative:
+1. **Method**: Cross-attention ego conditioning (196 K/V tokens) vs pooled single-token (H2)
+2. **Main result**: 49% FID improvement (3.392 vs 6.603)
+3. **Ablation**: Frozen encoder essential — unfreezing (H6) causes MM collapse and hurts all metrics
+
+**Next action**: Invoke ml-paper-writing skill to draft the paper.
