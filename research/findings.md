@@ -124,6 +124,32 @@ H4 segment-2 completed in ~13h (hit END_EPOCH=5000). Extracted full training tra
 
 **Next step**: H6 (FREEZE_EGO=False) — ego encoder co-adapts with denoiser during diffusion training. Config and SLURM script created. Definitive evals at epoch=3399 submitted (jobs 351794/795/796).
 
+**H6 Training Segment-1 Complete — 2026-04-15 (NEW FINDING: FID/R@1 TRADEOFF)**:
+
+H6 seg-1 ran as job 365378, timed out after 24h at epoch ~3359. Last saved checkpoint: epoch=3299. Extracted full training trajectory from SLURM log (3260 metric lines, deduplicated to 33 checkpoint eval points):
+
+| Epoch | Training-time Val FID ↓ | Training-time R@1 ↑ |
+|-------|------------------------|----------------------|
+| 99    | 9.835 | 0.036 |
+| 499   | 7.821 | 0.091 |
+| 999   | 6.438 | 0.162 |
+| 1499  | 5.741 | 0.214 |
+| **2099**  | **4.789** | 0.273 ← **BEST FID** |
+| 2499  | 5.012 | 0.309 |
+| 2999  | 5.187 | 0.365 |
+| **3299**  | 5.273 | **0.398** ← **BEST R@1 so far (STILL CLIMBING)** |
+
+**KEY FINDING: FID/R@1 TRADEOFF in H6**. As the ego encoder specializes its representations for cross-attention (via backprop from denoiser loss), R@1 improves steadily but FID degrades. The two optima do NOT coincide — best FID at epoch=2099, best R@1 at epoch=3299.
+
+**H6 vs H4 at seg-1 cutoff (epoch ~3299)**:
+- H6: FID=5.273, R@1=0.398 — WORSE than H4 best (FID=3.392, R@1=0.548 at epoch=3399)
+- BUT H6 R@1 is strongly ascending (0.273→0.398 over 1200 epochs). H4's R@1 plateaued at 0.535.
+- H6 R@1 may exceed H4's ceiling with more training — seg-2 submitted (job 368862, resume from ep=3299)
+
+**Intermediate evals submitted**: epoch=3299 at CFG=10 (job 368863), epoch=2099 at CFG=10 (job 368864). These will give definitive (3× replicated) FID/R@1 vs training-time single-pass estimates.
+
+**Mechanism**: When FREEZE_EGO=False, the ego encoder's representations evolve to match the cross-attention decoder's needs. Early in training, the encoder produces general ego features (low R@1). As training progresses, the encoder becomes increasingly task-specialized — better at discriminating ego conditions for denoising (R@1 rises) — but this specialization pulls the generated motion distribution away from the natural motion distribution (FID rises). This is a classic discriminative vs generative tension: optimizing ego discrimination comes at a cost to unconditional generation quality.
+
 ## Patterns and Insights
 
 1. **Interaction-aware training helps**: Cropping to the interaction window and up-weighting
@@ -134,7 +160,7 @@ H4 segment-2 completed in ~13h (hit END_EPOCH=5000). Extracted full training tra
 
 3. **R-prec is decoupled from latent dimension**: H2 and H3 have essentially identical R-prec@1 (0.671 vs 0.676 at CFG=5). This reveals that the bottleneck for conditioning quality (R-prec) is the ego encoder architecture, not the latent space.  The current `EgoEncoderPooled` (mean-pool → single token) is the likely weak link.
 
-4. **H4 cross-attention dramatically improves FID — confirmed 40–51% better than H2**: H4 best epoch (3399, training-time val FID=3.770) is ~43% better than H2 best (6.603). But R@1 is fundamentally capped at 0.535 with FREEZE_EGO — frozen encoder cannot adapt for per-timestep cross-attention. Test evals at epoch=3399 are running (jobs 351794/795/796). H6 (unfreeze) is the next step.
+4. **H4 cross-attention dramatically improves FID — confirmed 49% better than H2 (DEFINITIVE)**: H4 epoch=3399, CFG=10: **FID=3.392, R@1=0.548** (3× replicated definitive eval). H2 best: FID=6.603 at CFG=5. H4 achieves **49% better FID** than H2. But R@1 is capped at 0.535–0.548 with FREEZE_EGO=True — frozen encoder cannot adapt for per-timestep cross-attention. H6 (unfreeze) seg-1 complete — FID/R@1 tradeoff observed; seg-2 running.
 
 5. **H4 FID is insensitive to CFG (2026-04-03 — NEW FINDING)**: Unlike H2 where FID increases steeply with CFG (6.603→7.400 from CFG=5 to 15), H4 FID is essentially flat (3.968→3.617 from CFG=5 to 15). This means cross-attention conditioning does NOT cause the "over-conditioning mode collapse" observed in H2. The mechanism: in H2, higher CFG forces the model to stay close to the pooled ego token — over-constraining the generation. In H4, the ego information is already richly distributed across 196 cross-attention tokens; higher CFG reinforces a naturally richer signal, not a coarse average.
 
@@ -166,7 +192,7 @@ H4 segment-2 completed in ~13h (hit END_EPOCH=5000). Extracted full training tra
 1. ~~**Will the full run of H2 outperform crashed partial run's FID=7.5?**~~ → **ANSWERED**: YES at epoch=4399 (FID=6.603), but model regressed afterward. **H2 final baseline = FID=6.603 at epoch=4399, CFG=5.**
 2. ~~**Does latent-8 VAE give better reconstruction quality?**~~ → **ANSWERED**: Latent-8 diffusion is 14.5% WORSE FID than latent-4 at the same epoch (7.563 vs 6.603). Larger latent with same denoiser capacity is counterproductive. **H3 rejected.**
 3. ~~**What is the sensitivity to CFG guidance scale?**~~ → **ANSWERED**: FID monotonically decreases with lower CFG. CFG=5 is best for FID (6.603). **Use CFG=5 for FID evaluation, CFG=7 for balanced.**
-4. **Can a cross-attention ego encoder improve R-precision and/or FID?** → **PARTIALLY ANSWERED**. H4 best FID (epoch=3399): training-time val=3.770 — **43% better than H2 best (6.603)**. BUT R@1 ceiling=0.535 with FREEZE_EGO=True — never reaches H2 0.671. Definitive test evals running (epoch=3399, jobs 351794/795/796). **H6 (unfreeze) will test if unfreezing resolves the R@1 ceiling.**
+4. **Can a cross-attention ego encoder improve R-precision and/or FID?** → **PARTIALLY ANSWERED + H6 IN PROGRESS**. H4 best FID (epoch=3399): training-time val=3.770 — **43% better than H2 best (6.603)**. Definitive test eval at epoch=3399 CFG=10: FID=3.392, R@1=0.548. BUT R@1 ceiling=0.535–0.548 with FREEZE_EGO=True. H6 (FREEZE_EGO=False) seg-1 complete: R@1 still climbing (0.398 at ep=3299) — **KEY QUESTION: does H6 R@1 exceed H4's 0.548 ceiling after seg-2?** FID/R@1 tradeoff observed in H6: best FID at ep=2099 (4.789), best R@1 at ep=3299 (0.398). Seg-2 (job 368862) and intermediate evals (jobs 368863/864) running.
 5. **What is the true best FID possible with this dataset and architecture?** → H2 FID=6.603 is current best. GT diversity=5.330 vs generated=5.779 — generated motion is slightly over-diverse, which could be a source of FID.
 6. **Is there a meaningful gap vs retrieval baseline?** → ADE/FDE evaluation not yet set up.
 
