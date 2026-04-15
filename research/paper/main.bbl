@@ -1,0 +1,160 @@
+\begin{thebibliography}{18}
+\providecommand{\natexlab}[1]{#1}
+\providecommand{\url}[1]{\texttt{#1}}
+\expandafter\ifx\csname urlstyle\endcsname\relax
+  \providecommand{\doi}[1]{doi: #1}\else
+  \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Chen et~al.(2023)Chen, Jiang, Liu, Huang, Fu, Chen, and
+  Yu]{chen2023mld}
+Xin Chen, Biao Jiang, Wen Liu, Zilong Huang, Bin Fu, Tao Chen, and Gang Yu.
+\newblock Executing your commands via motion diffusion in latent space.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 2023.
+\newblock arXiv:2212.04048.
+
+\bibitem[Feng et~al.(2024)Feng, Bahari, Amor, Zablocki, Cord, and
+  Alahi]{feng2024unitraj}
+Lan Feng, Mohammadhossein Bahari, Kaouther Messaoud~Ben Amor, {\'E}loi
+  Zablocki, Matthieu Cord, and Alexandre Alahi.
+\newblock Unitraj: A unified framework for scalable vehicle trajectory
+  prediction.
+\newblock In \emph{Proceedings of the European Conference on Computer Vision
+  (ECCV)}, 2024.
+\newblock arXiv:2403.15098.
+
+\bibitem[Guo et~al.(2022)Guo, Zou, Zuo, Wang, Ji, Li, and
+  Cheng]{guo2022humanml3d}
+Chuan Guo, Shihao Zou, Xinxin Zuo, Sen Wang, Wei Ji, Xingyu Li, and Li~Cheng.
+\newblock Generating diverse and natural 3d human motions from text.
+\newblock 2022.
+\newblock arXiv:2212.04048 -- verify: this is the HumanML3D dataset paper.
+
+\bibitem[Guo et~al.(2024)Guo, Mu, Javed, Wang, and Cheng]{guo2024momask}
+Chuan Guo, Yuxuan Mu, Muhammad~Gohar Javed, Sen Wang, and Li~Cheng.
+\newblock Momask: Generative masked modeling of 3d human motions.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 2024.
+\newblock arXiv:2312.00063.
+
+\bibitem[Ho and Salimans(2022)]{ho2022cfg}
+Jonathan Ho and Tim Salimans.
+\newblock Classifier-free diffusion guidance.
+\newblock In \emph{NeurIPS 2021 Workshop on Deep Generative Models and
+  Downstream Applications}, 2022.
+\newblock arXiv:2207.12598.
+
+\bibitem[Liang et~al.(2024)Liang, Zhang, Li, Yu, and Xu]{liang2024intergen}
+Han Liang, Wenqian Zhang, Wenxuan Li, Jingyi Yu, and Lan Xu.
+\newblock Intergen: Diffusion-based multi-human motion generation under complex
+  interactions.
+\newblock \emph{International Journal of Computer Vision}, 2024.
+\newblock arXiv:2304.05684.
+
+\bibitem[Mao et~al.(2023)Mao, Xu, Zhu, Chen, and Wang]{mao2023led}
+Weibo Mao, Chenxin Xu, Qi~Zhu, Siheng Chen, and Yanfeng Wang.
+\newblock Leapfrog diffusion model for stochastic trajectory prediction.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 2023.
+\newblock arXiv:2307.10455 -- PLACEHOLDER: verify exact arXiv ID for
+  LED/leapfrog.
+
+\bibitem[PLACEHOLDER(2024)]{PLACEHOLDER_wosad2024}
+PLACEHOLDER.
+\newblock World-scene aware diffusion for pedestrian motion prediction.
+\newblock In \emph{arXiv preprint}, 2024.
+\newblock PLACEHOLDER: Search "WoSAD world scene aware diffusion pedestrian
+  2024" to verify authors and venue.
+
+\bibitem[Rombach et~al.(2022)Rombach, Blattmann, Lorenz, Esser, and
+  Ommer]{PLACEHOLDER_rombach2022sd}
+Robin Rombach, Andreas Blattmann, Dominik Lorenz, Patrick Esser, and Bj{\"o}rn
+  Ommer.
+\newblock High-resolution image synthesis with latent diffusion models.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 2022.
+\newblock arXiv:2112.10752 -- TODO: verify BibTeX via DOI
+  10.1109/CVPR52688.2022.01042.
+
+\bibitem[Ruiz et~al.(2023)Ruiz, Li, Jampani, Pritch, Rubinstein, and
+  Aberman]{PLACEHOLDER_ruiz2023dreambooth}
+Nataniel Ruiz, Yuanzhen Li, Varun Jampani, Yael Pritch, Michael Rubinstein, and
+  Kfir Aberman.
+\newblock Dreambooth: Fine tuning text-to-image diffusion models for
+  subject-driven generation.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 2023.
+\newblock arXiv:2208.12242 -- TODO: verify BibTeX via DOI.
+
+\bibitem[Song et~al.(2021)Song, Meng, and Ermon]{song2021ddim}
+Jiaming Song, Chenlin Meng, and Stefano Ermon.
+\newblock Denoising diffusion implicit models.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2021.
+\newblock arXiv:2010.02502.
+
+\bibitem[Tevet et~al.(2023)Tevet, Raab, Gordon, Shafir, Cohen-Or, and
+  Bermano]{tevet2023mdm}
+Guy Tevet, Sigal Raab, Brian Gordon, Yonatan Shafir, Daniel Cohen-Or, and
+  Amit~H. Bermano.
+\newblock Human motion diffusion model.
+\newblock In \emph{International Conference on Learning Representations
+  (ICLR)}, 2023.
+\newblock arXiv:2209.14916.
+
+\bibitem[Tsao et~al.(2023)Tsao, Vendrow, Fan, Soatto, and
+  Kadav]{tsao2023socialdiffusion}
+Matteo Tsao, Joshua Vendrow, Hanzi Fan, Stefano Soatto, and Asit Kadav.
+\newblock Social diffusion: Long-term multiple human motion anticipation.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
+  Computer Vision (ICCV)}, 2023.
+\newblock PLACEHOLDER: verify authors and venue for Social Diffusion paper.
+
+\bibitem[Ye et~al.(2023)Ye, Zhang, Liu, Han, and
+  Yang]{PLACEHOLDER_ye2023ipadapter}
+Hu~Ye, Jun Zhang, Sibo Liu, Xiao Han, and Wei Yang.
+\newblock Ip-adapter: Text compatible image prompt adapter for text-to-image
+  diffusion models.
+\newblock In \emph{arXiv preprint}, 2023.
+\newblock arXiv:2308.06721 -- PLACEHOLDER: verify final venue (likely NeurIPS
+  workshop or ECCV).
+
+\bibitem[Zhang et~al.(2023{\natexlab{a}})Zhang, Zhang, Cun, Zhang, Zhao, Lu,
+  Shen, and Shan]{zhang2023t2mgpt}
+Jianrong Zhang, Yangsong Zhang, Xiaodong Cun, Yong Zhang, Hao Zhao, Hongtao Lu,
+  Xi~Shen, and Ying Shan.
+\newblock T2m-gpt: Generating human motion from textual descriptions with
+  discrete representations.
+\newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
+  and Pattern Recognition (CVPR)}, 2023{\natexlab{a}}.
+\newblock arXiv:2301.06052.
+
+\bibitem[Zhang et~al.(2023{\natexlab{b}})Zhang, Rao, and
+  Agrawala]{PLACEHOLDER_zhang2023controlnet}
+Lvmin Zhang, Anyi Rao, and Maneesh Agrawala.
+\newblock Adding conditional control to text-to-image diffusion models.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
+  Computer Vision (ICCV)}, 2023{\natexlab{b}}.
+\newblock arXiv:2302.05543 -- TODO: verify BibTeX via DOI.
+
+\bibitem[Zhang et~al.(2023{\natexlab{c}})Zhang, Guo, Pan, Cai, Hong, Li, Yang,
+  and Liu]{xu2023rig}
+Mingyuan Zhang, Xinyi Guo, Liang Pan, Zhongang Cai, Fangzhou Hong, Huirong Li,
+  Lei Yang, and Ziwei Liu.
+\newblock Remodiffuse: Retrieval-augmented motion diffusion model.
+\newblock In \emph{Proceedings of the IEEE/CVF International Conference on
+  Computer Vision (ICCV)}, 2023{\natexlab{c}}.
+\newblock PLACEHOLDER: verify -- RIG (Reactive 3D motion generation) paper by
+  Xu et al. arXiv:2311.12057.
+
+\bibitem[Zhang et~al.(2024)Zhang, Cai, Pan, Hong, Guo, Yang, and
+  Liu]{zhang2022motiondiffuse}
+Mingyuan Zhang, Zhongang Cai, Liang Pan, Fangzhou Hong, Xinyi Guo, Lei Yang,
+  and Ziwei Liu.
+\newblock Motiondiffuse: Text-driven human motion generation with diffusion
+  model.
+\newblock \emph{IEEE Transactions on Pattern Analysis and Machine
+  Intelligence}, 2024.
+\newblock arXiv:2208.15001.
+
+\end{thebibliography}
