@@ -80,7 +80,10 @@ wandb sync --clean-force
 # H6 segment-2: resume from epoch=3299 checkpoint
 # R@1 still improving at epoch=3299 (0.398), need more training to find peak
 # H6 hypothesis: FREEZE_EGO=False — ego encoder co-adapts with denoiser
-# Resume checkpoint: epoch=3299 (last good checkpoint before SLURM timeout at epoch~3359)
+# Resume dir: TRAIN.RESUME must be the model directory (contains .yaml + checkpoints/)
+# train.py will auto-pick the latest checkpoint (epoch=3299) from checkpoints/ subdir
+MODEL_DIR=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_h6_unfreeze_ego
+
 python -m train \
 --cfg configs/config_ego_motion_new_vae_stoch_latent_4_h6_unfreeze_ego.yaml \
 --nodebug \
@@ -88,4 +91,4 @@ python -m train \
     "DATASET.EGOMOTION.ROOT=[$TMPDIR/data/diffusion/ava, $TMPDIR/data/diffusion/nuscenes, $TMPDIR/data/diffusion/waymo]" \
     "DATASET.EGOMOTION.MEAN_STD_PATH=$TMPDIR/data/vae/mean_std_txt/ava_nuscenes_waymo" \
     "DATASET.EGOMOTION.EGO_MEAN_STD_PATH=$TMPDIR/data/vae/mean_std_txt/ava_nuscenes_waymo" \
-    "TRAIN.RESUME=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_h6_unfreeze_ego/checkpoints/epoch=3299.ckpt"
+    "TRAIN.RESUME=$MODEL_DIR"
