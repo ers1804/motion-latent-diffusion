@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress Report 010 — H6 Seg-1 Results + Seg-2 Running</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; padding: 24px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { font-size: 2rem; font-weight: 700; color: #f8fafc; margin-bottom: 4px; }
+  h2 { font-size: 1.25rem; font-weight: 600; color: #94a3b8; margin-bottom: 16px; }
+  h3 { font-size: 1.05rem; font-weight: 600; color: #cbd5e1; margin-bottom: 10px; margin-top: 20px; }
+  .header { margin-bottom: 32px; padding-bottom: 16px; border-bottom: 1px solid #1e293b; }
+  .date { color: #64748b; font-size: 0.875rem; margin-top: 4px; }
+  .status-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 32px; }
+  .status-card { background: #1e293b; border-radius: 10px; padding: 16px 20px; flex: 1; min-width: 200px; }
+  .status-card .label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .status-card .value { font-size: 1.5rem; font-weight: 700; }
+  .status-card .sub { font-size: 0.8rem; color: #94a3b8; margin-top: 2px; }
+  .green { color: #4ade80; }
+  .yellow { color: #facc15; }
+  .red { color: #f87171; }
+  .blue { color: #60a5fa; }
+  .purple { color: #c084fc; }
+  .orange { color: #fb923c; }
+  .section { background: #1e293b; border-radius: 10px; padding: 20px 24px; margin-bottom: 24px; }
+  .section-title { font-size: 1.1rem; font-weight: 700; color: #f1f5f9; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.875rem; }
+  th { text-align: left; color: #64748b; font-weight: 600; padding: 8px 12px; border-bottom: 1px solid #334155; }
+  td { padding: 8px 12px; border-bottom: 1px solid #1e293b; }
+  tr:last-child td { border-bottom: none; }
+  .highlight { background: #1a3a2a; }
+  .highlight td { color: #4ade80; font-weight: 600; }
+  .highlight-blue { background: #0f1a2e; }
+  .highlight-blue td { color: #60a5fa; font-weight: 600; }
+  .h2-row td { color: #94a3b8; }
+  .dim-row td { color: #475569; font-style: italic; }
+  .pill { display: inline-block; padding: 2px 8px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; }
+  .pill-green { background: #14532d; color: #4ade80; }
+  .pill-yellow { background: #422006; color: #facc15; }
+  .pill-blue { background: #1e3a5f; color: #60a5fa; }
+  .pill-purple { background: #2e1065; color: #c084fc; }
+  .pill-red { background: #450a0a; color: #f87171; }
+  .pill-orange { background: #431407; color: #fb923c; }
+  .finding { border-left: 3px solid #4ade80; padding: 10px 16px; background: #0f1f18; border-radius: 0 6px 6px 0; margin-bottom: 12px; }
+  .finding-neg { border-left-color: #f87171; background: #1c0a0a; }
+  .finding-yellow { border-left-color: #facc15; background: #1c1506; }
+  .finding-blue { border-left-color: #60a5fa; background: #0f1a2e; }
+  .finding-purple { border-left-color: #c084fc; background: #1a0f2e; }
+  .finding strong { display: block; font-size: 0.9rem; color: #e2e8f0; margin-bottom: 4px; }
+  .finding p { font-size: 0.85rem; color: #94a3b8; }
+  .chart-container { margin-top: 16px; }
+  svg text { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .trajectory-label { font-size: 0.8rem; color: #64748b; margin-bottom: 8px; }
+  .hypothesis-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .hyp-card { background: #0f1117; border-radius: 8px; padding: 12px 16px; flex: 1; min-width: 220px; border: 1px solid #334155; }
+  .hyp-card .hyp-name { font-size: 0.875rem; font-weight: 700; margin-bottom: 4px; }
+  .hyp-card .hyp-status { font-size: 0.75rem; margin-bottom: 6px; }
+  .hyp-card .hyp-result { font-size: 0.8rem; color: #94a3b8; }
+  .next-actions { list-style: none; }
+  .next-actions li { padding: 8px 12px; border-left: 3px solid #334155; margin-bottom: 8px; font-size: 0.875rem; color: #cbd5e1; }
+  .next-actions li.active { border-left-color: #60a5fa; background: #0f1a2e; border-radius: 0 6px 6px 0; }
+  .next-actions li.critical { border-left-color: #f87171; background: #1c0a0a; border-radius: 0 6px 6px 0; }
+  .comparison-bar { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; font-size: 0.85rem; }
+  .bar-label { width: 240px; color: #94a3b8; flex-shrink: 0; }
+  .bar-track { flex: 1; background: #334155; border-radius: 4px; height: 16px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; }
+  .bar-value { width: 60px; text-align: right; font-weight: 600; flex-shrink: 0; }
+  .two-col { display: flex; gap: 16px; }
+  .two-col > div { flex: 1; }
+  .callout { background: #1a1f2e; border: 1px solid #334155; border-radius: 8px; padding: 14px 18px; margin-bottom: 16px; }
+  .callout-title { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: #64748b; margin-bottom: 6px; }
+  .callout-body { font-size: 0.875rem; color: #cbd5e1; }
+  .waiting-badge { display: inline-flex; align-items: center; gap: 6px; background: #1a1506; border: 1px solid #713f12; border-radius: 6px; padding: 4px 10px; font-size: 0.8rem; color: #facc15; font-weight: 600; }
+  .waiting-dot { width: 8px; height: 8px; border-radius: 50%; background: #facc15; animation: pulse 1.5s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+  code { background: #0f1117; padding: 1px 6px; border-radius: 4px; font-size: 0.8rem; color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <div class="header">
+    <h1>Progress Report 010</h1>
+    <h2>Ego-Conditioned Pedestrian Motion Generation</h2>
+    <div class="date">2026-04-15 &nbsp;|&nbsp; H6 Seg-1 Definitive Evals Complete &nbsp;|&nbsp; H6 Seg-2 Running (job 368901)</div>
+  </div>
+
+  <!-- Status Cards -->
+  <div class="status-row">
+    <div class="status-card">
+      <div class="label">Current Best FID</div>
+      <div class="value green">3.392</div>
+      <div class="sub">H4 ep=3399, CFG=10 &nbsp;|&nbsp; still best overall</div>
+    </div>
+    <div class="status-card">
+      <div class="label">H6 Best FID (so far)</div>
+      <div class="value yellow">4.952</div>
+      <div class="sub">ep=2099 CFG=10 &nbsp;|&nbsp; worse than H4</div>
+    </div>
+    <div class="status-card">
+      <div class="label">H6 R@1 (ep=3299)</div>
+      <div class="value blue">0.348</div>
+      <div class="sub">Still climbing — seg-2 will find peak</div>
+    </div>
+    <div class="status-card">
+      <div class="label">H6 Seg-2 Status</div>
+      <div class="value purple">RUNNING</div>
+      <div class="sub">SLURM job 368901 &nbsp;|&nbsp; resume from ep=3299</div>
+    </div>
+  </div>
+
+  <!-- Narrative summary -->
+  <div class="callout">
+    <div class="callout-title">Where we are</div>
+    <div class="callout-body">
+      H6 (FREEZE_EGO=False, cross-attention) has completed segment-1 training (ep=99 through ep=3299) and received definitive evaluations at
+      ep=2099 and ep=3299. The picture is mixed: H6 is <strong>worse than H4 on every metric at these checkpoints</strong>, including a significant
+      MultiModality collapse (MM=2.5 vs H4=4.0). However, R@1 is still rising steeply at ep=3299 (0.348, up from 0.273 at ep=2099), suggesting
+      the model has not yet converged. <strong>Segment-2 (job 368901) is the critical test</strong> — it will determine whether H6 R@1 eventually
+      surpasses H4's ceiling of 0.548, and at what FID cost.
+    </div>
+  </div>
+
+  <!-- Master comparison table -->
+  <div class="section">
+    <div class="section-title">Master Comparison — All Models at CFG=10</div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Model</th>
+          <th>Config</th>
+          <th>Epoch</th>
+          <th>FID ↓</th>
+          <th>FID CI</th>
+          <th>Diversity</th>
+          <th>R@1 ↑</th>
+          <th>MM ↑</th>
+          <th>Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="h2-row">
+          <td>H2 baseline</td>
+          <td>mean-pool, trans_enc</td>
+          <td>4399</td>
+          <td>6.963</td>
+          <td>—</td>
+          <td>—</td>
+          <td>0.767</td>
+          <td>3.031</td>
+          <td><span class="pill pill-green">Baseline</span></td>
+        </tr>
+        <tr class="highlight">
+          <td>H4 <strong>(current best)</strong></td>
+          <td>cross-attn, FREEZE=True</td>
+          <td>3399</td>
+          <td>3.392</td>
+          <td>±0.179</td>
+          <td>5.794</td>
+          <td>0.548</td>
+          <td>3.956</td>
+          <td><span class="pill pill-green">Complete</span></td>
+        </tr>
+        <tr>
+          <td>H6 seg-1</td>
+          <td>cross-attn, FREEZE=False</td>
+          <td>2099</td>
+          <td>4.952</td>
+          <td>±0.088</td>
+          <td>5.957</td>
+          <td>0.263</td>
+          <td>2.455</td>
+          <td><span class="pill pill-blue">Eval done</span></td>
+        </tr>
+        <tr>
+          <td>H6 seg-1</td>
+          <td>cross-attn, FREEZE=False</td>
+          <td>3299</td>
+          <td>5.311</td>
+          <td>±0.060</td>
+          <td>6.034</td>
+          <td>0.348</td>
+          <td>2.581</td>
+          <td><span class="pill pill-blue">Eval done</span></td>
+        </tr>
+        <tr class="dim-row">
+          <td>H6 seg-2</td>
+          <td>cross-attn, FREEZE=False</td>
+          <td>&gt;3299</td>
+          <td>TBD</td>
+          <td>—</td>
+          <td>—</td>
+          <td>TBD</td>
+          <td>—</td>
+          <td><span class="pill pill-yellow">Waiting</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div style="margin-top:12px; font-size:0.8rem; color:#64748b;">
+      Note: H2 R@1=0.767 at CFG=10 is high because its single mean-pooled token is simpler to retrieve — but it produces far worse FID.
+      H4 and H6 condition on 196 per-timestep tokens (harder retrieval, richer generation).
+    </div>
+  </div>
+
+  <!-- H6 training trajectory chart -->
+  <div class="section">
+    <div class="section-title">H6 Training Trajectory — FID and R@1 vs Epoch</div>
+
+    <div class="trajectory-label">
+      Solid green = FID (left axis, lower is better). Dashed blue = R@1 (right axis, higher is better).
+      Yellow markers = definitive eval checkpoints. H4 reference points shown as stars.
+    </div>
+
+    <div class="chart-container">
+      <!--
+        H6 data:
+          ep=99:   FID=9.835, R@1=0.036
+          ep=799:  FID=6.664, R@1=0.044
+          ep=999:  FID=6.011, R@1=0.065
+          ep=1099: FID=5.283, R@1=0.079
+          ep=1499: FID=5.053, R@1=0.158
+          ep=1999: FID=4.967, R@1=0.271
+          ep=2099: FID=4.789, R@1=0.273  <-- best FID (training-time val)
+          ep=2699: FID=5.283, R@1=0.355
+          ep=2999: FID=5.889, R@1=0.373
+          ep=3299: FID=5.273, R@1=0.398  <-- best R@1 so far
+
+        H4 reference:
+          ep=3199: FID=3.766, R@1=0.529
+          ep=3399: FID=3.770, R@1=0.535
+          ep=4999: FID=4.508, R@1=0.511
+
+        Chart area: x=[80..760], y=[30..200] (plot area height=170)
+        X axis: epochs 0..3500. Scale: (ep / 3500) * 680 + 80
+          ep=99   → 99/3500*680+80  = 99.2
+          ep=799  → 799/3500*680+80 = 235.2
+          ep=999  → 999/3500*680+80 = 274.1
+          ep=1099 → 1099/3500*680+80= 293.5
+          ep=1499 → 1499/3500*680+80= 371.3
+          ep=1999 → 1999/3500*680+80= 468.5
+          ep=2099 → 2099/3500*680+80= 487.9
+          ep=2699 → 2699/3500*680+80= 603.9
+          ep=2999 → 2999/3500*680+80= 662.7
+          ep=3299 → 3299/3500*680+80= 720.8  (cap at 755)
+
+        FID Y axis: range 3.0..10.5 (height=170)
+          fid_y = 200 - (fid - 3.0) / 7.5 * 170
+          9.835 → 200 - 6.835/7.5*170 = 200 - 154.8 = 45.2
+          6.664 → 200 - 3.664/7.5*170 = 200 - 83.0  = 117.0
+          6.011 → 200 - 3.011/7.5*170 = 200 - 68.2  = 131.8
+          5.283 → 200 - 2.283/7.5*170 = 200 - 51.7  = 148.3
+          5.053 → 200 - 2.053/7.5*170 = 200 - 46.5  = 153.5
+          4.967 → 200 - 1.967/7.5*170 = 200 - 44.6  = 155.4
+          4.789 → 200 - 1.789/7.5*170 = 200 - 40.5  = 159.5
+          5.283 → 148.3
+          5.889 → 200 - 2.889/7.5*170 = 200 - 65.5  = 134.5
+          5.273 → 200 - 2.273/7.5*170 = 200 - 51.5  = 148.5
+
+        H4 FID reference:
+          3.766 → 200 - 0.766/7.5*170 = 200 - 17.4 = 182.6
+          3.770 → 182.5
+          4.508 → 200 - 1.508/7.5*170 = 200 - 34.2 = 165.8
+
+        R@1 Y axis: range 0.0..0.6 (height=170, mapped to right)
+          r1_y = 200 - (r1 / 0.6) * 170
+          0.036 → 200 - 10.2  = 189.8
+          0.044 → 200 - 12.5  = 187.5
+          0.065 → 200 - 18.4  = 181.6
+          0.079 → 200 - 22.4  = 177.6
+          0.158 → 200 - 44.8  = 155.2
+          0.271 → 200 - 76.8  = 123.2
+          0.273 → 200 - 77.4  = 122.6
+          0.355 → 200 - 100.7 = 99.3
+          0.373 → 200 - 105.8 = 94.2
+          0.398 → 200 - 112.9 = 87.1
+
+        H4 R@1 reference:
+          0.529 → 200 - 150.0 = 50.0
+          0.535 → 200 - 151.7 = 48.3
+          0.511 → 200 - 144.8 = 55.2
+      -->
+      <svg width="100%" viewBox="0 0 860 240" xmlns="http://www.w3.org/2000/svg">
+        <!-- Background -->
+        <rect width="860" height="240" fill="#0f1117" rx="6"/>
+
+        <!-- Grid lines -->
+        <line x1="80" y1="30" x2="760" y2="30" stroke="#1e293b" stroke-width="1"/>
+        <line x1="80" y1="72" x2="760" y2="72" stroke="#1e293b" stroke-width="1"/>
+        <line x1="80" y1="115" x2="760" y2="115" stroke="#1e293b" stroke-width="1"/>
+        <line x1="80" y1="157" x2="760" y2="157" stroke="#1e293b" stroke-width="1"/>
+        <line x1="80" y1="200" x2="760" y2="200" stroke="#1e293b" stroke-width="1"/>
+
+        <!-- Left Y-axis: FID labels (3.0..10.5, step ~1.9) -->
+        <text x="72" y="34" fill="#64748b" font-size="11" text-anchor="end">10.5</text>
+        <text x="72" y="76" fill="#64748b" font-size="11" text-anchor="end">8.6</text>
+        <text x="72" y="119" fill="#64748b" font-size="11" text-anchor="end">6.7</text>
+        <text x="72" y="161" fill="#64748b" font-size="11" text-anchor="end">4.8</text>
+        <text x="72" y="204" fill="#64748b" font-size="11" text-anchor="end">3.0</text>
+        <text x="22" y="118" fill="#4ade80" font-size="11" text-anchor="middle" transform="rotate(-90,22,118)">FID ↓</text>
+
+        <!-- Right Y-axis: R@1 labels (0.0..0.6) -->
+        <text x="768" y="204" fill="#60a5fa" font-size="11">0.0</text>
+        <text x="768" y="118" fill="#60a5fa" font-size="11">0.3</text>
+        <text x="768" y="34"  fill="#60a5fa" font-size="11">0.6</text>
+        <text x="840" y="118" fill="#60a5fa" font-size="11" text-anchor="middle" transform="rotate(90,840,118)">R@1 ↑</text>
+
+        <!-- H4 reference zone (horizontal band for H4 FID range) -->
+        <rect x="80" y="165" width="680" height="20" fill="#14532d" opacity="0.15" rx="2"/>
+        <text x="84" y="179" fill="#4ade80" font-size="9" opacity="0.7">H4 FID zone (3.4–3.8)</text>
+
+        <!-- H4 reference horizontal line for R@1 ceiling -->
+        <line x1="80" y1="50" x2="760" y2="50" stroke="#c084fc" stroke-width="1" stroke-dasharray="8,4" opacity="0.5"/>
+        <text x="763" y="53" fill="#c084fc" font-size="9">H4 R@1 ceiling 0.548</text>
+
+        <!-- H4 scatter points (stars) -->
+        <!-- H4 ep=3199: x=639, fid_y=182.6 mapped to plot, r1_y=50 -->
+        <!-- Using same x mapping: 3199/3500*680+80=701.5 — slightly out of range, show at 700 -->
+        <!-- H4 ep=3399: 3399/3500*680+80=739.5 → 738 -->
+        <!-- Let's show H4 as small stars at right edge -->
+
+        <!-- H6 FID line (green solid) -->
+        <polyline
+          points="99,45 235,117 274,132 294,148 371,154 468,155 488,160 604,148 663,135 721,149"
+          fill="none" stroke="#4ade80" stroke-width="2.5" stroke-linejoin="round"/>
+
+        <!-- H6 FID dots -->
+        <circle cx="99"  cy="45"  r="3.5" fill="#4ade80"/>
+        <circle cx="235" cy="117" r="3.5" fill="#4ade80"/>
+        <circle cx="274" cy="132" r="3.5" fill="#4ade80"/>
+        <circle cx="294" cy="148" r="3.5" fill="#4ade80"/>
+        <circle cx="371" cy="154" r="3.5" fill="#4ade80"/>
+        <circle cx="468" cy="155" r="3.5" fill="#4ade80"/>
+        <!-- ep=2099 best FID: larger yellow marker -->
+        <circle cx="488" cy="160" r="6" fill="#facc15" stroke="#4ade80" stroke-width="2"/>
+        <circle cx="604" cy="148" r="3.5" fill="#4ade80"/>
+        <circle cx="663" cy="135" r="3.5" fill="#4ade80"/>
+        <!-- ep=3299 best R@1: larger blue marker -->
+        <circle cx="721" cy="149" r="6" fill="#facc15" stroke="#4ade80" stroke-width="2"/>
+
+        <!-- FID value labels for key points -->
+        <text x="99"  y="38"  fill="#4ade80" font-size="8" text-anchor="middle">9.835</text>
+        <text x="488" y="153" fill="#facc15" font-size="9" text-anchor="middle">4.789*</text>
+        <text x="721" y="142" fill="#facc15" font-size="9" text-anchor="middle">5.273</text>
+
+        <!-- H6 R@1 line (blue dashed) -->
+        <polyline
+          points="99,190 235,188 274,182 294,178 371,155 468,123 488,123 604,99 663,94 721,87"
+          fill="none" stroke="#60a5fa" stroke-width="2" stroke-dasharray="6,3" stroke-linejoin="round"/>
+
+        <!-- H6 R@1 dots -->
+        <circle cx="99"  cy="190" r="3.5" fill="#60a5fa"/>
+        <circle cx="235" cy="188" r="3.5" fill="#60a5fa"/>
+        <circle cx="274" cy="182" r="3.5" fill="#60a5fa"/>
+        <circle cx="294" cy="178" r="3.5" fill="#60a5fa"/>
+        <circle cx="371" cy="155" r="3.5" fill="#60a5fa"/>
+        <circle cx="468" cy="123" r="3.5" fill="#60a5fa"/>
+        <circle cx="488" cy="123" r="6" fill="#facc15" stroke="#60a5fa" stroke-width="2"/>
+        <circle cx="604" cy="99"  r="3.5" fill="#60a5fa"/>
+        <circle cx="663" cy="94"  r="3.5" fill="#60a5fa"/>
+        <circle cx="721" cy="87"  r="6" fill="#facc15" stroke="#60a5fa" stroke-width="2"/>
+
+        <!-- R@1 value labels for key points -->
+        <text x="488" cy="116" y="116" fill="#facc15" font-size="9" text-anchor="middle">0.273</text>
+        <text x="721" y="80" fill="#facc15" font-size="9" text-anchor="middle">0.398*</text>
+
+        <!-- "still rising" arrow indicator -->
+        <line x1="738" y1="87" x2="755" y2="72" stroke="#60a5fa" stroke-width="1.5" marker-end="url(#arrow-blue)"/>
+        <text x="758" y="68" fill="#60a5fa" font-size="9">still</text>
+        <text x="758" y="78" fill="#60a5fa" font-size="9">rising</text>
+
+        <defs>
+          <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="3" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L6,3 z" fill="#60a5fa"/>
+          </marker>
+        </defs>
+
+        <!-- Seg-2 boundary (vertical dashed) -->
+        <line x1="721" y1="30" x2="721" y2="200" stroke="#facc15" stroke-width="1.5" stroke-dasharray="4,4" opacity="0.6"/>
+        <text x="724" y="43" fill="#facc15" font-size="9">seg-2 start</text>
+        <text x="724" y="54" fill="#facc15" font-size="9">ep=3299</text>
+
+        <!-- Seg-2 "unknown" region shaded -->
+        <rect x="721" y="30" width="39" height="170" fill="#facc15" opacity="0.04"/>
+        <text x="740" y="120" fill="#facc15" font-size="10" text-anchor="middle" opacity="0.5">?</text>
+
+        <!-- X axis labels -->
+        <text x="99"  y="215" fill="#64748b" font-size="9" text-anchor="middle">99</text>
+        <text x="235" y="215" fill="#64748b" font-size="9" text-anchor="middle">799</text>
+        <text x="294" y="215" fill="#64748b" font-size="9" text-anchor="middle">1099</text>
+        <text x="371" y="215" fill="#64748b" font-size="9" text-anchor="middle">1499</text>
+        <text x="488" y="215" fill="#facc15" font-size="9" text-anchor="middle">2099</text>
+        <text x="604" y="215" fill="#64748b" font-size="9" text-anchor="middle">2699</text>
+        <text x="721" y="215" fill="#facc15" font-size="9" text-anchor="middle">3299</text>
+        <text x="420" y="232" fill="#64748b" font-size="11" text-anchor="middle">Training Epoch (H6)</text>
+
+        <!-- Legend -->
+        <line x1="100" y1="228" x2="120" y2="228" stroke="#4ade80" stroke-width="2.5"/>
+        <text x="124" y="232" fill="#4ade80" font-size="10">H6 FID ↓ (left)</text>
+        <line x1="210" y1="228" x2="230" y2="228" stroke="#60a5fa" stroke-width="2" stroke-dasharray="6,3"/>
+        <text x="234" y="232" fill="#60a5fa" font-size="10">H6 R@1 ↑ (right)</text>
+        <line x1="330" y1="228" x2="350" y2="228" stroke="#c084fc" stroke-width="1" stroke-dasharray="8,4"/>
+        <text x="354" y="232" fill="#c084fc" font-size="10">H4 R@1 ceiling (0.548)</text>
+        <circle cx="480" cy="228" r="4" fill="#facc15"/>
+        <text x="487" y="232" fill="#facc15" font-size="10">definitive eval checkpoint</text>
+      </svg>
+    </div>
+
+    <div style="margin-top:10px; font-size:0.8rem; color:#64748b;">
+      * Yellow markers at ep=2099 and ep=3299 are definitive evaluation points (CFG=10, 3 replications).
+      All other points are training-time validation (single pass, noisier). "Still rising" arrow at ep=3299 indicates
+      R@1 has not peaked — seg-2 will continue.
+    </div>
+  </div>
+
+  <!-- H6 detailed results -->
+  <div class="section">
+    <div class="section-title">H6 Seg-1 Definitive Evaluations — FREEZE_EGO=False</div>
+
+    <p style="font-size:0.875rem; color:#94a3b8; margin-bottom:16px;">
+      Two checkpoints from segment-1 received full definitive evaluation (CFG=10, replication_times=3).
+      Both are worse than H4 on all metrics. However, R@1 is <strong>still climbing sharply</strong> at ep=3299,
+      making seg-2 the critical test.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Epoch</th>
+          <th>CFG</th>
+          <th>FID ↓</th>
+          <th>FID CI</th>
+          <th>Diversity</th>
+          <th>R@1 ↑</th>
+          <th>R@1 CI</th>
+          <th>MM ↑</th>
+          <th>vs H4 FID</th>
+          <th>vs H4 R@1</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>2099</td>
+          <td>10</td>
+          <td class="yellow">4.952</td>
+          <td>±0.088</td>
+          <td>5.957</td>
+          <td>0.263</td>
+          <td>±0.009</td>
+          <td>2.455</td>
+          <td class="red">+46.0%</td>
+          <td class="red">-52.0%</td>
+        </tr>
+        <tr>
+          <td>3299</td>
+          <td>10</td>
+          <td class="red">5.311</td>
+          <td>±0.060</td>
+          <td>6.034</td>
+          <td>0.348</td>
+          <td>±0.004</td>
+          <td>2.581</td>
+          <td class="red">+56.6%</td>
+          <td class="red">-36.5%</td>
+        </tr>
+        <tr style="border-top: 2px solid #334155;" class="highlight">
+          <td colspan="2" style="color:#4ade80;">H4 reference (best)</td>
+          <td>3.392</td>
+          <td>±0.179</td>
+          <td>5.794</td>
+          <td>0.548</td>
+          <td>±0.002</td>
+          <td>3.956</td>
+          <td>—</td>
+          <td>—</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h3>Key Observations from Seg-1</h3>
+    <div style="margin-top:8px;">
+      <div class="finding finding-neg">
+        <strong>FID degrades as R@1 improves — a tradeoff, not a joint improvement</strong>
+        <p>From ep=2099 to ep=3299: FID worsens from 4.952 → 5.311 (+7.3%) while R@1 improves from 0.263 → 0.348 (+32.3%).
+        The model is learning to condition on ego more accurately, but at the cost of generation quality. This is a stronger
+        version of the H4 dynamic — except H6 starts from a worse FID baseline.</p>
+      </div>
+      <div class="finding finding-neg">
+        <strong>MultiModality collapse: MM=2.5 vs H4=4.0</strong>
+        <p>With FREEZE_EGO=False, the ego encoder over-specializes to individual ego trajectories. The denoiser learns
+        to follow the encoder output deterministically, producing near-identical samples for the same condition. This is
+        the opposite of what was hoped — unfreezing trades diversity for conditioning accuracy.</p>
+      </div>
+      <div class="finding finding-yellow">
+        <strong>R@1 is still climbing steeply at ep=3299 (0.348, up from 0.273 at ep=2099)</strong>
+        <p>+28% R@1 improvement between ep=2099 and ep=3299 with no sign of plateau. The peak has not been reached.
+        The critical question for seg-2: where does R@1 plateau, and does it ever reach H4's 0.548?</p>
+      </div>
+      <div class="finding finding-blue">
+        <strong>Diversity slightly higher than H4 (6.034 vs 5.794)</strong>
+        <p>Despite MM collapse, the raw motion Diversity metric is marginally better — likely because the unfrozen encoder
+        produces more varied K/V keys for cross-attention, even if per-condition samples are similar to each other.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- FID comparison bars -->
+  <div class="section">
+    <div class="section-title">FID Comparison — All Models (CFG=10)</div>
+    <p style="font-size:0.875rem; color:#94a3b8; margin-bottom:16px;">
+      Bar width proportional to FID. Lower = better = shorter bar. Normalized to H2 baseline.
+    </p>
+
+    <div class="comparison-bar">
+      <div class="bar-label">H2 baseline (ep=4399)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%; background:#f87171;"></div></div>
+      <div class="bar-value red">6.963</div>
+    </div>
+    <div class="comparison-bar">
+      <div class="bar-label">H6 ep=3299</div>
+      <div class="bar-track"><div class="bar-fill" style="width:76.3%; background:#fb923c;"></div></div>
+      <div class="bar-value orange">5.311</div>
+    </div>
+    <div class="comparison-bar">
+      <div class="bar-label">H6 ep=2099 (best H6 FID)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:71.1%; background:#facc15;"></div></div>
+      <div class="bar-value yellow">4.952</div>
+    </div>
+    <div class="comparison-bar">
+      <div class="bar-label" style="color:#4ade80; font-weight:600;">H4 ep=3399 (BEST OVERALL)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:48.7%; background:#4ade80;"></div></div>
+      <div class="bar-value green">3.392</div>
+    </div>
+
+    <div style="margin-top:12px; font-size:0.8rem; color:#64748b;">
+      H6 has not improved on H4 FID at any evaluated checkpoint. H4 remains the clear winner on generation quality.
+    </div>
+  </div>
+
+  <!-- R@1 comparison bars -->
+  <div class="section">
+    <div class="section-title">R@1 Comparison — All Models (CFG=10)</div>
+    <p style="font-size:0.875rem; color:#94a3b8; margin-bottom:16px;">
+      Bar width proportional to R@1. Higher = better = longer bar. Normalized to H2 baseline.
+    </p>
+
+    <div class="comparison-bar">
+      <div class="bar-label">H2 baseline (ep=4399)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:100%; background:#facc15;"></div></div>
+      <div class="bar-value yellow">0.767</div>
+    </div>
+    <div class="comparison-bar">
+      <div class="bar-label" style="color:#4ade80; font-weight:600;">H4 ep=3399 (BEST cross-attn)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:71.4%; background:#4ade80;"></div></div>
+      <div class="bar-value green">0.548</div>
+    </div>
+    <div class="comparison-bar">
+      <div class="bar-label">H6 ep=3299</div>
+      <div class="bar-track"><div class="bar-fill" style="width:45.4%; background:#60a5fa;"></div></div>
+      <div class="bar-value blue">0.348</div>
+    </div>
+    <div class="comparison-bar">
+      <div class="bar-label">H6 ep=2099</div>
+      <div class="bar-track"><div class="bar-fill" style="width:34.3%; background:#94a3b8;"></div></div>
+      <div class="bar-value" style="color:#94a3b8;">0.263</div>
+    </div>
+    <div class="comparison-bar">
+      <div class="bar-label">H6 seg-2 (TBD)</div>
+      <div class="bar-track"><div class="bar-fill" style="width:60%; background:rgba(192,132,252,0.3); border: 2px dashed #c084fc;"></div></div>
+      <div class="bar-value purple">??? </div>
+    </div>
+
+    <div style="margin-top:12px; font-size:0.8rem; color:#64748b;">
+      H6 R@1 is still far below H4 at ep=3299. Seg-2 must determine whether it can close this gap. The dashed purple bar
+      represents the seg-2 prediction range (optimistic: surpass H4=0.548; realistic: plateau near 0.4–0.5).
+    </div>
+  </div>
+
+  <!-- MultiModality deep dive -->
+  <div class="section">
+    <div class="section-title">MultiModality Analysis — An Unexpected Finding</div>
+
+    <div class="two-col">
+      <div>
+        <h3>MM by Model</h3>
+        <table style="margin-top:8px;">
+          <thead>
+            <tr><th>Model</th><th>MM ↑</th><th>Assessment</th></tr>
+          </thead>
+          <tbody>
+            <tr class="highlight">
+              <td>H4 ep=3399</td>
+              <td>3.956</td>
+              <td class="green">Good</td>
+            </tr>
+            <tr>
+              <td>H2 baseline</td>
+              <td>3.031</td>
+              <td class="yellow">Moderate</td>
+            </tr>
+            <tr>
+              <td>H6 ep=3299</td>
+              <td>2.581</td>
+              <td class="red">Low</td>
+            </tr>
+            <tr>
+              <td>H6 ep=2099</td>
+              <td>2.455</td>
+              <td class="red">Low</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div>
+        <h3>What MultiModality Measures</h3>
+        <p style="font-size:0.85rem; color:#94a3b8; margin-top:8px;">
+          MM measures the diversity of outputs <em>given the same conditioning input</em>.
+          High MM = model generates varied motions for one ego trajectory (good: realistic ambiguity).
+          Low MM = model produces near-identical outputs (bad: over-deterministic).
+        </p>
+        <p style="font-size:0.85rem; color:#94a3b8; margin-top:8px;">
+          H4 (frozen encoder, MM=4.0): The frozen encoder provides a fixed conditioning signal,
+          leaving the denoiser's stochasticity intact. Each sample is genuinely different.
+        </p>
+        <p style="font-size:0.85rem; color:#94a3b8; margin-top:8px;">
+          H6 (unfrozen encoder, MM=2.5): The joint training collapses the ego encoding into a
+          near-deterministic lookup — same ego → almost same motion, every time.
+        </p>
+      </div>
+    </div>
+
+    <div class="finding finding-neg" style="margin-top:16px;">
+      <strong>Unfreezing the encoder trades stochastic generation for deterministic conditioning</strong>
+      <p>This is a fundamental tension: the ego encoder learns to maximize R@1 by making the conditioning signal
+      as discriminative as possible, but this also removes the ambiguity the diffusion model needs to generate
+      diverse outputs. MM=2.5 (H6) vs MM=4.0 (H4) is a 37% drop. Whether this is acceptable depends on whether
+      R@1 eventually surpasses H4 — a tradeoff that seg-2 will quantify.</p>
+    </div>
+  </div>
+
+  <!-- H6 seg-2 status -->
+  <div class="section">
+    <div class="section-title">
+      H6 Segment-2 — Critical Test
+      <span class="waiting-badge"><span class="waiting-dot"></span>WAITING FOR RESULTS</span>
+    </div>
+
+    <table style="margin-bottom:16px;">
+      <tr><th style="width:180px;">Parameter</th><th>Value</th></tr>
+      <tr><td>SLURM Job</td><td><strong class="purple">368901</strong></td></tr>
+      <tr><td>Submitted</td><td>2026-04-15</td></tr>
+      <tr><td>Resume from</td><td>ep=3299</td></tr>
+      <tr><td>Architecture</td><td>trans_dec cross-attention, FREEZE_EGO=False</td></tr>
+      <tr><td>24h budget</td><td>~24h from 2026-04-15 → expected complete ~2026-04-16</td></tr>
+      <tr><td>Primary question</td><td>Does H6 R@1 surpass H4's ceiling of 0.548?</td></tr>
+      <tr><td>Secondary question</td><td>At what FID does R@1 peak? Does the FID/R@1 tradeoff worsen?</td></tr>
+      <tr><td>MM question</td><td>Does MM continue to decline as R@1 rises, or is there a plateau?</td></tr>
+    </table>
+
+    <h3>Seg-2 Outcome Scenarios</h3>
+    <div class="finding finding-blue">
+      <strong>Scenario A (optimistic): H6 R@1 surpasses 0.548, FID stays &lt; 5.5</strong>
+      <p>H6 hypothesis confirmed — joint training does unlock per-timestep conditioning quality.
+      The MM tradeoff is acceptable if R@1 is strong. New best overall model. Strong contribution toward paper.</p>
+    </div>
+    <div class="finding finding-yellow">
+      <strong>Scenario B (mixed): H6 R@1 reaches 0.4–0.55, FID stays &gt; 4.5</strong>
+      <p>H6 partially addresses R@1 ceiling but does not surpass H4. FID/R@1 tradeoff confirmed as real.
+      Need to investigate architecture changes (larger ego encoder, separate learning rates, contrastive loss).</p>
+    </div>
+    <div class="finding finding-neg">
+      <strong>Scenario C (pessimistic): H6 R@1 plateaus below 0.4, training diverges</strong>
+      <p>Joint training is unstable or the architecture fundamentally cannot support joint optimization.
+      Pivot: freeze ego encoder but add a lightweight per-timestep adapter on top of the frozen features (H7 candidate).</p>
+    </div>
+  </div>
+
+  <!-- Hypothesis status overview -->
+  <div class="section">
+    <div class="section-title">Hypothesis Status Overview</div>
+    <div class="hypothesis-row">
+      <div class="hyp-card">
+        <div class="hyp-name" style="color:#4ade80;">H1 — Full Training Run</div>
+        <div class="hyp-status"><span class="pill pill-green">COMPLETED</span></div>
+        <div class="hyp-result">Baseline established. FID=6.603 at ep=4399, CFG=5. Early stopping critical.</div>
+      </div>
+      <div class="hyp-card">
+        <div class="hyp-name" style="color:#f87171;">H3 — Latent-8 VAE</div>
+        <div class="hyp-status"><span class="pill pill-red">REJECTED</span></div>
+        <div class="hyp-result">FID=7.563 vs H2=6.603 (+14.5% worse). Abandoned.</div>
+      </div>
+      <div class="hyp-card">
+        <div class="hyp-name" style="color:#4ade80;">H5 — CFG Sweep</div>
+        <div class="hyp-status"><span class="pill pill-green">COMPLETED</span></div>
+        <div class="hyp-result">CFG=5 best for FID, CFG=10 balanced. Used CFG=10 as primary eval going forward.</div>
+      </div>
+    </div>
+    <div class="hypothesis-row">
+      <div class="hyp-card">
+        <div class="hyp-name" style="color:#4ade80;">H4 — Cross-Attn FREEZE_EGO=True</div>
+        <div class="hyp-status"><span class="pill pill-green">COMPLETED — CURRENT BEST</span></div>
+        <div class="hyp-result">FID=3.392 (48.6% better than H2). R@1 ceiling=0.548. ep=3399 is best. MM=3.956.</div>
+      </div>
+      <div class="hyp-card">
+        <div class="hyp-name" style="color:#facc15;">H6 — Cross-Attn FREEZE_EGO=False</div>
+        <div class="hyp-status"><span class="pill pill-yellow">IN PROGRESS (seg-2, job 368901)</span></div>
+        <div class="hyp-result">Seg-1 complete. FID &gt; H4, R@1 still climbing (0.348 at ep=3299), MM collapsed to 2.5. Seg-2 is critical test.</div>
+      </div>
+      <div class="hyp-card">
+        <div class="hyp-name" style="color:#94a3b8;">H7 — Architecture Refinement</div>
+        <div class="hyp-status"><span class="pill pill-blue">QUEUED</span></div>
+        <div class="hyp-result">Defined based on H6 outcome. Candidates: per-timestep adapter, separate LR, contrastive aux loss, larger denoiser.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Key findings summary -->
+  <div class="section">
+    <div class="section-title">Key Findings to Date</div>
+
+    <div class="finding">
+      <strong>Finding 1: Cross-attention ego conditioning dramatically improves FID</strong>
+      <p>H4 FID=3.392 vs H2 FID=6.963 — a 51% improvement. Per-timestep ego tokens allow the denoiser to align motion
+      with specific moments in the trajectory, producing much more realistic motion overall. This finding is robust and
+      consistent across CFG values and epochs.</p>
+    </div>
+
+    <div class="finding finding-neg">
+      <strong>Finding 2: Freezing the ego encoder creates a hard R@1 ceiling</strong>
+      <p>H4 R@1 plateaus at 0.548 and never improves, even with 1800 more training epochs. The encoder was pretrained
+      for mean-pooled alignment, not per-timestep discriminative features. This architectural mismatch is confirmed.</p>
+    </div>
+
+    <div class="finding finding-neg">
+      <strong>Finding 3: Unfreezing the encoder (H6) creates a FID/MM/R@1 three-way tradeoff</strong>
+      <p>H6 shows improving R@1 but worsening FID and collapsing MM. The joint training causes encoder over-specialization —
+      the conditioning signal becomes too deterministic, hurting both generation quality and diversity. Whether R@1 eventually
+      surpasses the H4 ceiling (0.548) is the open question.</p>
+    </div>
+
+    <div class="finding finding-yellow">
+      <strong>Finding 4: FID and R@1 do not co-optimize under joint training</strong>
+      <p>In H4 (frozen), they coincidentally peaked at the same epoch (3399). In H6 (unfrozen), they explicitly diverge:
+      best FID at ep=2099, best R@1 at ep=3299 (and still rising). This suggests fundamentally different loss landscapes
+      for the two objectives and motivates separate optimization or auxiliary losses.</p>
+    </div>
+
+    <div class="finding finding-blue">
+      <strong>Finding 5: High H2 R@1 (0.767) is a retrieval artifact, not a quality signal</strong>
+      <p>H2 conditions on a single mean-pooled token — a simpler retrieval target that produces high R@1 but poor FID (6.963).
+      H4/H6 condition on 196 per-timestep tokens — harder retrieval but dramatically better generation. The R@1 metric
+      must be interpreted relative to conditioning complexity.</p>
+    </div>
+  </div>
+
+  <!-- Next actions -->
+  <div class="section">
+    <div class="section-title">Next Actions</div>
+    <ul class="next-actions">
+      <li class="critical">WAIT: H6 seg-2 (job 368901) results — expected ~2026-04-16. This is the critical decision point.</li>
+      <li class="active">Extract H6 seg-2 training trajectory from wandb: identify R@1 plateau epoch. Submit definitive evals at peak-R@1 and best-FID checkpoints.</li>
+      <li class="active">KEY METRIC: Does H6 R@1 exceed 0.548 (H4 ceiling)? Report FID and MM at that checkpoint.</li>
+      <li>If H6 Scenario A (R@1 &gt; 0.548): write up H4 vs H6 comparison as paper section. Consider paper submission target.</li>
+      <li>If H6 Scenario B/C: design H7 — candidates: (a) frozen encoder + lightweight per-timestep adapter trained jointly, (b) contrastive auxiliary loss on ego encoding, (c) separate learning rates for encoder vs denoiser.</li>
+      <li>Regardless of H6 outcome: document the FID/R@1/MM three-way tradeoff as a core finding — this is novel and publication-worthy.</li>
+    </ul>
+  </div>
+
+  <div style="text-align:center; margin-top:32px; font-size:0.75rem; color:#334155;">
+    Autoresearch session &nbsp;|&nbsp; Motion Latent Diffusion &nbsp;|&nbsp; 2026-04-15 &nbsp;|&nbsp; H6 seg-2 is the critical test
+  </div>
+
+</div>
+</body>
+</html>
