@@ -471,6 +471,64 @@ experiments:
       MultiModality_ci: 0.435
     notes: "CFG=7 gives FID=6.716, R-prec@1=0.724. Good tradeoff: only 1.7% FID degradation vs CFG=5 but +7.9% R-prec. The CFG=7 operating point is the best combined FID/R-prec balance."
 
+  - id: run_026
+    name: h6_diffusion_training_segment1
+    hypothesis: H6-unfreeze-ego-encoder
+    status: finished
+    slurm_job: 365378
+    submitted: "2026-04-13"
+    elapsed: "24h (SLURM timeout at epoch ~3359)"
+    final_epoch: 3299
+    notes: |
+      H6 seg-1 TIMEOUT. Last checkpoint: epoch=3299. Training trajectory shows FID/R@1 tradeoff.
+      FID best at ep=2099 (4.789), R@1 best at ep=3299 (0.398). Both still below H4 best.
+
+  - id: run_027
+    name: h6_eval_epoch2099_cfg10
+    hypothesis: H6-unfreeze-ego-encoder
+    status: finished
+    slurm_job: 368864
+    submitted: "2026-04-15"
+    checkpoint: epoch=2099
+    guidance_scale: 10
+    metrics:
+      FID: 4.952
+      FID_ci: 0.088
+      Diversity: 5.957
+      gt_Diversity: 5.496
+      R_precision_top_1: 0.263
+      R_precision_top_1_ci: 0.009
+      R_precision_top_2: 0.363
+      R_precision_top_3: 0.436
+      MultiModality: 2.455
+      MultiModality_ci: 0.250
+    notes: "H6 ep=2099 best FID checkpoint. FID=4.952 (vs H4 3.392 — 46% worse). R@1=0.263."
+
+  - id: run_028
+    name: h6_eval_epoch3299_cfg10
+    hypothesis: H6-unfreeze-ego-encoder
+    status: finished
+    slurm_job: 368863
+    submitted: "2026-04-15"
+    checkpoint: epoch=3299
+    guidance_scale: 10
+    metrics:
+      FID: 5.311
+      FID_ci: 0.060
+      Diversity: 6.034
+      gt_Diversity: 5.496
+      R_precision_top_1: 0.348
+      R_precision_top_1_ci: 0.004
+      R_precision_top_2: 0.463
+      R_precision_top_3: 0.532
+      MultiModality: 2.581
+      MultiModality_ci: 0.349
+    notes: |
+      H6 ep=3299 best R@1 so far. FID=5.311 (vs H4 3.392 — 57% worse). R@1=0.348 (vs H4 0.548 — 36% worse).
+      BOTH metrics worse than H4, but H6 R@1 still ascending steeply — seg-2 may change the story.
+      MM=2.581 (H4: 3.956) — H6 generates LESS diverse motions per condition than H4.
+      This aligns with encoder over-specialization: the ego encoder encodes discriminative not generative features.
+
 hypotheses:
   H0-baseline:
     description: "Train on all datasets with standard VAE (latent-4, no interaction features)"
@@ -546,7 +604,7 @@ hypotheses:
     prediction: "R-prec@1 improves toward or beyond H2 (0.671); FID may remain low because architecture is same"
     status: running_seg2
     slurm_job_seg1: 365378
-    slurm_job_seg2: 368862
+    slurm_job_seg2: 368901  # 368862 FAILED (resume path was file not dir; fixed)
     submitted_seg1: "2026-04-13"
     submitted_seg2: "2026-04-15"
     seg1_result: |
@@ -566,8 +624,16 @@ hypotheses:
       R@1 improves but FID degrades. Best FID (4.789) is at ep=2099 but R@1 still low (0.273).
       Both FID and R@1 still well below H4 best (FID=3.392, R@1=0.548 at ep=3399).
       R@1 still strongly increasing at ep=3299 — training needs to continue.
-      Intermediate evals submitted: ep=3299 (job 368863) and ep=2099 (job 368864), both CFG=10.
-      Seg-2 resume submitted (job 368862) from ep=3299.
+      Intermediate evals COMPLETED: ep=3299 (job 368863) and ep=2099 (job 368864), both CFG=10.
+      DEFINITIVE EVAL RESULTS (3× replicated, CFG=10):
+        ep=2099: FID=4.952 ±0.088, R@1=0.263 ±0.009, Diversity=5.957, MM=2.455
+        ep=3299: FID=5.311 ±0.060, R@1=0.348 ±0.004, Diversity=6.034, MM=2.581
+      NOTE: Definitive FID higher than training-time val (4.789→4.952, 5.273→5.311).
+      R@1 also slightly lower (0.398→0.348 at ep=3299). Both are normal: 3× replication
+      is more robust than single-pass training-time val.
+      H6 ep=3299 vs H4 ep=3399 (CFG=10): FID 5.311 vs 3.392 (57% worse), R@1 0.348 vs 0.548 (36% worse).
+      H6 seg-2 resume FAILED job 368862 (bug: TRAIN.RESUME path was .ckpt file, not dir).
+      Fixed: changed to model directory path. Resubmitted as job 368901.
     motivation: |
       H4 R@1 ceiling: max is 0.535 at epoch=3399 (both metrics DEGRADE after this epoch).
       H2 R@1=0.671. H4 FREEZE_EGO=True prevents encoder from adapting to cross-attention use case.
@@ -590,14 +656,14 @@ hypotheses:
     priority: low  # expensive; activate only after H4 + H6 explored
 
 next_actions:
-  - "H6 seg-2 running (job 368862, resume from ep=3299). Check trajectory in ~24h."
-  - "H6 intermediate evals running: job 368863 (ep=3299, CFG=10), job 368864 (ep=2099, CFG=10)"
-  - "KEY QUESTION: after seg-2, does H6 R@1 exceed H4's 0.548 ceiling? Does FID stabilize?"
-  - "New finding: H6 shows FID/R@1 TRADEOFF. At ep=2099: FID=4.789 (best), R@1=0.273. At ep=3299: FID=5.273, R@1=0.398."
+  - "H6 seg-2 running (job 368901, resume from ep=3299). Check trajectory in ~24h."
+  - "KEY QUESTION: after seg-2, does H6 R@1 exceed H4's 0.548 ceiling? Does FID approach H4's 3.392?"
+  - "Definitive evals (CFG=10) completed: ep=2099 FID=4.952/R@1=0.263, ep=3299 FID=5.311/R@1=0.348"
+  - "FID/R@1 TRADEOFF CONFIRMED in H6: best FID at ep=2099 (4.952), best R@1 at ep=3299 (0.348)"
   - "After seg-2 (24h): extract trajectory, find best checkpoint, submit CFG=5/10/15 evals"
-  - "H9 (layernorm) job 365367 still running — check its config and expected results"
+  - "If H6 R@1 surpasses 0.548 with good FID, consider writing paper. If not, test H7 (larger denoiser)."
 
-last_updated: "2026-04-15 (H6 seg-1 complete — FID/R@1 tradeoff observed; seg-2 + evals submitted)"
+last_updated: "2026-04-15 (H6 definitive evals complete; seg-2 job 368901 running)"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
