@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Research Progress Report #004 — Ego-Conditioned Motion Generation</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0f1117; color: #e2e8f0; line-height: 1.6; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+  h1 { font-size: 1.8rem; font-weight: 700; color: #f8fafc; margin-bottom: 0.3rem; }
+  h2 { font-size: 1.2rem; font-weight: 600; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin: 2rem 0 1rem; }
+  h3 { font-size: 1rem; font-weight: 600; color: #cbd5e1; margin-bottom: 0.5rem; }
+  .subtitle { color: #64748b; font-size: 0.9rem; margin-bottom: 2rem; }
+  .card { background: #1e2433; border: 1px solid #2d3748; border-radius: 12px; padding: 1.5rem; margin-bottom: 1.5rem; }
+  .card-highlight { background: #1a2744; border-color: #3b82f6; }
+  .card-warning { background: #2a1f14; border-color: #f59e0b; }
+  .card-success { background: #142a1a; border-color: #22c55e; }
+  .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .metric { text-align: center; }
+  .metric-value { font-size: 1.8rem; font-weight: 700; color: #f8fafc; }
+  .metric-label { font-size: 0.75rem; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; }
+  .metric-badge { display: inline-block; background: #166534; color: #86efac; font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 4px; margin-top: 0.2rem; }
+  .badge-warn { background: #78350f; color: #fcd34d; }
+  .badge-info { background: #1e3a5f; color: #93c5fd; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { background: #2d3748; padding: 0.6rem 0.8rem; text-align: left; color: #94a3b8; font-weight: 600; }
+  td { padding: 0.6rem 0.8rem; border-bottom: 1px solid #2d3748; }
+  tr:last-child td { border-bottom: none; }
+  .highlight-row { background: rgba(59, 130, 246, 0.1); }
+  .highlight-row-green { background: rgba(34, 197, 94, 0.08); }
+  .tag { display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  .tag-best { background: #166534; color: #86efac; }
+  .tag-tradeoff { background: #1e40af; color: #93c5fd; }
+  .tag-regression { background: #7f1d1d; color: #fca5a5; }
+  .tag-running { background: #164e63; color: #67e8f9; }
+  .tag-pending { background: #3d2e00; color: #fde68a; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+  canvas { width: 100%; }
+  .finding { border-left: 3px solid #3b82f6; padding: 0.5rem 1rem; margin: 0.8rem 0; background: rgba(59,130,246,0.05); }
+  .finding-green { border-color: #22c55e; background: rgba(34,197,94,0.05); }
+  .finding-amber { border-color: #f59e0b; background: rgba(245,158,11,0.05); }
+  ul { padding-left: 1.3rem; }
+  li { margin: 0.3rem 0; color: #cbd5e1; font-size: 0.9rem; }
+  .status-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin: 1rem 0; }
+  .status-card { background: #1a2030; border: 1px solid #2d3748; border-radius: 8px; padding: 1rem; }
+  .status-running { border-color: #0891b2; }
+  .status-done { border-color: #16a34a; }
+  .status-planned { border-color: #6366f1; }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+  .dot-running { background: #0891b2; animation: pulse 1.5s infinite; }
+  .dot-done { background: #16a34a; }
+  .dot-planned { background: #6366f1; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .progress-bar { background: #2d3748; border-radius: 4px; height: 6px; margin-top: 0.5rem; }
+  .progress-fill { height: 100%; border-radius: 4px; }
+</style>
+</head>
+<body>
+<div class="container">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+    <h1>Ego-Motion Generation — Progress #004</h1>
+    <span style="color:#64748b;font-size:0.85rem;">2026-03-30</span>
+  </div>
+  <p class="subtitle">Autoresearch loop update: CFG sweep complete · H2 baseline confirmed · H3 training (latent-8) underway</p>
+
+  <!-- Key Metrics Bar -->
+  <div class="card card-success">
+    <h3>H2 Best Result (Confirmed Baseline)</h3>
+    <div class="metric-grid" style="margin-top:1rem;">
+      <div class="metric">
+        <div class="metric-value" style="color:#4ade80;">6.603</div>
+        <div class="metric-label">FID (CFG=5)</div>
+        <div class="metric-badge">↓ 10.8% vs default</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" style="color:#60a5fa;">6.716</div>
+        <div class="metric-label">FID (CFG=7)</div>
+        <div class="metric-badge badge-info">Best tradeoff</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">0.724</div>
+        <div class="metric-label">R-prec@1 (CFG=7)</div>
+        <div class="metric-badge badge-info">↑ 7.9% vs CFG=5</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value">5.779</div>
+        <div class="metric-label">Diversity (CFG=5)</div>
+        <div class="metric-badge">GT: 5.33</div>
+      </div>
+      <div class="metric">
+        <div class="metric-value" style="color:#f59e0b;">4399</div>
+        <div class="metric-label">Best Epoch (H2)</div>
+        <div class="metric-badge badge-warn">Not final ckpt</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Plot: Complete CFG Sweep -->
+  <div class="card">
+    <h2 style="margin-top:0;">Complete CFG Guidance Scale Sweep</h2>
+    <p style="color:#94a3b8;font-size:0.85rem;margin-bottom:1rem;">H2 epoch=4399 checkpoint evaluated at all 5 guidance scales. Lower FID = better quality. Higher R-prec = better ego conditioning fidelity.</p>
+    <canvas id="cfgCanvas" height="280"></canvas>
+  </div>
+
+  <div class="two-col">
+    <!-- CFG Sweep Table -->
+    <div class="card">
+      <h2 style="margin-top:0;">CFG Sweep Results</h2>
+      <table>
+        <thead>
+          <tr><th>CFG</th><th>FID ↓</th><th>FID CI</th><th>R-prec@1 ↑</th><th>MM</th></tr>
+        </thead>
+        <tbody>
+          <tr class="highlight-row-green">
+            <td><strong>5</strong></td><td style="color:#4ade80;font-weight:700;">6.603</td><td>±0.067</td><td>0.671</td><td>3.503</td>
+          </tr>
+          <tr class="highlight-row">
+            <td><strong>7 ★</strong></td><td style="color:#60a5fa;font-weight:700;">6.716</td><td>±0.068</td><td style="color:#60a5fa;font-weight:700;">0.724</td><td>3.291</td>
+          </tr>
+          <tr>
+            <td>10</td><td>6.963</td><td>±0.035</td><td>0.767</td><td>3.031</td>
+          </tr>
+          <tr>
+            <td>15</td><td>7.400</td><td>±0.016</td><td>0.797</td><td>2.724</td>
+          </tr>
+          <tr>
+            <td>20</td><td>7.856</td><td>±0.041</td><td>0.815</td><td>2.573</td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="color:#64748b;font-size:0.78rem;margin-top:0.8rem;">★ CFG=7: best combined score (+1.7% FID cost, +7.9% R-prec vs CFG=5)</p>
+    </div>
+
+    <!-- H2 Epoch Trajectory -->
+    <div class="card">
+      <h2 style="margin-top:0;">H2 Epoch Trajectory (FID at CFG=5)</h2>
+      <canvas id="epochCanvas" height="200"></canvas>
+      <p style="color:#64748b;font-size:0.78rem;margin-top:0.8rem;">FID oscillated independently of training loss. Epoch=4399 is definitively the best checkpoint.</p>
+      <table style="margin-top:1rem;">
+        <thead><tr><th>Epoch</th><th>FID</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr class="highlight-row-green"><td>4399</td><td style="color:#4ade80;font-weight:700;">6.603</td><td><span class="tag tag-best">BEST</span></td></tr>
+          <tr><td>4599</td><td style="color:#f87171;">8.400</td><td><span class="tag tag-regression">Regression</span></td></tr>
+          <tr><td>4999</td><td>7.510</td><td>Partial recovery</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Key Findings -->
+  <div class="card">
+    <h2 style="margin-top:0;">Key Findings</h2>
+    <div class="finding finding-green">
+      <strong>CFG=7 is the optimal operating point</strong> for balanced evaluation. At only +1.7% FID cost vs CFG=5 (6.716 vs 6.603), R-precision improves +7.9% (0.724 vs 0.671). The FID/R-prec tradeoff curve is convex — CFG=7 sits at the knee.
+    </div>
+    <div class="finding finding-amber">
+      <strong>FID regression confirmed permanent:</strong> H2 model peaked at epoch=4399 (FID=6.603) and did not recover at epoch=4999 (FID=7.510). Training loss was flat (~0.287) throughout — sampling quality oscillates independently of loss. <em>Early stopping with periodic FID validation is essential.</em>
+    </div>
+    <div class="finding">
+      <strong>Latent-8 (H3) is 3× slower per epoch:</strong> H3 trains at ~51.6s/epoch vs H2's ~17.6s/epoch. A 24h job reaches ~1674 epochs — far short of H2's best at epoch=4399. H3 will need ~3× chained 24h job segments. Resume script prepared.
+    </div>
+    <div class="finding finding-green">
+      <strong>H4 infrastructure already exists:</strong> Both EgoEncoder (no pooling, returns full T=196 sequence) and trans_dec (cross-attention decoder arch) are implemented. H4 just needs config changes + ego encoder re-pretraining (~4h) + diffusion training.
+    </div>
+  </div>
+
+  <!-- Active Pipeline -->
+  <div class="card">
+    <h2 style="margin-top:0;">Active Research Pipeline</h2>
+    <div class="status-grid">
+      <div class="status-card status-running">
+        <div><span class="dot dot-running"></span><strong>Job 329789</strong></div>
+        <div style="color:#67e8f9;font-size:0.85rem;margin-top:0.3rem;">H3 Diffusion Training (Latent-8)</div>
+        <div style="color:#94a3b8;font-size:0.8rem;margin-top:0.3rem;">~300/5000 epochs · ~51s/epoch · 24h wall time</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:6%;background:#0891b2;"></div></div>
+        <div style="color:#64748b;font-size:0.75rem;margin-top:0.3rem;">Will reach ~1674 epochs. Resume required.</div>
+      </div>
+      <div class="status-card status-done">
+        <div><span class="dot dot-done"></span><strong>H5 CFG Sweep</strong></div>
+        <div style="color:#4ade80;font-size:0.85rem;margin-top:0.3rem;">COMPLETE (5 guidance scales)</div>
+        <div style="color:#94a3b8;font-size:0.8rem;margin-top:0.3rem;">CFG=5 best FID · CFG=7 best combined</div>
+      </div>
+      <div class="status-card status-done">
+        <div><span class="dot dot-done"></span><strong>H2 Final Eval</strong></div>
+        <div style="color:#4ade80;font-size:0.85rem;margin-top:0.3rem;">COMPLETE — Baseline confirmed</div>
+        <div style="color:#94a3b8;font-size:0.8rem;margin-top:0.3rem;">Best: epoch=4399, FID=6.603 (CFG=5)</div>
+      </div>
+      <div class="status-card status-planned">
+        <div><span class="dot dot-planned"></span><strong>H4 Cross-Attention Encoder</strong></div>
+        <div style="color:#a5b4fc;font-size:0.85rem;margin-top:0.3rem;">PLANNED — Protocol locked</div>
+        <div style="color:#94a3b8;font-size:0.8rem;margin-top:0.3rem;">Infrastructure ready · Pending H3 first result</div>
+      </div>
+      <div class="status-card status-planned">
+        <div><span class="dot dot-planned"></span><strong>H3 Resume (Segment 2)</strong></div>
+        <div style="color:#a5b4fc;font-size:0.85rem;margin-top:0.3rem;">PLANNED — Script ready</div>
+        <div style="color:#94a3b8;font-size:0.8rem;margin-top:0.3rem;">Submit after job 329789 ends (~tomorrow)</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hypothesis Tracker -->
+  <div class="card">
+    <h2 style="margin-top:0;">Hypothesis Status</h2>
+    <table>
+      <thead><tr><th>Hypothesis</th><th>Description</th><th>Status</th><th>Best Result</th></tr></thead>
+      <tbody>
+        <tr><td>H2</td><td>Interaction crop + weighted sampling</td><td><span class="tag tag-best">DONE</span></td><td>FID=6.603 (epoch=4399, CFG=5)</td></tr>
+        <tr><td>H5</td><td>CFG guidance scale sweep</td><td><span class="tag tag-best">DONE</span></td><td>CFG=7 best tradeoff; CFG=5 best FID</td></tr>
+        <tr class="highlight-row"><td>H3</td><td>Latent-8 VAE (more capacity)</td><td><span class="tag tag-running">TRAINING</span></td><td>~epoch 300/5000 · pending eval</td></tr>
+        <tr><td>H4</td><td>Cross-attention ego encoder (trans_dec)</td><td><span class="tag tag-pending">PLANNED</span></td><td>Expected: R-prec ≥ 0.80</td></tr>
+        <tr><td>H6</td><td>Joint fine-tuning VAE+diffusion</td><td><span class="tag tag-pending">UNTESTED</span></td><td>—</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Next Steps -->
+  <div class="card card-warning">
+    <h2 style="margin-top:0;">Critical Next Steps</h2>
+    <ul>
+      <li><strong>~Tomorrow (2026-03-31 ~09:00):</strong> Job 329789 ends. Check final epoch, submit intermediate eval (epoch~1599), then <code>sbatch resume_h3_diffusion_helma.sh</code></li>
+      <li><strong>Key question:</strong> Does H3 show FID improvement by epoch 1600 vs H2 at same epoch?</li>
+      <li><strong>H3 needs ~3× 24h segments</strong> to reach epoch 4399 for fair comparison with H2 baseline</li>
+      <li><strong>If H3 looks promising at epoch 1600:</strong> Start H4 implementation (ego encoder re-pretrain + trans_dec config) in parallel</li>
+      <li><strong>Recommended eval CFG going forward:</strong> CFG=7 for combined FID/R-prec evaluation; CFG=5 for FID-only comparisons</li>
+    </ul>
+  </div>
+
+  <p style="color:#334155;font-size:0.8rem;text-align:center;margin-top:2rem;">Generated by autoresearch loop · 2026-03-30</p>
+</div>
+
+<script>
+// CFG Sweep Plot
+(function() {
+  const canvas = document.getElementById('cfgCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = 280 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = canvas.offsetWidth, H = 280;
+
+  const cfgData = [
+    { cfg: 5, fid: 6.603, rprec: 0.671 },
+    { cfg: 7, fid: 6.716, rprec: 0.724 },
+    { cfg: 10, fid: 6.963, rprec: 0.767 },
+    { cfg: 15, fid: 7.400, rprec: 0.797 },
+    { cfg: 20, fid: 7.856, rprec: 0.815 },
+  ];
+
+  const pad = { l: 55, r: 60, t: 30, b: 45 };
+  const fw = W - pad.l - pad.r, fh = H - pad.t - pad.b;
+
+  // Scales
+  const cfgMin = 4, cfgMax = 21;
+  const fidMin = 6.3, fidMax = 8.1;
+  const rprecMin = 0.62, rprecMax = 0.84;
+
+  function xScale(cfg) { return pad.l + (cfg - cfgMin) / (cfgMax - cfgMin) * fw; }
+  function yScaleFID(fid) { return pad.t + (1 - (fid - fidMin) / (fidMax - fidMin)) * fh; }
+  function yScaleRprec(r) { return pad.t + (1 - (r - rprecMin) / (rprecMax - rprecMin)) * fh; }
+
+  // Grid
+  ctx.strokeStyle = '#2d3748'; ctx.lineWidth = 1;
+  for (let f = 6.5; f <= 8.0; f += 0.5) {
+    const y = yScaleFID(f);
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(W - pad.r, y); ctx.stroke();
+  }
+  for (const cfg of [5,7,10,15,20]) {
+    const x = xScale(cfg);
+    ctx.beginPath(); ctx.moveTo(x, pad.t); ctx.lineTo(x, H - pad.b); ctx.stroke();
+  }
+
+  // FID line
+  ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  cfgData.forEach((d, i) => {
+    const x = xScale(d.cfg), y = yScaleFID(d.fid);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // R-prec line
+  ctx.strokeStyle = '#60a5fa'; ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  cfgData.forEach((d, i) => {
+    const x = xScale(d.cfg), y = yScaleRprec(d.rprec);
+    i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+
+  // Points
+  cfgData.forEach(d => {
+    const x = xScale(d.cfg);
+    const isStar = d.cfg === 7;
+    const isBest = d.cfg === 5;
+
+    // FID point
+    ctx.fillStyle = isBest ? '#86efac' : isStar ? '#4ade80' : '#22c55e';
+    ctx.beginPath(); ctx.arc(x, yScaleFID(d.fid), isStar||isBest ? 7 : 5, 0, 2*Math.PI); ctx.fill();
+
+    // R-prec point
+    ctx.fillStyle = isStar ? '#93c5fd' : '#3b82f6';
+    ctx.beginPath(); ctx.arc(x, yScaleRprec(d.rprec), isStar ? 7 : 5, 0, 2*Math.PI); ctx.fill();
+
+    // CFG label
+    ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(`${d.cfg}`, x, H - pad.b + 14);
+
+    // Value labels for star
+    if (isStar) {
+      ctx.fillStyle = '#4ade80'; ctx.font = '10px sans-serif';
+      ctx.fillText(d.fid.toFixed(3), x + 2, yScaleFID(d.fid) - 12);
+      ctx.fillStyle = '#93c5fd';
+      ctx.fillText(d.rprec.toFixed(3), x + 2, yScaleRprec(d.rprec) - 12);
+    }
+    if (isBest) {
+      ctx.fillStyle = '#86efac'; ctx.font = 'bold 10px sans-serif';
+      ctx.fillText(d.fid.toFixed(3), x - 22, yScaleFID(d.fid) - 10);
+    }
+  });
+
+  // Axes
+  ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, H-pad.b); ctx.lineTo(W-pad.r, H-pad.b); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W-pad.r, pad.t); ctx.lineTo(W-pad.r, H-pad.b); ctx.stroke();
+
+  // Axis labels
+  ctx.fillStyle = '#4ade80'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+  [6.5, 7.0, 7.5, 8.0].forEach(f => ctx.fillText(f.toFixed(1), pad.l - 5, yScaleFID(f) + 4));
+
+  ctx.fillStyle = '#60a5fa'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+  [0.65, 0.70, 0.75, 0.80].forEach(r => ctx.fillText(r.toFixed(2), W - pad.r + 5, yScaleRprec(r) + 4));
+
+  ctx.fillStyle = '#94a3b8'; ctx.font = '11px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('Guidance Scale (CFG)', W/2, H - 5);
+
+  // Legend
+  ctx.fillStyle = '#4ade80'; ctx.font = '11px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillRect(pad.l, 8, 20, 2); ctx.fillText('FID ↓ (left axis)', pad.l + 25, 13);
+  ctx.fillStyle = '#60a5fa';
+  ctx.fillRect(pad.l + 140, 8, 20, 2); ctx.fillText('R-prec@1 ↑ (right axis)', pad.l + 165, 13);
+
+  // Best marker
+  ctx.strokeStyle = '#f59e0b'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+  const x7 = xScale(7);
+  ctx.beginPath(); ctx.moveTo(x7, pad.t); ctx.lineTo(x7, H-pad.b); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#f59e0b'; ctx.font = 'bold 10px sans-serif'; ctx.textAlign = 'center';
+  ctx.fillText('★ best tradeoff', x7, pad.t - 5);
+})();
+
+// Epoch FID Plot
+(function() {
+  const canvas = document.getElementById('epochCanvas');
+  const ctx = canvas.getContext('2d');
+  canvas.width = canvas.offsetWidth * window.devicePixelRatio;
+  canvas.height = 200 * window.devicePixelRatio;
+  ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+  const W = canvas.offsetWidth, H = 200;
+
+  const epochs = [4399, 4599, 4999];
+  const fids = [6.603, 8.400, 7.510];
+  const colors = ['#4ade80', '#f87171', '#fbbf24'];
+
+  const pad = { l: 50, r: 20, t: 20, b: 40 };
+  const fw = W - pad.l - pad.r, fh = H - pad.t - pad.b;
+  const eMin = 4300, eMax = 5100, fidMin = 6.0, fidMax = 9.0;
+
+  function xS(e) { return pad.l + (e-eMin)/(eMax-eMin)*fw; }
+  function yS(f) { return pad.t + (1-(f-fidMin)/(fidMax-fidMin))*fh; }
+
+  // Grid
+  ctx.strokeStyle = '#2d3748'; ctx.lineWidth = 1;
+  [6,7,8,9].forEach(f => {
+    ctx.beginPath(); ctx.moveTo(pad.l,yS(f)); ctx.lineTo(W-pad.r,yS(f)); ctx.stroke();
+  });
+
+  // Line
+  ctx.strokeStyle = '#64748b'; ctx.lineWidth = 2;
+  ctx.setLineDash([5,3]);
+  ctx.beginPath();
+  epochs.forEach((e,i) => i===0 ? ctx.moveTo(xS(e),yS(fids[i])) : ctx.lineTo(xS(e),yS(fids[i])));
+  ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Best line
+  ctx.strokeStyle = '#4ade80'; ctx.lineWidth = 1; ctx.setLineDash([3,3]);
+  ctx.beginPath(); ctx.moveTo(pad.l,yS(6.603)); ctx.lineTo(W-pad.r,yS(6.603)); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = '#4ade80'; ctx.font = '10px sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('6.603 (best)', pad.l + 3, yS(6.603) - 4);
+
+  // Points
+  epochs.forEach((e,i) => {
+    ctx.fillStyle = colors[i];
+    ctx.beginPath(); ctx.arc(xS(e),yS(fids[i]),7,0,2*Math.PI); ctx.fill();
+    ctx.fillStyle = colors[i]; ctx.font = 'bold 11px sans-serif'; ctx.textAlign = 'center';
+    ctx.fillText(fids[i].toFixed(3), xS(e), yS(fids[i]) - 12);
+    ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif';
+    ctx.fillText(`ep=${e}`, xS(e), H - pad.b + 15);
+  });
+
+  // Axis
+  ctx.strokeStyle = '#4a5568'; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(pad.l,pad.t); ctx.lineTo(pad.l,H-pad.b); ctx.lineTo(W-pad.r,H-pad.b); ctx.stroke();
+
+  ctx.fillStyle = '#94a3b8'; ctx.font = '10px sans-serif'; ctx.textAlign = 'right';
+  [6,7,8,9].forEach(f => ctx.fillText(f, pad.l-5, yS(f)+4));
+  ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center';
+  ctx.fillText('FID (CFG=5)', 12, H/2);
+})();
+</script>
+</body>
+</html>

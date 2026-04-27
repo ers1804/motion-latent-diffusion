@@ -28,8 +28,8 @@ import matplotlib.pyplot as plt
 
 
 
-def _pad_or_crop( 
-    sequence: np.ndarray, 
+def _pad_or_crop(
+    sequence: np.ndarray,
     max_length: int
 ) -> tuple:
     """
@@ -37,7 +37,7 @@ def _pad_or_crop(
     Returns: (padded_sequence, actual_length)
     """
     actual_length = len(sequence)
-    
+
     if actual_length >= max_length:
         # Crop from the beginning (keep recent frames)
         sequence = sequence[:max_length]
@@ -47,8 +47,52 @@ def _pad_or_crop(
         pad_length = max_length - actual_length
         padding = np.zeros((pad_length, sequence.shape[-1]), dtype=sequence.dtype)
         sequence = np.concatenate([sequence, padding], axis=0)
-    
+
     return sequence, actual_length
+
+
+def _interaction_crop_aligned(
+    ego_2d: np.ndarray,
+    motion: np.ndarray,
+    ego_ped_dists: np.ndarray,
+    max_length: int,
+    interaction_crop: bool = True,
+) -> tuple:
+    """Crop ego and motion together to max_length.
+
+    When interaction_crop is True the window is centred on the frame of
+    closest ego-pedestrian approach (matching EgoMotionDataset behaviour),
+    with ±25 % uniform jitter.  Otherwise a random contiguous window is used.
+
+    Returns: (ego_cropped, motion_cropped, actual_length)
+    """
+    actual_length = min(len(ego_2d), len(motion))
+    # Align both to the same length first
+    ego_2d = ego_2d[:actual_length]
+    motion = motion[:actual_length]
+
+    if actual_length >= max_length:
+        if interaction_crop and ego_ped_dists is not None:
+            center = int(np.argmin(ego_ped_dists[:actual_length]))
+            jitter = int(max_length * 0.25)
+            center += np.random.randint(-jitter, jitter + 1)
+            start_idx = center - max_length // 2
+            start_idx = max(0, min(start_idx, actual_length - max_length))
+        else:
+            start_idx = np.random.randint(0, actual_length - max_length + 1)
+        ego_2d = ego_2d[start_idx:start_idx + max_length]
+        motion = motion[start_idx:start_idx + max_length]
+        actual_length = max_length
+    else:
+        pad = max_length - actual_length
+        ego_2d = np.concatenate(
+            [ego_2d, np.zeros((pad, ego_2d.shape[-1]), dtype=ego_2d.dtype)], axis=0
+        )
+        motion = np.concatenate(
+            [motion, np.zeros((pad, motion.shape[-1]), dtype=motion.dtype)], axis=0
+        )
+
+    return ego_2d, motion, actual_length
 
 
 def load_config(config_path):
@@ -97,11 +141,22 @@ def load_model(cfg, checkpoint_path, device):
     return model, dataset
 
 
-def load_ego_from_json(json_path, max_ego_len=196, ego_scale=50.0, ego_mean=None, ego_std=None):
-    """Load ego trajectory from a JSON file."""
+def load_ego_from_json(
+    json_path,
+    max_motion_length=196,
+    ego_mean=None,
+    ego_std=None,
+    interaction_crop=True,
+):
+    """Load and crop ego trajectory + GT motion from a JSON file.
+
+    When interaction_crop is True the crop window is centred on the frame of
+    closest ego-pedestrian approach (mirroring EgoMotionDataset behaviour),
+    with ±25 % uniform jitter.
+    """
     with open(json_path, "r") as f:
         data = json.load(f)
-    
+
     # Extract ego: (T, 3) -> (T, 2) using x, z
     ego_3d = np.array(data["ego_in_ped_frame"], dtype=np.float32)
     ego_2d = ego_3d[:, [0, 2]]  # x, z only
@@ -116,23 +171,30 @@ def load_ego_from_json(json_path, max_ego_len=196, ego_scale=50.0, ego_mean=None
         ego_mean = ego_mean[..., [0, 2]]
     if ego_std.shape[-1] == 3:
         ego_std = ego_std[..., [0, 2]]
-    
-    # Also load ground truth motion if available (for comparison)
+
     gt_motion = None
     if "vectors_263" in data:
         gt_motion = np.array(data["vectors_263"], dtype=np.float32)
-    # Normalize
-    ego_2d = (ego_2d - ego_mean) / (ego_std + 1e-8)
-    # Pad/crop to max_ego_len
-    actual_len = len(ego_2d)
-    if actual_len >= len(gt_motion):
-        ego_2d = ego_2d[:len(gt_motion)]
-        actual_len = len(gt_motion)
+
+    # Compute raw ego-ped distances BEFORE normalization (for interaction crop)
+    ego_ped_dists = None
+    if "ped_in_ped_frame" in data:
+        ped_joints = np.array(data["ped_in_ped_frame"], dtype=np.float32)  # (T, 22, 3)
+        ped_root_xz = ped_joints[:, 0, [0, 2]]  # (T, 2) pelvis
+        T = min(len(ego_2d), len(ped_root_xz))
+        ego_ped_dists = np.linalg.norm(ego_2d[:T] - ped_root_xz[:T], axis=-1)
+
+    # Interaction-aware aligned crop (matches EgoMotionDataset._pad_or_crop_ego_motion)
+    if gt_motion is not None:
+        ego_2d, gt_motion, actual_len = _interaction_crop_aligned(
+            ego_2d, gt_motion, ego_ped_dists, max_motion_length, interaction_crop
+        )
     else:
-        padding = np.zeros((len(gt_motion) - actual_len, 2), dtype=np.float32)
-        ego_2d = np.concatenate([ego_2d, padding], axis=0)
-    
-    
+        ego_2d, actual_len = _pad_or_crop(ego_2d, max_motion_length)
+
+    # Normalize ego after cropping
+    ego_2d = (ego_2d - ego_mean) / (ego_std + 1e-8)
+
     return ego_2d, actual_len, gt_motion, data.get("scene_id", ""), data.get("object_id", "")
 
 
@@ -453,6 +515,8 @@ def main():
                         help="Random seed for reproducibility")
     parser.add_argument("--inject_traj", action="store_true",
                         help="Post-hoc: replace root trajectory features with GT trajectory (keeps generated pose)")
+    parser.add_argument("--no_interaction_crop", action="store_true",
+                        help="Disable interaction-centred cropping (use random crop instead, as in vanilla MLD)")
     args = parser.parse_args()
     
     # Setup
@@ -490,8 +554,7 @@ def main():
         print("  This will produce garbage joints. Provide --mean_std_path or set MEAN_STD_PATH in config.")
     
     # Get ego parameters from config
-    max_ego_len = cfg.DATASET.EGOMOTION.MAX_EGO_LEN
-    ego_scale = cfg.DATASET.EGOMOTION.EGO_SCALE
+    max_motion_length = cfg.DATASET.SAMPLER.MAX_LEN
     ego_mean_std_path = getattr(cfg.DATASET.EGOMOTION, 'EGO_MEAN_STD_PATH', None)
     if ego_mean_std_path:
         ego_mean_file = os.path.join(ego_mean_std_path, "Ego_Mean.npy")
@@ -536,22 +599,24 @@ def main():
             torch.cuda.manual_seed_all(args.seed)
             np.random.seed(args.seed)
         
-        # Load ego trajectory
+        # Load ego trajectory (interaction-centred crop applied inside)
         ego, ego_len, gt_motion, scene_id, object_id = load_ego_from_json(
-            json_path, max_ego_len, ego_scale, ego_mean, ego_std
+            json_path,
+            max_motion_length=max_motion_length,
+            ego_mean=ego_mean,
+            ego_std=ego_std,
+            interaction_crop=not args.no_interaction_crop,
         )
         print(f"  Ego length: {ego_len} frames")
         if gt_motion is not None:
             print(f"  GT motion length: {len(gt_motion)} frames")
-        
+
         # Generate motion(s)
         for rep in range(args.num_repetitions):
             rep_suffix = f"_rep{rep}" if args.num_repetitions > 1 else ""
-            
-            # Use actual ego length if --motion_length not explicitly set
+
+            # Honour explicit --motion_length override; otherwise use the cropped length
             motion_length = ego_len if args.motion_length <= 0 else args.motion_length
-            ego, ego_len = _pad_or_crop(ego, motion_length)
-            gt_motion, motion_length = _pad_or_crop(gt_motion, motion_length)
             
             # Generate features (vectors_263)
             # Build guidance target from GT root trajectory if --guide

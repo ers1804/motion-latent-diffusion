@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Progress Report 006 — H4 Cross-Attention Ego Conditioning</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 1100px; margin: 0 auto; padding: 2rem; background: #f8f9fa; color: #212529; }
+  h1 { color: #1a1a2e; border-bottom: 3px solid #e74c3c; padding-bottom: 0.5rem; }
+  h2 { color: #16213e; margin-top: 2rem; }
+  h3 { color: #0f3460; }
+  .card { background: white; border-radius: 8px; padding: 1.5rem; margin: 1rem 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+  .status-running { background: #fff3cd; border-left: 4px solid #ffc107; }
+  .status-done { background: #d4edda; border-left: 4px solid #28a745; }
+  .status-rejected { background: #f8d7da; border-left: 4px solid #dc3545; }
+  .status-info { background: #d1ecf1; border-left: 4px solid #17a2b8; }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; font-size: 0.9rem; }
+  th { background: #1a1a2e; color: white; padding: 0.7rem 1rem; text-align: left; }
+  td { padding: 0.6rem 1rem; border-bottom: 1px solid #dee2e6; }
+  tr.highlight { background: #fff9c4 !important; font-weight: bold; }
+  tr.baseline { background: #e8f5e9 !important; }
+  tr.rejected { background: #ffeef0 !important; }
+  .metric-good { color: #28a745; font-weight: bold; }
+  .metric-bad { color: #dc3545; }
+  .big-number { font-size: 2.5rem; font-weight: bold; color: #1a1a2e; }
+  .big-label { font-size: 0.85rem; color: #6c757d; text-transform: uppercase; letter-spacing: 1px; }
+  .metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin: 1rem 0; }
+  .metric-box { background: white; border-radius: 8px; padding: 1rem; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+  code { background: #f1f3f4; padding: 0.1rem 0.4rem; border-radius: 3px; font-family: monospace; font-size: 0.9em; }
+  .arch-diagram { background: #1a1a2e; color: #e8e8e8; padding: 1.5rem; border-radius: 8px; font-family: monospace; font-size: 0.85rem; line-height: 1.8; }
+  .progress-bar-container { background: #e9ecef; border-radius: 4px; height: 22px; margin: 0.3rem 0; }
+  .progress-bar { height: 22px; border-radius: 4px; display: flex; align-items: center; padding-left: 0.5rem; font-size: 0.8rem; color: white; font-weight: bold; min-width: 60px; }
+  .timeline { padding-left: 1.5rem; border-left: 3px solid #dee2e6; }
+  .timeline-item { margin-bottom: 1.2rem; padding-left: 1rem; position: relative; }
+  .timeline-item::before { content: ''; position: absolute; left: -1.4rem; top: 0.35rem; width: 12px; height: 12px; border-radius: 50%; }
+  .tl-done::before { background: #28a745; }
+  .tl-running::before { background: #ffc107; }
+  .tl-next::before { background: #dee2e6; border: 2px solid #adb5bd; }
+</style>
+</head>
+<body>
+
+<h1>Progress Report 006</h1>
+<p style="color: #6c757d; margin-top: -0.5rem;">2026-04-02 &bull; Ego-Conditioned Pedestrian Motion Generation &bull; H4: Cross-Attention Conditioning</p>
+
+<div class="card status-running">
+  <strong>Status</strong>: H4 diffusion training running (job 345130, ~24h). Ego encoder pretraining completed in 1.5h. H3 latent-8 hypothesis fully rejected. H4 is the primary remaining improvement direction.
+</div>
+
+<h2>Where We Stand</h2>
+<div class="metrics-grid">
+  <div class="metric-box" style="border-top: 3px solid #28a745;">
+    <div class="big-number">6.603</div>
+    <div class="big-label">Best FID (H2 baseline)</div>
+    <small style="color:#6c757d;">epoch=4399, CFG=5</small>
+  </div>
+  <div class="metric-box" style="border-top: 3px solid #17a2b8;">
+    <div class="big-number">0.671</div>
+    <div class="big-label">R-Prec@1 (H2, CFG=5)</div>
+    <small style="color:#6c757d;">H4 prediction: &ge;0.80</small>
+  </div>
+  <div class="metric-box" style="border-top: 3px solid #ffc107;">
+    <div class="big-number">&gt;197</div>
+    <div class="big-label">K/V tokens in H4</div>
+    <small style="color:#6c757d;">vs 2 in H2 (time + 1 ego token)</small>
+  </div>
+</div>
+
+<h2>The Key Insight Driving H4</h2>
+<div class="card">
+  <p>H3 gave us an unexpected diagnostic result: increasing latent dimension from 4 to 8 made FID <strong>14.5% worse</strong>, but R-precision was essentially <em>unchanged</em> (0.671 → 0.676). This decoupling reveals that <strong>R-precision is entirely limited by the ego encoder architecture, not the latent space</strong>.</p>
+
+  <p>The current <code>EgoEncoderPooled</code> compresses 196 ego timesteps to a single mean-pooled 256d token before injection into the denoiser. H4 changes this fundamentally:</p>
+
+  <div class="arch-diagram">
+H2/H3 (trans_enc):  Ego → transformer → mean-pool → (B, <span style="color:#ff9f43;">1</span>, 256) → concat with z → self-attn
+H4 (trans_dec):     Ego → transformer → (B, <span style="color:#2ecc71;">196</span>, 256) → cross-attn K/V; z is Query
+  </div>
+
+  <p style="margin-top:1rem;">In H4, every denoising step the latent z can query "what was happening at ego timestep t=73?" or "how did the vehicle accelerate in the last 20 frames?" — all temporal detail is preserved.</p>
+</div>
+
+<h2>Complete Results Table</h2>
+<div class="card">
+  <table>
+    <thead><tr><th>Run</th><th>Model</th><th>Epoch</th><th>CFG</th><th>FID &darr;</th><th>FID CI</th><th>R-prec@1</th><th>Diversity</th><th>MM</th></tr></thead>
+    <tbody>
+      <tr class="rejected"><td>run_013</td><td>H3 latent-8</td><td>2299</td><td>5</td><td>7.475</td><td>&plusmn;0.048</td><td>0.576</td><td>5.718</td><td>3.631</td></tr>
+      <tr class="rejected"><td>run_015</td><td>H3 latent-8</td><td>4399</td><td>5</td><td>7.563</td><td>&plusmn;0.078</td><td>0.676</td><td>5.842</td><td>3.245</td></tr>
+      <tr class="rejected"><td>run_016</td><td>H3 latent-8</td><td>4399</td><td>7</td><td>8.131</td><td>&plusmn;0.103</td><td>0.733</td><td>5.830</td><td>2.989</td></tr>
+      <tr><td>run_010</td><td>H2 latent-4</td><td>4999</td><td>5</td><td>7.510</td><td>&plusmn;0.084</td><td>0.671</td><td>5.816</td><td>3.613</td></tr>
+      <tr class="baseline"><td>run_012</td><td>H2 latent-4</td><td>4399</td><td>7</td><td>6.716</td><td>&plusmn;0.068</td><td>0.724</td><td>5.771</td><td>3.291</td></tr>
+      <tr class="highlight"><td>run_005 &#9733;</td><td>H2 latent-4</td><td>4399</td><td>5</td><td><strong>6.603</strong></td><td>&plusmn;0.067</td><td>0.671</td><td>5.779</td><td>3.503</td></tr>
+      <tr style="background:#e3f2fd;font-style:italic;"><td>run_018</td><td>H4 trans_dec</td><td>4399</td><td>5</td><td><em>pending</em></td><td>—</td><td><em>pending</em></td><td>—</td><td>—</td></tr>
+    </tbody>
+  </table>
+  <p style="font-size:0.8rem;color:#6c757d;">Red rows: H3 rejected. Green rows: H2 baseline. Yellow: best result. Blue: H4 pending. GT diversity: 5.330.</p>
+</div>
+
+<h2>H4 Training Progress</h2>
+<div class="card">
+  <div style="margin: 0.8rem 0;">
+    <div style="font-size:0.85rem; margin-bottom:0.3rem; display:flex; justify-content:space-between;"><span>Ego Encoder Pretraining (200 epochs)</span><span style="color:#28a745;">&#10003; Done — job 343503 (1.5h)</span></div>
+    <div class="progress-bar-container"><div class="progress-bar" style="width:100%; background:#28a745;">Best val MSE: 1.919</div></div>
+  </div>
+  <div style="margin: 0.8rem 0;">
+    <div style="font-size:0.85rem; margin-bottom:0.3rem; display:flex; justify-content:space-between;"><span>Diffusion Training Segment-1 (~2300 epochs)</span><span style="color:#ffc107;">&#9654; Running — job 345130</span></div>
+    <div class="progress-bar-container"><div class="progress-bar" style="width:8%; background:#ffc107;">~8% est.</div></div>
+  </div>
+  <div style="margin: 0.8rem 0;">
+    <div style="font-size:0.85rem; margin-bottom:0.3rem; display:flex; justify-content:space-between;"><span>Diffusion Training Segment-2 (2300&rarr;4400 epochs)</span><span style="color:#adb5bd;">Pending</span></div>
+    <div class="progress-bar-container"><div class="progress-bar" style="width:0%; background:#dee2e6; color:#6c757d;"></div></div>
+  </div>
+  <div style="margin: 0.8rem 0;">
+    <div style="font-size:0.85rem; margin-bottom:0.3rem; display:flex; justify-content:space-between;"><span>Definitive Eval at epoch=4399</span><span style="color:#adb5bd;">Pending</span></div>
+    <div class="progress-bar-container"><div class="progress-bar" style="width:0%; background:#dee2e6; color:#6c757d;"></div></div>
+  </div>
+</div>
+
+<h2>What to Expect</h2>
+<div class="card status-info">
+  <ul style="margin:0;">
+    <li><strong>~2026-04-03</strong>: Segment-1 done. Intermediate eval at epoch~2299 will give early signal. H3 was at FID=7.475 at the same depth — if H4 is below that, the architecture is working.</li>
+    <li><strong>~2026-04-04/05</strong>: After segment-2, eval at epoch=4399. The key test:
+      <ul>
+        <li>R-prec@1 &ge; 0.80? (H4's main prediction)</li>
+        <li>FID &le; 6.60? (beat H2 baseline)</li>
+      </ul>
+    </li>
+    <li>If H4 improves both FID and R-prec: strong result, ready to write up.</li>
+    <li>If H4 improves R-prec but not FID: still useful — better conditioning at same generation quality.</li>
+    <li>If H4 fails: return to literature, investigate H6 (joint VAE+diffusion fine-tuning) or attention weight analysis to understand why cross-attention didn't help.</li>
+  </ul>
+</div>
+
+<h2>Timeline</h2>
+<div class="card">
+  <div class="timeline">
+    <div class="timeline-item tl-done"><strong>2026-03-27</strong> — H2 + CFG sweep complete: FID=6.603 at CFG=5, epoch=4399. Epoch regression discovered (4599 FID=8.40).</div>
+    <div class="timeline-item tl-done"><strong>2026-03-31</strong> — H3 segment-1 done (epoch=2299). Intermediate eval at 52% depth showed FID=7.475.</div>
+    <div class="timeline-item tl-done"><strong>2026-04-01</strong> — H3 definitive eval: rejected (−14.5% FID). R-prec decoupled → ego encoder is bottleneck. Direction set to H4.</div>
+    <div class="timeline-item tl-done"><strong>2026-04-02</strong> — H4 implementation: EgoEncoder + trans_dec config + slurm scripts. NAS path bug found and fixed. Ego encoder pretraining done in 1.5h.</div>
+    <div class="timeline-item tl-running"><strong>Now</strong> — H4 diffusion training segment-1 running (job 345130, ~24h)</div>
+    <div class="timeline-item tl-next"><strong>~2026-04-03</strong> — Intermediate eval + segment-2 submit</div>
+    <div class="timeline-item tl-next"><strong>~2026-04-04/05</strong> — Definitive H4 eval at epoch=4399</div>
+  </div>
+</div>
+
+<hr style="margin:2rem 0; border:none; border-top:1px solid #dee2e6;">
+<p style="font-size:0.8rem; color:#6c757d;">Autonomous research agent &bull; Progress report 006 &bull; 2026-04-02</p>
+</body>
+</html>

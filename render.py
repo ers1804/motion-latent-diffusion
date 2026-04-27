@@ -69,9 +69,10 @@ def render_cli() -> None:
             if item.endswith("_mesh.npy"):
                 paths.append(os.path.join(cfg.RENDER.DIR, item))
 
-        # then render other npy
+        # then render joints npy (skip ego/features/gt_features which are not renderable)
+        _skip_suffixes = ("_mesh.npy", "_ego.npy", "_features.npy", "_gt_features.npy")
         for item in file_list:
-            if item.endswith(".npy") and not item.endswith("_mesh.npy"):
+            if item.endswith(".npy") and not any(item.endswith(s) for s in _skip_suffixes):
                 paths.append(os.path.join(cfg.RENDER.DIR, item))
 
         print(f"begin to render for {paths[0]}")
@@ -95,7 +96,7 @@ def render_cli() -> None:
             print(f"Loaded ego motion trajectory with shape {ego_motion_data.shape}")
         elif os.path.isdir(ego_motion_path):
             # Folder containing npy files - load them to match with pose paths
-            ego_files = natsort.natsorted([f for f in os.listdir(ego_motion_path) if f.endswith('.npy')])
+            ego_files = natsort.natsorted([f for f in os.listdir(ego_motion_path) if f.endswith('_ego.npy')])
             for ef in ego_files:
                 ego_motion_paths.append(os.path.join(ego_motion_path, ef))
             print(f"Found {len(ego_motion_paths)} ego motion files in folder")
@@ -147,13 +148,21 @@ def render_cli() -> None:
         elif ego_motion_paths:
             # Try to find matching ego motion file by name
             base_name = os.path.splitext(os.path.basename(path))[0]
-            # Remove _mesh suffix if present
-            if base_name.endswith('_mesh'):
-                base_name = base_name[:-5]
+            # Strip renderable suffixes to get the bare scene id
+            for _sfx in ('_mesh', '_joints'):
+                if base_name.endswith(_sfx):
+                    base_name = base_name[:-len(_sfx)]
+                    break
             for ego_path in ego_motion_paths:
                 ego_base = os.path.splitext(os.path.basename(ego_path))[0]
-                if ego_base == base_name or ego_base == base_name + '_ego':
-                    current_ego_motion = np.load(ego_path)
+                # ego files are named <id>_ego.npy
+                ego_id = ego_base[:-4] if ego_base.endswith('_ego') else ego_base
+                if ego_id == base_name:
+                    raw = np.load(ego_path)
+                    if raw.ndim == 2 and raw.shape[1] == 2:
+                        raw = np.pad(raw, ((0, 0), (0, 1)), mode='constant', constant_values=0)
+                        raw = raw[..., [0, 2, 1]]
+                    current_ego_motion = raw
                     print(f"Matched ego motion {ego_path} with shape {current_ego_motion.shape}")
                     break
 

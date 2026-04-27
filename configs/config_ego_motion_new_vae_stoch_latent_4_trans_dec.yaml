@@ -25,9 +25,9 @@ TRAIN:
 
   RESUME: ''
   # Latent-4 VAE — same as H2 baseline
-  PRETRAINED_VAE: '/hnvme/workspace/v103fe12-ped_gen/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt'
+  PRETRAINED_VAE: '/home/erik/NAS/methods/diffusion_gen/models/helma_models/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt'
   # H4 ego encoder (full sequence, no pooling) — created by pretrain_ego_encoder_h4_helma.sh
-  PRETRAINED_EGO: '/hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt'
+  PRETRAINED_EGO: '/home/erik/NAS/methods/diffusion_gen/models/helma_models/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt'
   PRETRAINED: ''
   FREEZE_EGO: True
   DETERMINISTIC_Z: False
@@ -113,7 +113,7 @@ model:
   num_heads: 4
   dropout: 0.1
   activation: gelu
-  guidance_scale: 7.5              # Will override via CLI during eval
+  guidance_scale: 10              # Will override via CLI during eval
   guidance_uncondp: 0.1
 
   # H4 ego encoder: full sequence (no pooling), outputs (B, T, 256)
