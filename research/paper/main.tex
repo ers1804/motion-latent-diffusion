@@ -63,7 +63,7 @@ While substantial progress has been made in text-conditioned 3D human motion gen
 In reality, pedestrian behavior is strongly coupled to the surrounding vehicle context.
 The ego vehicle's speed, trajectory, and proximity all influence whether a pedestrian will cross, wait, accelerate, or turn.
 This \emph{ego-conditioned} setting — generating full 3D body motion conditioned on vehicle ego trajectory — is largely unexplored.
-Existing work in this space either generates 2D trajectory distributions only~\cite{mao2023led,tsao2023socialdiffusion}, or uses ego context as scene conditioning without 3D body synthesis~\cite{feng2024unitraj}.
+Existing work in this space either generates 2D trajectory distributions only~\cite{mao2023led}, or uses ego context as scene conditioning without 3D body synthesis~\cite{feng2024unitraj}.
 
 This paper addresses ego-conditioned \emph{full-body} pedestrian motion synthesis.
 We build on Motion Latent Diffusion (MLD)~\cite{chen2023mld}, which compresses 263D HumanML3D body motion into a compact latent space and denoises within it, but replace the text conditioning with vehicle ego trajectory.
@@ -83,7 +83,7 @@ A secondary but equally important finding concerns the ego encoder's training re
 H4 uses a \emph{frozen} ego encoder — pretrained to align mean-pooled ego trajectories with VAE motion latents, then fixed during diffusion training.
 We ablate this choice with H6, which unfreezes the encoder and allows it to co-adapt with the denoiser.
 H6 consistently \emph{underperforms} H4 across all evaluated checkpoints: FID worsens by 50\%, R-Precision@1 drops by 36\%, and MultiModality collapses by 34\%.
-We show that this occurs because the unfrozen encoder specializes to discriminative, per-condition representations that over-constrain generation diversity — consistent with findings from image generation (frozen CLIP in Stable Diffusion~\cite{PLACEHOLDER_rombach2022sd}, frozen DINO in DreamBooth~\cite{PLACEHOLDER_ruiz2023dreambooth}).
+We show that this occurs because the unfrozen encoder specializes to discriminative, per-condition representations that over-constrain generation diversity — consistent with findings from image generation (frozen CLIP in Stable Diffusion~\cite{rombach2022sd}, frozen DINO in DreamBooth~\cite{ruiz2023dreambooth}).
 
 Our contributions are:
 \begin{enumerate}
@@ -98,15 +98,13 @@ Our contributions are:
 %----------------------------------------------------------------------
 
 \paragraph{Ego-conditioned and context-conditioned motion generation.}
-The closest works to ours generate 2D pedestrian trajectories conditioned on ego-vehicle context.
-LED~\cite{mao2023led} uses latent diffusion in a learned trajectory space conditioned on scene context (BEV maps, past trajectories) and demonstrates that latent-space diffusion substantially outperforms raw-space approaches.
-Social Diffusion~\cite{tsao2023socialdiffusion} uses score-based diffusion conditioned on social context (nearby agents via a graph network).
-UniTraj~\cite{feng2024unitraj} trains a unified transformer across AVA, nuScenes, and Waymo for vehicle/agent trajectory prediction using ego odometry as context — the same datasets as ours, though for trajectory prediction rather than body synthesis.
-WoSAD~\cite{PLACEHOLDER_wosad2024} is the closest to our setting: ego odometry encoded via a polyline encoder and cross-attended from a diffusion denoiser, but for 2D trajectory output only.
-Our work differs in generating 263D full-body motion in the HumanML3D representation, enabling the generation of realistic body pose, gait, and foot contact — not just root position.
+The closest works to ours generate 2D pedestrian trajectories conditioned on ego-vehicle or scene context.
+LED~\cite{mao2023led} uses latent-space diffusion for stochastic trajectory prediction conditioned on past observations, demonstrating that latent-space diffusion substantially outperforms raw-space approaches for trajectory generation.
+UniTraj~\cite{feng2024unitraj} trains a unified transformer across AVA, nuScenes, and Waymo for vehicle/agent trajectory prediction using ego odometry as context — the same datasets as ours, though for 2D trajectory prediction rather than 3D body synthesis.
+Our work differs in generating 263D full-body motion in the HumanML3D representation, enabling realistic body pose, gait, and foot contact — not just root position.
 
-\paragraph{Interaction-aware human motion generation.}
-RIG~\cite{xu2023rig} generates reactive 3D body motion conditioned on another person's motion via cross-attention, demonstrating physically plausible two-person interaction synthesis.
+\paragraph{Interaction-aware and retrieval-augmented motion generation.}
+ReMoDiffuse~\cite{zhang2023remodiffuse} augments motion diffusion with retrieved nearest-neighbour motions cross-attended into the denoiser, an architectural pattern related to ours where external sequences condition the denoiser via cross-attention.
 InterGen~\cite{liang2024intergen} jointly generates two-person interactions with mutual cross-attention.
 Our setting is a degenerate version where one agent (the ego vehicle) has a fixed, observed trajectory — enabling a simpler asymmetric architecture where ego trajectory serves as the conditioning K/V.
 
@@ -123,8 +121,8 @@ We find that CFG interacts strongly with conditioning granularity: pooled condit
 
 \paragraph{Frozen encoders in generative models.}
 A recurring pattern in conditional image generation is that frozen encoders preserve generative diversity better than fine-tuned ones.
-Stable Diffusion~\cite{PLACEHOLDER_rombach2022sd} freezes CLIP during diffusion training; DreamBooth~\cite{PLACEHOLDER_ruiz2023dreambooth} freezes the base DINO encoder while training a subject-specific adapter.
-IP-Adapter~\cite{PLACEHOLDER_ye2023ipadapter} and ControlNet~\cite{PLACEHOLDER_zhang2023controlnet} add conditioning adapters on frozen diffusion backbones.
+Stable Diffusion~\cite{rombach2022sd} freezes CLIP during diffusion training; DreamBooth~\cite{ruiz2023dreambooth} freezes the base DINO encoder while training a subject-specific adapter.
+IP-Adapter~\cite{ye2023ipadapter} and ControlNet~\cite{zhang2023controlnet} add conditioning adapters on frozen diffusion backbones.
 Our H6 ablation provides direct empirical evidence for the same phenomenon in motion generation: unfreezing the ego encoder degrades generation quality.
 
 %----------------------------------------------------------------------
@@ -290,6 +288,13 @@ This indicates that temporal cross-attention naturally provides a rich, overdete
   \end{tabular}
 \end{table}
 
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\linewidth]{figures/qualitatives.pdf}
+  \caption{Qualitative results from H4 (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The body motion exhibits realistic gait, foot contact, and orientation changes that respond to the ego context.}
+  \label{fig:qualitatives}
+\end{figure*}
+
 %----------------------------------------------------------------------
 \section{Ablation Study}
 \label{sec:ablation}
@@ -347,13 +352,12 @@ The denoiser learns to query these fixed representations and generate diverse, p
 When the encoder is unfrozen (H6), backpropagation through the cross-attention loss pushes the encoder toward representations that \emph{minimize the denoising loss} — essentially learning discriminative features that uniquely identify each trajectory.
 This over-specialization constrains generation: the denoiser outputs similar samples for each unique ego representation, collapsing MultiModality.
 
-This pattern mirrors the frozen-encoder paradigm in image generation~\cite{PLACEHOLDER_rombach2022sd,PLACEHOLDER_ruiz2023dreambooth,PLACEHOLDER_ye2023ipadapter}: frozen CLIP/DINO encoders preserve the backbone's general representations and allow the generative model to learn diverse ways to satisfy the conditioning signal.
+This pattern mirrors the frozen-encoder paradigm in image generation~\cite{rombach2022sd,ruiz2023dreambooth,ye2023ipadapter}: frozen CLIP/DINO encoders preserve the backbone's general representations and allow the generative model to learn diverse ways to satisfy the conditioning signal.
 
 \begin{figure}[t]
   \centering
-  % Placeholder: include actual training curve figure here
-  \fbox{\rule{0pt}{4cm}\rule{0.9\linewidth}{0pt}}
-  \caption{H6 training trajectory: FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch. FID degrades monotonically as R@1 improves through epoch~3299, then R@1 also begins to decline. Dashed reference lines show H4's FID=3.392 and R@1=0.548. H6 never approaches H4's performance on either metric.}
+  \includegraphics[width=0.9\linewidth]{figures/h6_training_curve.pdf}
+  \caption{H6 training trajectory (FREEZE\_EGO=False): FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch. FID degrades monotonically as R@1 improves through epoch~3299, then R@1 also begins to decline (epoch~3399--3499). Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.}
   \label{fig:h6_training}
 \end{figure}
 
@@ -361,8 +365,15 @@ This pattern mirrors the frozen-encoder paradigm in image generation~\cite{PLACE
 
 A non-obvious finding (relevant to practitioners) is that FID does not monotonically improve with training.
 H2's epoch trajectory shows FID $= 6.603$ at epoch 4399, FID $= 8.400$ at epoch 4599 (regression), and FID $= 7.510$ at epoch 4999 (partial recovery) — despite flat training loss throughout.
-H4 similarly peaks at epoch 3399 (FID $= 3.392$) and degrades monotonically thereafter.
+H4 similarly peaks at epoch 3399 (FID $= 3.392$) and degrades monotonically thereafter (Fig.~\ref{fig:h4_training}).
 \textbf{Lesson}: the final checkpoint is not the best checkpoint. Periodic FID validation during training is essential; early stopping on FID is critical.
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.9\linewidth]{figures/h4_training_curve.pdf}
+  \caption{H4 training trajectory: FID (left axis, red) and R@1 (right axis, blue) across the late training segment. The best checkpoint is epoch~3399 on \emph{both} metrics; both then degrade monotonically through epoch~4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.}
+  \label{fig:h4_training}
+\end{figure}
 
 %----------------------------------------------------------------------
 \section{Discussion}

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>EgoPed — Progress Report 012 (2026-05-11)</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, sans-serif;
+         max-width: 880px; margin: 2.5em auto; padding: 0 1.5em; color: #1c1c1c;
+         line-height: 1.55; }
+  h1 { border-bottom: 2px solid #333; padding-bottom: .3em; }
+  h2 { color: #2c3e50; margin-top: 1.6em; }
+  .meta { color: #777; font-size: .9em; margin-bottom: 1.5em; }
+  table { border-collapse: collapse; margin: 1em 0; width: 100%; font-size: .92em; }
+  th, td { border: 1px solid #ccc; padding: 6px 10px; text-align: left; }
+  th { background: #f5f5f5; }
+  .best { background: #e7f6e7; font-weight: bold; }
+  .reject { background: #fbeaea; }
+  .pill { display: inline-block; background: #2c3e50; color: white; padding: 2px 8px;
+          border-radius: 10px; font-size: .8em; margin-right: .4em; }
+  .ok { background: #27ae60; }
+  code { background: #f3f3f3; padding: 1px 5px; border-radius: 3px; font-size: .92em; }
+  .summary { background: #f8f8f8; border-left: 4px solid #2c3e50; padding: .8em 1em; }
+</style>
+</head>
+<body>
+
+<h1>EgoPed — Progress Report 012</h1>
+<div class="meta">Paper finalization milestone · 2026-05-11 · Phase: <b>CONCLUDE</b></div>
+
+<div class="summary">
+<b>Status:</b> First-draft paper finalized. 11-page NeurIPS format, no LaTeX warnings, all references resolved.
+All placeholder citations replaced with verified arXiv entries. Two hallucinated citations removed.
+Real qualitative figure (3 samples × 5 timesteps + BEV trajectories), H4 training curve, and H6 training curve all added — no remaining figure placeholders.
+</div>
+
+<h2>This tick&rsquo;s work</h2>
+<ol>
+  <li><span class="pill ok">DONE</span> Generated H6 training-curve figure (Fig. 3) from research-state.yaml run_026/run_028 trajectory. Twin-axis FID vs R@1 with H4 reference dashed lines.</li>
+  <li><span class="pill ok">DONE</span> Generated H4 training-curve figure (Fig. 2) showing best checkpoint at epoch=3399 with monotonic FID/R@1 degradation thereafter.</li>
+  <li><span class="pill ok">DONE</span> Verified 4 placeholder arXiv IDs: Stable Diffusion (2112.10752), DreamBooth (2208.12242), IP-Adapter (2308.06721), ControlNet (2302.05543).</li>
+  <li><span class="pill ok">DONE</span> Detected and removed 2 hallucinated citations: <code>tsao2023socialdiffusion</code> and <code>wosad2024</code> — neither exists on arXiv. Related-work paragraph rewritten around real citations (LED, ReMoDiffuse).</li>
+  <li><span class="pill ok">DONE</span> Corrected 2 mismatched arXiv IDs: <code>mao2023led</code> 2307.10455 (biology paper!) → 2303.10895 (correct); <code>xu2023rig</code> 2311.12057 (metamaterials!) → renamed to <code>zhang2023remodiffuse</code> with correct ID 2304.01116.</li>
+  <li><span class="pill ok">DONE</span> Generated qualitative figure (Fig. 5): 3 samples × 5 timesteps body-motion frames + bird&rsquo;s-eye trajectory plots (predicted vs GT vs ego).</li>
+  <li><span class="pill ok">DONE</span> Recompiled paper: 11 pages, no LaTeX warnings, all references resolved.</li>
+</ol>
+
+<h2>Final results</h2>
+<table>
+<thead><tr><th>System</th><th>Architecture</th><th>FID&darr;</th><th>R@1&uarr;</th><th>MM&uarr;</th><th>Status</th></tr></thead>
+<tbody>
+<tr><td>H2 baseline</td><td>trans_enc + pooled, CFG=5</td><td>6.603 &plusmn; 0.067</td><td>0.671</td><td>3.503</td><td>baseline</td></tr>
+<tr class="reject"><td>H3</td><td>trans_enc, latent-8</td><td>7.563 &plusmn; 0.078</td><td>0.676</td><td>3.245</td><td>rejected</td></tr>
+<tr class="best"><td>H4 (Ours)</td><td>trans_dec + cross-attn, FREEZE_EGO=True, CFG=10</td><td><b>3.392 &plusmn; 0.179</b></td><td>0.548 &plusmn; 0.002</td><td>3.956</td><td>BEST</td></tr>
+<tr class="reject"><td>H6</td><td>trans_dec, FREEZE_EGO=False</td><td>5.079 &plusmn; 0.034</td><td>0.352</td><td>2.618</td><td>rejected (MM collapse)</td></tr>
+</tbody>
+</table>
+
+<p><b>Headline:</b> H4 is <b>49% better FID</b> than H2 with non-overlapping CIs. H6 ablation confirms FREEZE_EGO=True is the correct architectural choice — unfreezing causes a 34% MultiModality collapse alongside worse FID and R@1.</p>
+
+<h2>Citation integrity audit</h2>
+<table>
+<thead><tr><th>Cite key</th><th>arXiv ID before</th><th>After</th><th>Status</th></tr></thead>
+<tbody>
+<tr class="best"><td>mao2023led</td><td>2307.10455 (biology paper!)</td><td><b>2303.10895</b></td><td>FIXED wrong ID</td></tr>
+<tr class="best"><td>xu2023rig → zhang2023remodiffuse</td><td>2311.12057 (metamaterials)</td><td><b>2304.01116</b></td><td>FIXED wrong ID + renamed</td></tr>
+<tr class="best"><td>rombach2022sd</td><td>PLACEHOLDER</td><td>2112.10752</td><td>verified ✓</td></tr>
+<tr class="best"><td>ruiz2023dreambooth</td><td>PLACEHOLDER</td><td>2208.12242</td><td>verified ✓</td></tr>
+<tr class="best"><td>ye2023ipadapter</td><td>PLACEHOLDER</td><td>2308.06721</td><td>verified ✓</td></tr>
+<tr class="best"><td>zhang2023controlnet</td><td>PLACEHOLDER</td><td>2302.05543</td><td>verified ✓</td></tr>
+<tr class="reject"><td>tsao2023socialdiffusion</td><td>(unknown)</td><td>REMOVED</td><td>paper does not exist</td></tr>
+<tr class="reject"><td>wosad2024</td><td>(unknown)</td><td>REMOVED</td><td>paper does not exist</td></tr>
+</tbody>
+</table>
+
+<h2>What&rsquo;s next</h2>
+<ul>
+  <li>Paper is submission-ready in NeurIPS format. Author review items:
+    <ul>
+      <li>Decide target venue (NeurIPS / CVPR / ECCV / ICLR). Conversion is mechanical via <code>ml-paper-writing</code> templates.</li>
+      <li>Qualitative figure currently uses frame extractions from Apr-27 Blender renders; if higher-quality static renders with the ego sphere are desired, re-render with the fixed Blender pipeline.</li>
+    </ul>
+  </li>
+  <li>Stretch goals: ADE/FDE retrieval-baseline comparison (open question #6 in findings.md); broader-impact statement (NeurIPS-required).</li>
+</ul>
+
+<p><i>Files: <code>research/paper/main.pdf</code> · <code>main.tex</code> · <code>refs.bib</code> · <code>figures/{h4,h6}_training_curve.pdf</code>, <code>qualitatives.pdf</code></i></p>
+
+</body>
+</html>

@@ -1,7 +1,6 @@
 % ============================================================
 % Bibliography for EgoPed paper
-% NOTE: Entries fetched via arXiv / DOI where possible.
-% Entries marked PLACEHOLDER require human verification.
+% All arXiv IDs verified via arXiv API (2026-05-10).
 % ============================================================
 
 % ---- Core backbone ----
@@ -22,20 +21,18 @@
   note         = {arXiv:2209.14916}
 }
 
-@article{guo2022humanml3d,
+@inproceedings{guo2022humanml3d,
   title        = {Generating Diverse and Natural 3D Human Motions from Text},
   author       = {Guo, Chuan and Zou, Shihao and Zuo, Xinxin and Wang, Sen and Ji, Wei and Li, Xingyu and Cheng, Li},
   booktitle    = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-  year         = {2022},
-  note         = {arXiv:2212.04048 -- verify: this is the HumanML3D dataset paper}
+  year         = {2022}
 }
 
-@inproceedings{ho2022cfg,
+@article{ho2022cfg,
   title        = {Classifier-Free Diffusion Guidance},
   author       = {Ho, Jonathan and Salimans, Tim},
-  booktitle    = {NeurIPS 2021 Workshop on Deep Generative Models and Downstream Applications},
-  year         = {2022},
-  note         = {arXiv:2207.12598}
+  journal      = {arXiv preprint arXiv:2207.12598},
+  year         = {2022}
 }
 
 @inproceedings{song2021ddim,
@@ -49,7 +46,7 @@
 % ---- Related work: motion generation ----
 
 @article{zhang2022motiondiffuse,
-  title        = {MotionDiffuse: Text-Driven Human Motion Generation with Diffusion Model},
+  title        = {{MotionDiffuse}: Text-Driven Human Motion Generation with Diffusion Model},
   author       = {Zhang, Mingyuan and Cai, Zhongang and Pan, Liang and Hong, Fangzhou and Guo, Xinyi and Yang, Lei and Liu, Ziwei},
   journal      = {IEEE Transactions on Pattern Analysis and Machine Intelligence},
   year         = {2024},
@@ -57,7 +54,7 @@
 }
 
 @inproceedings{guo2024momask,
-  title        = {MoMask: Generative Masked Modeling of 3D Human Motions},
+  title        = {{MoMask}: Generative Masked Modeling of 3D Human Motions},
   author       = {Guo, Chuan and Mu, Yuxuan and Javed, Muhammad Gohar and Wang, Sen and Cheng, Li},
   booktitle    = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
   year         = {2024},
@@ -65,7 +62,7 @@
 }
 
 @inproceedings{zhang2023t2mgpt,
-  title        = {T2M-GPT: Generating Human Motion from Textual Descriptions with Discrete Representations},
+  title        = {{T2M-GPT}: Generating Human Motion from Textual Descriptions with Discrete Representations},
   author       = {Zhang, Jianrong and Zhang, Yangsong and Cun, Xiaodong and Zhang, Yong and Zhao, Hao and Lu, Hongtao and Shen, Xi and Shan, Ying},
   booktitle    = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
   year         = {2023},
@@ -80,90 +77,71 @@
   note         = {arXiv:2305.12577}
 }
 
-% ---- Related work: ego / trajectory / AV ----
+% ---- Related work: trajectory / AV ----
 
 @inproceedings{mao2023led,
   title        = {Leapfrog Diffusion Model for Stochastic Trajectory Prediction},
   author       = {Mao, Weibo and Xu, Chenxin and Zhu, Qi and Chen, Siheng and Wang, Yanfeng},
   booktitle    = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
   year         = {2023},
-  note         = {arXiv:2307.10455 -- PLACEHOLDER: verify exact arXiv ID for LED/leapfrog}
-}
-
-@inproceedings{tsao2023socialdiffusion,
-  title        = {Social Diffusion: Long-Term Multiple Human Motion Anticipation},
-  author       = {Tsao, Matteo and Vendrow, Joshua and Fan, Hanzi and Soatto, Stefano and Kadav, Asit},
-  booktitle    = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
-  year         = {2023},
-  note         = {PLACEHOLDER: verify authors and venue for Social Diffusion paper}
+  note         = {arXiv:2303.10895}
 }
 
 @inproceedings{feng2024unitraj,
-  title        = {UniTraj: A Unified Framework for Scalable Vehicle Trajectory Prediction},
+  title        = {{UniTraj}: A Unified Framework for Scalable Vehicle Trajectory Prediction},
   author       = {Feng, Lan and Bahari, Mohammadhossein and Amor, Kaouther Messaoud Ben and Zablocki, {\'E}loi and Cord, Matthieu and Alahi, Alexandre},
   booktitle    = {Proceedings of the European Conference on Computer Vision (ECCV)},
   year         = {2024},
   note         = {arXiv:2403.15098}
 }
 
-% ---- Related work: interaction-aware generation ----
+% ---- Related work: interaction-aware / retrieval-augmented motion generation ----
 
-@inproceedings{xu2023rig,
-  title        = {Remodiffuse: Retrieval-Augmented Motion Diffusion Model},
+@inproceedings{zhang2023remodiffuse,
+  title        = {{ReMoDiffuse}: Retrieval-Augmented Motion Diffusion Model},
   author       = {Zhang, Mingyuan and Guo, Xinyi and Pan, Liang and Cai, Zhongang and Hong, Fangzhou and Li, Huirong and Yang, Lei and Liu, Ziwei},
   booktitle    = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
   year         = {2023},
-  note         = {PLACEHOLDER: verify -- RIG (Reactive 3D motion generation) paper by Xu et al. arXiv:2311.12057}
+  note         = {arXiv:2304.01116}
 }
 
 @article{liang2024intergen,
-  title        = {InterGen: Diffusion-based Multi-human Motion Generation under Complex Interactions},
+  title        = {{InterGen}: Diffusion-based Multi-human Motion Generation under Complex Interactions},
   author       = {Liang, Han and Zhang, Wenqian and Li, Wenxuan and Yu, Jingyi and Xu, Lan},
   journal      = {International Journal of Computer Vision},
   year         = {2024},
   note         = {arXiv:2304.05684}
 }
 
-% ---- Frozen encoders in generative models (PLACEHOLDERS — verify before submission) ----
+% ---- Frozen encoders in generative models ----
 
-@inproceedings{PLACEHOLDER_rombach2022sd,
+@inproceedings{rombach2022sd,
   title        = {High-Resolution Image Synthesis with Latent Diffusion Models},
   author       = {Rombach, Robin and Blattmann, Andreas and Lorenz, Dominik and Esser, Patrick and Ommer, Bj{\"o}rn},
   booktitle    = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
   year         = {2022},
-  note         = {arXiv:2112.10752 -- TODO: verify BibTeX via DOI 10.1109/CVPR52688.2022.01042}
+  note         = {arXiv:2112.10752}
 }
 
-@inproceedings{PLACEHOLDER_ruiz2023dreambooth,
-  title        = {DreamBooth: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation},
+@inproceedings{ruiz2023dreambooth,
+  title        = {{DreamBooth}: Fine Tuning Text-to-Image Diffusion Models for Subject-Driven Generation},
   author       = {Ruiz, Nataniel and Li, Yuanzhen and Jampani, Varun and Pritch, Yael and Rubinstein, Michael and Aberman, Kfir},
   booktitle    = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
   year         = {2023},
-  note         = {arXiv:2208.12242 -- TODO: verify BibTeX via DOI}
+  note         = {arXiv:2208.12242}
 }
 
-@inproceedings{PLACEHOLDER_ye2023ipadapter,
-  title        = {IP-Adapter: Text Compatible Image Prompt Adapter for Text-to-Image Diffusion Models},
+@article{ye2023ipadapter,
+  title        = {{IP-Adapter}: Text Compatible Image Prompt Adapter for Text-to-Image Diffusion Models},
   author       = {Ye, Hu and Zhang, Jun and Liu, Sibo and Han, Xiao and Yang, Wei},
-  booktitle    = {arXiv preprint},
-  year         = {2023},
-  note         = {arXiv:2308.06721 -- PLACEHOLDER: verify final venue (likely NeurIPS workshop or ECCV)}
+  journal      = {arXiv preprint arXiv:2308.06721},
+  year         = {2023}
 }
 
-@inproceedings{PLACEHOLDER_zhang2023controlnet,
+@inproceedings{zhang2023controlnet,
   title        = {Adding Conditional Control to Text-to-Image Diffusion Models},
   author       = {Zhang, Lvmin and Rao, Anyi and Agrawala, Maneesh},
   booktitle    = {Proceedings of the IEEE/CVF International Conference on Computer Vision (ICCV)},
   year         = {2023},
-  note         = {arXiv:2302.05543 -- TODO: verify BibTeX via DOI}
-}
-
-% ---- WoSAD (PLACEHOLDER — search "WoSAD world scene aware diffusion pedestrian 2024") ----
-
-@inproceedings{PLACEHOLDER_wosad2024,
-  title        = {World-Scene Aware Diffusion for Pedestrian Motion Prediction},
-  author       = {PLACEHOLDER},
-  booktitle    = {arXiv preprint},
-  year         = {2024},
-  note         = {PLACEHOLDER: Search "WoSAD world scene aware diffusion pedestrian 2024" to verify authors and venue}
+  note         = {arXiv:2302.05543}
 }
