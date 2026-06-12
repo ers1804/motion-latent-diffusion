@@ -33,6 +33,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mld.config import parse_args
 from mld.data.EgoMotion import EgoMotionDataModule, ego_motion_collate
+from mld.data.get_data import get_datasets
 from mld.models.architectures.mld_vae import MldVae
 from mld.config import instantiate_from_config
 from mld.utils.logger import create_logger
@@ -91,11 +92,17 @@ def main():
     cfg = parse_args(phase="test")
     cfg.FOLDER = cfg.TEST.FOLDER
 
+    # Deterministic eval + correct motion normalization (see eval_retrieval.py).
+    import pytorch_lightning as pl
+    pl.seed_everything(cfg.SEED_VALUE)
+
     logger = create_logger(cfg, phase="test")
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # ---- Dataset -----------------------------------------------------------
-    datamodule = EgoMotionDataModule(cfg, logger=logger)
+    # Build via get_datasets so motion mean/std are loaded (else motions are
+    # unnormalized and the t2m evaluator produces collapsed embeddings).
+    datamodule = get_datasets(cfg, logger=logger, phase="test")[0]
     datamodule.setup(stage="fit")   # train split
     datamodule.setup(stage="test")  # test split
 

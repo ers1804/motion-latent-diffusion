@@ -1,0 +1,51 @@
+{
+    "Metrics/FID/mean": 9.08815860748291,
+    "Metrics/FID/conf_interval": 0.32206736229089705,
+    "Metrics/Diversity/mean": 5.941031297047933,
+    "Metrics/Diversity/conf_interval": 0.080960515524304,
+    "Metrics/gt_Diversity/mean": 5.884188652038574,
+    "Metrics/gt_Diversity/conf_interval": 0.12920765534511466,
+    "Metrics/R_precision_top_1/mean": 0.03125,
+    "Metrics/R_precision_top_1/conf_interval": 0.0,
+    "Metrics/R_precision_top_2/mean": 0.0625,
+    "Metrics/R_precision_top_2/conf_interval": 0.0,
+    "Metrics/R_precision_top_3/mean": 0.09375,
+    "Metrics/R_precision_top_3/conf_interval": 0.0,
+    "Metrics/MultiModality/mean": 5.422793865203857,
+    "Metrics/MultiModality/conf_interval": 0.25591819171997554,
+    "Metrics/FID": [
+        9.014530181884766,
+        8.782279014587402,
+        9.467666625976562
+    ],
+    "Metrics/Diversity": [
+        5.869865894317627,
+        6.038900375366211,
+        5.914327621459961
+    ],
+    "Metrics/gt_Diversity": [
+        6.018298149108887,
+        5.739243984222412,
+        5.895023822784424
+    ],
+    "Metrics/R_precision_top_1": [
+        0.03125,
+        0.03125,
+        0.03125
+    ],
+    "Metrics/R_precision_top_2": [
+        0.0625,
+        0.0625,
+        0.0625
+    ],
+    "Metrics/R_precision_top_3": [
+        0.09375,
+        0.09375,
+        0.09375
+    ],
+    "Metrics/MultiModality": [
+        5.2500691413879395,
+        5.276039123535156,
+        5.742273330688477
+    ]
+}

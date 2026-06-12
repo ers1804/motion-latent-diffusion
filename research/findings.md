@@ -131,13 +131,18 @@ H6 seg-1 ran as job 365378, timed out after 24h at epoch ~3359. Last saved check
 | Epoch | Training-time Val FID ↓ | Training-time R@1 ↑ |
 |-------|------------------------|----------------------|
 | 99    | 9.835 | 0.036 |
-| 499   | 7.821 | 0.091 |
-| 999   | 6.438 | 0.162 |
-| 1499  | 5.741 | 0.214 |
+| 499   | 8.373 | 0.038 |
+| 999   | 6.011 | 0.065 |
+| 1499  | 5.053 | 0.158 |
 | **2099**  | **4.789** | 0.273 ← **BEST FID** |
-| 2499  | 5.012 | 0.309 |
-| 2999  | 5.187 | 0.365 |
+| 2499  | 5.385 | 0.332 |
+| 2999  | 5.889 | 0.373 |
 | **3299**  | 5.273 | **0.398** ← **BEST R@1 so far (STILL CLIMBING)** |
+
+> **CORRECTION (2026-06-12)**: An earlier version of this table contained wrong values at
+> epochs 499/999/1499/2499/2999 (apparently smoothed/interpolated during transcription).
+> The values above were re-extracted directly from the SLURM log
+> `diffusion_h6_unfreeze_ego_365378.txt` and match research-state.yaml run_026.
 
 **KEY FINDING: FID/R@1 TRADEOFF in H6**. As the ego encoder specializes its representations for cross-attention (via backprop from denoiser loss), R@1 improves steadily but FID degrades. The two optima do NOT coincide — best FID at epoch=2099, best R@1 at epoch=3299.
 
@@ -158,13 +163,23 @@ H6 seg-1 ran as job 365378, timed out after 24h at epoch ~3359. Last saved check
 
 **Mechanism**: When FREEZE_EGO=False, the ego encoder's representations evolve to match the cross-attention decoder's needs. Early in training, the encoder produces general ego features (low R@1). As training progresses, the encoder becomes increasingly task-specialized — better at discriminating ego conditions for denoising (R@1 rises) — but this specialization pulls the generated motion distribution away from the natural motion distribution (FID rises). The MultiModality collapse (2.5) suggests the model is "collapsing" to near-deterministic outputs for each ego condition — the encoder encodes fine-grained discriminative information that constrains generation to a narrow region per condition.
 
-**H6 seg-2 submitted** (job 368901, resumes from ep=3299). H6 seg-2 training trajectory shows R@1 peaked at ep=3299 and is now DECLINING:
+**H6 seg-2 submitted** (job 368901, resumes from ep=3299). Seg-2 ran to END_EPOCH=5000.
+
+> **CORRECTION (2026-06-12)**: The earlier claim that "R@1 peaked at ep=3299 and is declining"
+> was based on only the first two seg-2 val points. The full seg-2 log
+> (`diffusion_h6_seg2_368901.txt`) shows training-time R@1 *saturates*, oscillating in the
+> 0.37–0.42 band through ep=4999 (max 0.417 at ep=4599), while FID oscillates between 5.1
+> and 6.3. The H6 rejection is unchanged — both metrics stay far from H4 (FID=3.392, R@1=0.548)
+> at every point in 5000 epochs.
 
 | Epoch | Training-time Val FID ↓ | Training-time R@1 ↑ |
 |-------|------------------------|----------------------|
-| 3299  | 5.273 | 0.398 ← PEAK |
-| 3399  | 5.141 | 0.380 ← declining |
-| 3499  | 5.415 | 0.367 ← still declining |
+| 3299  | 5.273 | 0.398 |
+| 3399  | 5.141 | 0.380 |
+| 3499  | 5.415 | 0.367 |
+| 3999  | 6.221 | 0.407 |
+| 4599  | 6.339 | 0.417 ← max train-time R@1 |
+| 4999  | 5.561 | 0.408 |
 
 **H6 ep=3399 seg-2 DEFINITIVE EVAL (3× replicated, CFG=10 — job 369437):**
 
@@ -348,6 +363,34 @@ Cross-attention ego conditioning with frozen encoder (H4) achieves **49% FID imp
 | H3 | trans_enc, latent-8, FREEZE=True | 7.563 | 0.676 | 3.245 | REJECTED (worse FID) |
 | H4 | trans_dec, EgoEncoder×196, FREEZE=True, CFG=10 | **3.392** | **0.548** | **3.956** | **BEST** |
 | H6 | trans_dec, EgoEncoder×196, FREEZE=False, CFG=10 | 5.079 | 0.352 | 2.618 | REJECTED (worse all) |
+
+### Trivial Baselines (2026-06-12 — all on the main-table t2m-evaluator scale)
+Four non-learned / reference baselines establish the lower and upper bounds of the metric space.
+All evaluated on the val split (2937 samples) with the same 512-D t2m evaluator as the main results.
+
+| Baseline | What it does | FID↓ | Diversity | gt_Div | R@1 | MM |
+|----------|--------------|------|-----------|--------|-----|-----|
+| Retrieval (NN ego) | copy training motion of nearest-ego-trajectory neighbour | **0.042** | 5.67 | 5.83 | — | — |
+| Unconditional MLD | trained model with ego zeroed (CFG cancels) | 8.90 | 5.95 | 5.9 | 0.031 | 5.25 |
+| VAE latent interp | decode random interpolation of two train latents | 12.18 | 5.76 | 5.74 | — | — |
+| Traj+kinematic (oracle) | GT root velocity + mean body (zeros) | 53.93 | 0.72 | 5.72 | — | — |
+| Traj+kinematic (mean) | training-mean motion (all zeros) | 56.16 | 0.52 | 5.72 | — | — |
+| H2 (pooled) | — | 6.603 | 5.78 | — | 0.671 | 3.50 |
+| **H4 (ours)** | — | **3.392** | 5.79 | — | 0.548 | 3.96 |
+
+**What the baselines establish:**
+- **Retrieval FID≈0 is a sanity check, not a competitor**: copying real training motions trivially matches the GT distribution (FID 0.042), but retrieval is not generative and has no ego-conditioned R-precision. It shows FID alone is gameable by memorization — conditioning fidelity (R@1) is what separates real methods.
+- **Unconditional MLD (FID=8.90)** is the key reference: it is the same model with ego removed. H4 (3.392) and H2 (6.603) both beat it, proving ego conditioning measurably improves realism, and H4's 62% FID reduction over uncond shows cross-attention exploits the ego signal far more than pooling.
+- **VAE interp (12.18)** > uncond: arbitrary latent interpolation leaves the data manifold; the learned diffusion prior matters.
+- **Traj+kinematic (54–56)** is the floor: following the trajectory with a static/mean body is catastrophic for FID (and near-zero Diversity 0.5–0.7), proving the task genuinely requires generating articulated body motion, not just root translation.
+
+**Implementation note (bug fixed 2026-06-12):** the three non-model baseline scripts
+(`eval_retrieval`, `eval_vae_interp`, `eval_traj_kinematic`) originally built
+`EgoMotionDataModule` directly with `mean=None, std=None`, so motions were fed to the
+t2m evaluator **unnormalized** → collapsed embeddings (gt_Diversity≈0.6 instead of ≈5.8,
+FID meaningless). Fixed by constructing the datamodule via `get_datasets()` (loads
+mean/std from `MEAN_STD_PATH`) and seeding with `cfg.SEED_VALUE` for determinism — exactly
+as `eval_uncond` already did. The earlier Feb-26 baseline JSONs are stale; current numbers above.
 
 ### Paper Narrative
 The paper tells a clean 3-part story:

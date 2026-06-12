@@ -32,6 +32,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mld.config import parse_args
 from mld.data.EgoMotion import EgoMotionDataModule, ego_motion_collate
+from mld.data.get_data import get_datasets
 from mld.utils.logger import create_logger
 from baselines.baseline_utils import (
     compute_metrics,
@@ -161,11 +162,22 @@ def main():
     cfg = parse_args(phase="test")
     cfg.FOLDER = cfg.TEST.FOLDER
 
+    # Deterministic eval: the EgoMotion dataset random-crops motions longer than
+    # MAX_LEN (np.random in _pad_or_crop_ego_motion). Without a fixed seed the GT
+    # motion windows — and hence FID/Diversity — vary run to run and can collapse.
+    # Seed exactly like the model eval (eval_uncond.py) for comparable numbers.
+    import pytorch_lightning as pl
+    pl.seed_everything(cfg.SEED_VALUE)
+
     logger = create_logger(cfg, phase="test")
     device = "cuda" if torch.cuda.is_available() else "cpu"
 
     # ---- Dataset -----------------------------------------------------------
-    datamodule = EgoMotionDataModule(cfg, logger=logger)
+    # IMPORTANT: build via get_datasets so motion mean/std are loaded from
+    # MEAN_STD_PATH and passed to the datamodule. Constructing EgoMotionDataModule
+    # directly leaves mean/std=None → motions are NOT normalized → the t2m
+    # evaluator (trained on normalized motions) produces collapsed embeddings.
+    datamodule = get_datasets(cfg, logger=logger, phase="test")[0]
     datamodule.setup(stage="fit")   # loads train split
     datamodule.setup(stage="test")  # loads test split
 

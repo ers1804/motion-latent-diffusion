@@ -1,4 +1,4 @@
-\begin{thebibliography}{16}
+\begin{thebibliography}{20}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
@@ -12,6 +12,15 @@ Xin Chen, Biao Jiang, Wen Liu, Zilong Huang, Bin Fu, Tao Chen, and Gang Yu.
 \newblock In \emph{Proceedings of the IEEE/CVF Conference on Computer Vision
   and Pattern Recognition (CVPR)}, 2023.
 \newblock arXiv:2212.04048.
+
+\bibitem[Chen et~al.(2025)Chen, Yang, Huang, de~Lutio, Esturo, Ivanovic,
+  Litany, Gojcic, Fidler, Pavone, Song, and Wang]{chen2025omnire}
+Ziyu Chen, Jiawei Yang, Jiahui Huang, Riccardo de~Lutio, Janick~Martinez
+  Esturo, Boris Ivanovic, Or~Litany, Zan Gojcic, Sanja Fidler, Marco Pavone,
+  Li~Song, and Yue Wang.
+\newblock Omnire: Omni urban scene reconstruction.
+\newblock In \emph{The Thirteenth International Conference on Learning
+  Representations}, 2025.
 
 \bibitem[Feng et~al.(2024)Feng, Bahari, Amor, Zablocki, Cord, and
   Alahi]{feng2024unitraj}
@@ -48,6 +57,14 @@ Han Liang, Wenqian Zhang, Wenxuan Li, Jingyi Yu, and Lan Xu.
   complex interactions.
 \newblock \emph{International Journal of Computer Vision}, 2024.
 \newblock arXiv:2304.05684.
+
+\bibitem[Loper et~al.(2015)Loper, Mahmood, Romero, Pons-Moll, and
+  Black]{SMPL:2015}
+Matthew Loper, Naureen Mahmood, Javier Romero, Gerard Pons-Moll, and Michael~J.
+  Black.
+\newblock {SMPL}: A skinned multi-person linear model.
+\newblock \emph{ACM Transactions on Graphics, (Proc. SIGGRAPH Asia)},
+  34\penalty0 (6):\penalty0 248:1--248:16, October 2015.
 
 \bibitem[Mao et~al.(2023)Mao, Xu, Zhu, Chen, and Wang]{mao2023led}
 Weibo Mao, Chenxin Xu, Qi~Zhu, Siheng Chen, and Yanfeng Wang.
@@ -90,6 +107,24 @@ Guy Tevet, Sigal Raab, Brian Gordon, Yonatan Shafir, Daniel Cohen-Or, and
 \newblock In \emph{International Conference on Learning Representations
   (ICLR)}, 2023.
 \newblock arXiv:2209.14916.
+
+\bibitem[Tsai et~al.(2023)Tsai, Berrio, Shan, Nebot, and Worrall]{tsai2023ms3d}
+Darren Tsai, Julie~Stephany Berrio, Mao Shan, Eduardo Nebot, and Stewart
+  Worrall.
+\newblock Ms3d: Leveraging multiple detectors for unsupervised domain
+  adaptation in 3d object detection.
+\newblock In \emph{2023 IEEE 26th International Conference on Intelligent
+  Transportation Systems (ITSC)}, pages 140--147, 2023.
+\newblock \doi{10.1109/ITSC57777.2023.10421941}.
+
+\bibitem[Tsai et~al.(2024)Tsai, Berrio, Shan, Nebot, and
+  Worrall]{tsai2024ms3d++}
+Darren Tsai, Julie~Stephany Berrio, Mao Shan, Eduardo Nebot, and Stewart
+  Worrall.
+\newblock Ms3d++: Ensemble of experts for multi-source unsupervised domain
+  adaptation in 3d object detection.
+\newblock \emph{IEEE Transactions on Intelligent Vehicles}, pages 1--16, 2024.
+\newblock \doi{10.1109/TIV.2024.3441527}.
 
 \bibitem[Ye et~al.(2023)Ye, Zhang, Liu, Han, and Yang]{ye2023ipadapter}
 Hu~Ye, Jun Zhang, Sibo Liu, Xiao Han, and Wei Yang.

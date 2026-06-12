@@ -56,6 +56,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from mld.config import parse_args
 from mld.data.EgoMotion import EgoMotionDataModule, ego_motion_collate
+from mld.data.get_data import get_datasets
 from mld.utils.logger import create_logger
 from baselines.baseline_utils import (
     compute_metrics,
@@ -118,19 +119,24 @@ def mean_motion(motions_gt: torch.Tensor, lengths: list) -> torch.Tensor:
 # ---------------------------------------------------------------------------
 
 def main():
-    # parse_args handles --cfg / --cfg_assets; we add --mode on top
+    # Extract --mode {oracle|mean} and strip it from sys.argv BEFORE parse_args,
+    # which is strict and rejects unknown arguments.
+    mode = "oracle"
+    if "--mode" in sys.argv:
+        idx = sys.argv.index("--mode")
+        if idx + 1 < len(sys.argv):
+            mode = sys.argv[idx + 1]
+            del sys.argv[idx:idx + 2]
+    if mode not in ("oracle", "mean"):
+        raise ValueError(f"--mode must be 'oracle' or 'mean', got '{mode}'")
+
+    # parse_args handles --cfg / --cfg_assets
     cfg = parse_args(phase="test")
     cfg.FOLDER = cfg.TEST.FOLDER
 
-    # Manual extra argument: --mode {oracle|mean}
-    mode = "oracle"
-    raw_argv = sys.argv[1:]
-    if "--mode" in raw_argv:
-        idx = raw_argv.index("--mode")
-        if idx + 1 < len(raw_argv):
-            mode = raw_argv[idx + 1]
-    if mode not in ("oracle", "mean"):
-        raise ValueError(f"--mode must be 'oracle' or 'mean', got '{mode}'")
+    # Deterministic eval + correct motion normalization (see eval_retrieval.py).
+    import pytorch_lightning as pl
+    pl.seed_everything(cfg.SEED_VALUE)
 
     logger = create_logger(cfg, phase="test")
     device = "cuda" if torch.cuda.is_available() else "cpu"
@@ -138,7 +144,9 @@ def main():
     logger.info(f"Traj+Kinematic baseline — mode: {mode}")
 
     # ---- Dataset -----------------------------------------------------------
-    datamodule = EgoMotionDataModule(cfg, logger=logger)
+    # Build via get_datasets so motion mean/std are loaded (else motions are
+    # unnormalized and the t2m evaluator produces collapsed embeddings).
+    datamodule = get_datasets(cfg, logger=logger, phase="test")[0]
     datamodule.setup(stage="test")
 
     test_loader = DataLoader(

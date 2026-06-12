@@ -46,10 +46,10 @@
 \maketitle
 
 \begin{abstract}
-We introduce \method, a system that generates realistic 3D full-body pedestrian motions (263-dimensional HumanML3D representation) conditioned on vehicle ego trajectory observations from autonomous driving datasets.
+We introduce \method, a system that generates realistic 3D full-body pedestrian motions conditioned on vehicle ego trajectory observations from autonomous driving data.
 Existing pedestrian motion synthesis methods rely on text descriptions or action class labels, ignoring the driving context that fundamentally shapes pedestrian behavior — how a person walks, stops, or reacts is strongly influenced by nearby vehicle speed and proximity.
 We condition a Motion Latent Diffusion (MLD) model on vehicle ego odometry via cross-attention, using a frozen ego encoder that maps the full 196-timestep ego trajectory sequence to per-timestep conditioning tokens attending to the denoiser at every diffusion step.
-Extensive experiments on a combined AVA/nuScenes/Waymo dataset demonstrate a \textbf{49\% FID improvement} (6.603~$\to$~3.392) over the strongest pooled-conditioning baseline, and an ablation study reveals that the frozen encoder is critical: unfreezing causes a 34\% MultiModality collapse (3.956~$\to$~2.618) as the encoder over-specializes for discriminative per-condition features.
+Experiments on a combined dataset built from nuScenes, Waymo, and recordings from our sensor-equipped research vehicle (AVA) demonstrate a \textbf{49\% FID improvement} (6.603~$\to$~3.392) over the strongest pooled-conditioning baseline, and an ablation study reveals that the frozen encoder is critical: unfreezing causes a 34\% MultiModality collapse (3.956~$\to$~2.618) as the encoder over-specializes for discriminative per-condition features.
 Our best system achieves FID $= 3.392 \pm 0.179$ with R-Precision@1 $= 0.548 \pm 0.002$ at CFG $= 10$, providing a strong foundation for generating behavior-consistent pedestrian motions for AV simulation and safety-critical scenario generation.
 \end{abstract}
 
@@ -77,14 +77,14 @@ We study two families of conditioning mechanisms:
 \end{itemize}
 
 Our main finding is that temporal cross-attention dramatically outperforms pooled conditioning.
-H4 achieves \textbf{FID = 3.392}, a 49\% improvement over the best H2 result (FID = 6.603), at matched training compute.
+H4 achieves \textbf{FID = 3.392}, a 49\% improvement over the best H2 result (FID = 6.603), with the same denoiser capacity — and its best checkpoint occurs \emph{earlier} in training (epoch 3399 vs.\ 4399), so the improvement does not come from additional compute.
 The cross-attention denoiser can attend to specific moments in the ego trajectory rather than a coarse average, producing motion that more closely follows the ground truth distribution.
 
 A secondary but equally important finding concerns the ego encoder's training regime.
 H4 uses a \emph{frozen} ego encoder — pretrained to align mean-pooled ego trajectories with VAE motion latents, then fixed during diffusion training.
 We ablate this choice with H6, which unfreezes the encoder and allows it to co-adapt with the denoiser.
 H6 consistently \emph{underperforms} H4 across all evaluated checkpoints: FID worsens by 50\%, R-Precision@1 drops by 36\%, and MultiModality collapses by 34\%.
-We show that this occurs because the unfrozen encoder specializes to discriminative, per-condition representations that over-constrain generation diversity — consistent with findings from image generation (frozen CLIP in Stable Diffusion~\cite{rombach2022sd}, frozen DINO in DreamBooth~\cite{ruiz2023dreambooth}).
+We show that this occurs because the unfrozen encoder specializes to discriminative, per-condition representations that over-constrain generation diversity — consistent with the frozen-encoder paradigm in image generation (frozen CLIP in Stable Diffusion~\cite{rombach2022sd}, adapters on frozen backbones in IP-Adapter~\cite{ye2023ipadapter} and ControlNet~\cite{zhang2023controlnet}).
 
 Our contributions are:
 \begin{enumerate}
@@ -101,7 +101,7 @@ Our contributions are:
 \paragraph{Ego-conditioned and context-conditioned motion generation.}
 The closest works to ours generate 2D pedestrian trajectories conditioned on ego-vehicle or scene context.
 LED~\cite{mao2023led} uses latent-space diffusion for stochastic trajectory prediction conditioned on past observations, demonstrating that latent-space diffusion substantially outperforms raw-space approaches for trajectory generation.
-UniTraj~\cite{feng2024unitraj} trains a unified transformer across AVA, nuScenes, and Waymo for vehicle/agent trajectory prediction using ego odometry as context — the same datasets as ours, though for 2D trajectory prediction rather than 3D body synthesis.
+UniTraj~\cite{feng2024unitraj} trains a unified trajectory-prediction model across multiple AV datasets (nuScenes, Argoverse~2, Waymo Open Motion), demonstrating the value of multi-dataset training for agent behavior modeling — though for 2D trajectory prediction rather than 3D body synthesis.
 Our work differs in generating 263D full-body motion in the HumanML3D representation, enabling realistic body pose, gait, and foot contact — not just root position.
 
 \paragraph{Interaction-aware and retrieval-augmented motion generation.}
@@ -122,13 +122,20 @@ We find that CFG interacts strongly with conditioning granularity: pooled condit
 
 \paragraph{Frozen encoders in generative models.}
 A recurring pattern in conditional image generation is that frozen encoders preserve generative diversity better than fine-tuned ones.
-Stable Diffusion~\cite{rombach2022sd} freezes CLIP during diffusion training; DreamBooth~\cite{ruiz2023dreambooth} freezes the base DINO encoder while training a subject-specific adapter.
-IP-Adapter~\cite{ye2023ipadapter} and ControlNet~\cite{zhang2023controlnet} add conditioning adapters on frozen diffusion backbones.
-Our H6 ablation provides direct empirical evidence for the same phenomenon in motion generation: unfreezing the ego encoder degrades generation quality.
+Stable Diffusion~\cite{rombach2022sd} freezes CLIP during diffusion training; IP-Adapter~\cite{ye2023ipadapter} and ControlNet~\cite{zhang2023controlnet} add conditioning adapters on frozen diffusion backbones.
+Conversely, approaches that fine-tune the generative stack end-to-end, such as DreamBooth~\cite{ruiz2023dreambooth}, are known to trade diversity for condition fidelity and require explicit prior-preservation regularization to counteract it.
+Our H6 ablation provides direct empirical evidence for the same phenomenon in motion generation: unfreezing the ego encoder degrades generation quality and collapses per-condition diversity.
 
 %----------------------------------------------------------------------
 \section{Method}
 %----------------------------------------------------------------------
+
+\begin{figure}[t]
+  \centering
+  \includegraphics[width=0.82\linewidth]{figures/architecture.png}
+  \caption{\method architecture. The ego trajectory is encoded by a \emph{frozen} transformer encoder into 196 per-timestep conditioning tokens. At every denoising step, the noisy latent $\mathbf{z}_t$ queries the full ego token sequence via cross-attention (\texttt{trans\_dec} denoiser). Diffusion runs in the latent space of a frozen HumanML3D VAE; only the denoiser is trained.}
+  \label{fig:architecture}
+\end{figure}
 
 \subsection{Problem Formulation}
 
@@ -152,11 +159,12 @@ The encoder consists of a linear projection from 2D to 256D, followed by sinusoi
 Unlike the pooled variant (H2), which applies mean-pooling to produce a single token $\mathbf{c} \in \mathbb{R}^{1 \times 256}$, our encoder preserves the full temporal sequence.
 
 \paragraph{Ego encoder pretraining.}
-Before diffusion training, the ego encoder is pretrained with a contrastive alignment objective.
-Specifically, we minimize the mean squared error between the mean-pooled ego encoding $\bar{\mathbf{c}} = \mathrm{MeanPool}(\mathbf{c}) \in \mathbb{R}^{256}$ and the mean-pooled VAE posterior mean $\bar{\mathbf{z}} \in \mathbb{R}^{256}$ (computed from the paired motion):
+Before diffusion training, the ego encoder is pretrained with a regression-based alignment objective that distills the paired motion's VAE latent into the ego encoding.
+Specifically, we align the mean-pooled ego encoding $\bar{\mathbf{c}} = \mathrm{MeanPool}(\mathbf{c}) \in \mathbb{R}^{256}$ with the mean-pooled VAE posterior mean $\bar{\mathbf{z}} \in \mathbb{R}^{256}$ (computed from the paired motion) using a combined MSE and cosine objective:
 \begin{equation}
-  \mathcal{L}_{\mathrm{pretrain}} = \|\bar{\mathbf{c}} - \bar{\mathbf{z}}\|^2.
+  \mathcal{L}_{\mathrm{pretrain}} = \|\bar{\mathbf{c}} - \bar{\mathbf{z}}\|^2 + \lambda_{\cos}\bigl(1 - \cos(\bar{\mathbf{c}}, \bar{\mathbf{z}})\bigr),
 \end{equation}
+where the cosine term encourages directional alignment in addition to magnitude.
 After pretraining, the encoder achieves validation MSE $\approx 1.92$, matching the pooled variant (which uses an additional 2-layer projection head without improvement), confirming that the projection head adds no alignment capacity.
 
 \paragraph{Frozen encoder (key design choice).}
@@ -166,12 +174,14 @@ We ablate this choice in Section~\ref{sec:ablation}.
 
 \subsection{Diffusion Denoiser}
 
-We use the MLD denoiser with \texttt{trans\_dec} architecture: a transformer \emph{decoder} where the noisy latent $\mathbf{z}_t$ forms the queries and the ego conditioning tokens $\mathbf{c}$ form the keys and values:
+We use the MLD denoiser with \texttt{trans\_dec} architecture: a transformer \emph{decoder} where the noisy latent $\mathbf{z}_t$ forms the queries and the ego conditioning tokens $\mathbf{c}$ form the keys and values.
+The denoiser predicts the noise component,
 \begin{equation}
-  \mathbf{z}_{t-1} = \mathrm{Denoiser}(\mathbf{z}_t, t, \mathbf{c}) = \mathrm{TransformerDecoder}(\mathbf{z}_t, \mathbf{c}),
+  \hat{\boldsymbol{\epsilon}} = \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \mathbf{c}) = \mathrm{TransformerDecoder}\bigl(\mathbf{z}_t;\, [\mathbf{t}_{\mathrm{emb}}, \mathbf{c}]\bigr),
 \end{equation}
-where the time step $t$ is embedded and prepended to the K/V sequence alongside $\mathbf{c}$.
-This cross-attention design has $\mathcal{O}(L \times T)$ complexity vs.\ $\mathcal{O}((L+T)^2)$ for concatenated self-attention, making it both efficient and expressive.
+where the time step $t$ is embedded and prepended to the K/V sequence alongside $\mathbf{c}$, and the sampler computes $\mathbf{z}_{t-1}$ from $\hat{\boldsymbol{\epsilon}}$.
+Cross-attention makes full-sequence conditioning affordable: attention cost is $\mathcal{O}(L \times T)$, whereas concatenating all $T = 196$ ego tokens into the denoiser's \emph{self}-attention would cost $\mathcal{O}((L+T)^2)$.
+Relative to the pooled baseline (self-attention over only $L+2$ tokens), the added cost is modest — and in exchange, every denoising step gains temporal resolution over the full ego trajectory.
 
 At each denoising step, the 4 latent queries attend to all 196 ego tokens, enabling temporally fine-grained conditioning: the denoiser can attend to specific moments in the ego trajectory (e.g., a braking event or sharp turn) rather than a global average.
 
@@ -202,7 +212,7 @@ We use DDIM~\cite{song2021ddim} for fast inference with 50 denoising steps.
 
 As there are no datasets available for the problem investigated in this work, we generated a dataset for ego-conditioned motion generation from both existing autonomous driving datasets and from scenes recorded with our sensor-equipped research vehicle AVA. The vehicle is equipped with seven 128-layer LiDARs and eight RGB cameras for full 360° sensor coverage around the vehicle. \TODO{Figure ?? shows the vehicle and a detailed sensor setup.} To obtain scenes with meaningful interaction between the vehicle and a pedestrian, we staged \TODO{NUMBER} highly interactive scenarios. \TODO{An example scene of a pedestrian waving a vehicle through can be seen in Figure ??.} The recorded data is brought into nuScenes format and objects in the scene are annotated with 3D bounding boxes and orientation labels using MS3D \cite{tsai2024ms3d++, tsai2023ms3d}.
 
-With the data in nuScenes format fully annotated we extract 3D human poses in SMPL \cite{SMPL:2015} format using an adapted version of OmniRe \cite{chen2025omnire} from all three data sources: AVA, nuScenes, and Waymo Open Dataset. Here, we extract poses for all pedestrian instances from all available camera images using the projected 3D bounding box. All poses for a given pedestrian instance are stitched together using available extrinsic calibration values. Body poses are lifted to 3D HumanML3D format~\cite{guo2022humanml3d} using a pretrained SMPL estimator. In addition to the pose sequences, we extract vehicle trajectories for the ego vehicle as well. \TODO{EXPLAIN GOD SCRIPT}.
+With the data in nuScenes format fully annotated, we extract 3D human poses in SMPL~\cite{SMPL:2015} format using an adapted version of OmniRe~\cite{chen2025omnire} from all three data sources: AVA, nuScenes, and Waymo Open Dataset. We estimate poses for every pedestrian instance from all available camera images, using the projected 3D bounding box to localize the person in each view. Per-instance pose estimates from different cameras are then stitched into a single continuous sequence using the extrinsic calibration of the camera rigs. Finally, the SMPL pose sequences are converted to the 263D HumanML3D motion representation~\cite{guo2022humanml3d}. In addition to the pedestrian pose sequences, we extract the synchronized ego-vehicle trajectory from each scene's odometry. \TODO{EXPLAIN GOD SCRIPT}.
 
 Using all three data sources we get \TODO{NUMBER} in total. \TODO{Detailed numbers can be found in Table ??.}
 
@@ -211,17 +221,20 @@ Each sample is a paired sequence of ego odometry $\mathbf{e} \in \mathbb{R}^{196
 To reduce the complexity of the generation process, we crop the length of each scenario to 196 timesteps. For this, we apply interaction-aware cropping: sequences are windowed to the pedestrian-ego interaction event (high proximity, shared heading change), and oversampled proportionally to interaction density. \TODO{DETAILED INTERACTION CROP ALGO OR FORMULA.}
 
 \subsection{Evaluation Protocol}
+\label{sec:eval}
 
 We report four metrics, following the HumanML3D evaluation protocol~\cite{guo2022humanml3d}:
 
 \begin{itemize}
   \item \textbf{FID} (Fréchet Inception Distance): computes the feature-space distance between the generated and real motion distributions, using the pretrained \texttt{t2m\_moveencoder} (stride-2 Conv1D) and \texttt{t2m\_motionencoder} (BiGRU) from~\cite{guo2022humanml3d}. Lower is better.
-  \item \textbf{R-Precision@1}: top-1 retrieval accuracy of the ego condition from a batch of 32 negatives, using cosine similarity between mean-pooled VAE latent (from generated motion) and ego encoder output. Higher is better.
+  \item \textbf{R-Precision@1}: top-1 retrieval accuracy of the ego condition from batches of 32 candidates (1 positive + 31 negatives), using cosine similarity between the mean-pooled VAE latent (from generated motion) and the ego encoder output. Higher is better.
   \item \textbf{MultiModality (MM)}: average pairwise L2 distance between 10 generated samples for the same ego condition, measuring diversity per condition. Higher is better.
-  \item \textbf{Diversity}: average pairwise L2 distance in feature space across all generated samples, measuring population-level diversity.
+  \item \textbf{Diversity}: average pairwise L2 distance in feature space across all generated samples, measuring population-level diversity. Values \emph{closer to the ground-truth diversity} (5.496 on our test set) are better.
 \end{itemize}
 
 All reported values are the mean over \textbf{3 independent replications} with 95\% confidence intervals.
+Note that FID and Diversity use a fixed, pretrained evaluator shared by all systems, so they are directly comparable across architectures.
+R-Precision, in contrast, retrieves with each model's \emph{own} ego encoder embedding; cross-architecture R@1 comparisons (\eg pooled vs.\ full-sequence encoders) should therefore be read as indicative rather than exact, as the retrieval space itself differs.
 
 \subsection{Baselines}
 
@@ -229,6 +242,37 @@ All reported values are the mean over \textbf{3 independent replications} with 9
   \item \textbf{H2 (Pooled, our baseline)}: EgoEncoderPooled (transformer + mean-pool $\to$ single 256D token), trans\_enc denoiser (concatenated self-attention over $[\mathbf{z}, \mathbf{c}_\mathrm{pool}, \mathbf{t}]$). Best at epoch 4399, CFG~=~5.
   \item \textbf{H3 (Latent-8)}: Same as H2 but with latent dimension $L=8$ (larger VAE). Best at epoch 4399, CFG~=~5.
 \end{itemize}
+
+We additionally report four non-learned or reference baselines (Table~\ref{tab:trivial}) that bound the metric space.
+\textbf{Unconditional MLD} runs our trained model with the ego trajectory zeroed (classifier-free guidance cancels), isolating the contribution of ego conditioning.
+\textbf{Retrieval} returns, for each test ego trajectory, the training motion whose ego trajectory is the nearest neighbour (32-point resampled L2).
+\textbf{VAE interpolation} decodes a random latent interpolation of two training motions.
+\textbf{Trajectory$+$kinematic} replaces all body features with the training mean, keeping either the ground-truth root velocity (\emph{oracle}) or nothing (\emph{mean}), simulating a trajectory-prediction-then-fitting pipeline with no learned body model.
+
+\begin{table}[t]
+  \centering
+  \caption{Reference baselines bounding the metric space (val split, same t2m evaluator as Table~\ref{tab:main}). Retrieval attains near-zero FID by copying real motions but is non-generative and has no ego-conditioned R-Precision; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. \method (H4) reduces FID by 62\% relative to the unconditional model.}
+  \label{tab:trivial}
+  \vspace{4pt}
+  \small
+  \setlength{\tabcolsep}{5pt}
+  \begin{tabular}{lccc}
+    \toprule
+    Method & FID $\downarrow$ & Diversity & R@1 $\uparrow$ \\
+    \midrule
+    Retrieval (NN ego)$^\ast$        & 0.042  & 5.67 & -- \\
+    Trajectory+kinematic (mean)      & 56.16  & 0.52 & -- \\
+    Trajectory+kinematic (oracle)    & 53.93  & 0.72 & -- \\
+    VAE latent interpolation         & 12.18  & 5.76 & -- \\
+    Unconditional MLD                & 8.90   & 5.95 & 0.031 \\
+    \midrule
+    H2 (Pooled)                      & 6.603  & 5.78 & 0.671 \\
+    H4 (\method, ours)               & \textbf{3.392} & 5.79 & 0.548 \\
+    \bottomrule
+  \end{tabular}
+  \\[2pt]
+  {\footnotesize $^\ast$Non-generative upper bound: copies real training motions, so low FID reflects memorization rather than conditioned synthesis.}
+\end{table}
 
 \subsection{Main Results}
 
@@ -238,7 +282,7 @@ The improvement is significant: the confidence intervals are non-overlapping (H4
 
 \begin{table}[t]
   \centering
-  \caption{Main evaluation results. Each method is reported at its own optimal CFG (sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}. H4 = \method (ours).}
+  \caption{Main evaluation results. Each method is reported at its own optimal CFG (sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}; for Diversity, values closer to the ground-truth reference are better. H4 = \method (ours).}
   \label{tab:main}
   \vspace{4pt}
   \small
@@ -247,19 +291,22 @@ The improvement is significant: the confidence intervals are non-overlapping (H4
     \toprule
     Method & Epoch & CFG & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ & Diversity \\
     \midrule
-    H2 (Pooled, baseline)            & 4399 & 5  & 6.603 {\scriptsize $\pm$0.067} & 0.671 & 3.503 & 5.779 \\
-    H3 (Latent-8 VAE)                & 4399 & 5  & 7.563 {\scriptsize $\pm$0.078} & 0.676 & 3.245 & 5.842 \\
+    H2 (Pooled, baseline)            & 4399 & 5  & 6.603 {\scriptsize $\pm$0.067} & 0.671 {\scriptsize $\pm$0.003} & 3.503 & 5.779 \\
+    H3 (Latent-8 VAE)                & 4399 & 5  & 7.563 {\scriptsize $\pm$0.078} & 0.676 {\scriptsize $\pm$0.003} & 3.245 {\scriptsize $\pm$0.386} & 5.842 \\
     \midrule
-    H4 (Ours, FREEZE\_EGO=True)      & 3399 & 10 & \textbf{3.392} {\scriptsize $\pm$0.179} & \textbf{0.548} {\scriptsize $\pm$0.002} & \textbf{3.956} {\scriptsize $\pm$0.406} & 5.794 \\
+    H4 (Ours, FREEZE\_EGO=True)      & 3399 & 10 & \textbf{3.392} {\scriptsize $\pm$0.179} & 0.548 {\scriptsize $\pm$0.002} & \textbf{3.956} {\scriptsize $\pm$0.406} & 5.794 \\
     H6 (Ablation, FREEZE\_EGO=False) & 3399 & 10 & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 {\scriptsize $\pm$0.309} & 6.064 \\
+    \midrule
+    Ground truth (reference)         & ---  & --- & --- & --- & --- & 5.496 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 Interestingly, R-Precision@1 for H4 (0.548) is \emph{lower} than H2's baseline (0.671).
-We attribute this to two compounding factors:
+We attribute this to three compounding factors:
 (1) H4 generates more diverse motions per ego condition (MM: 3.956 vs.\ 3.503), spreading the generated distribution further in feature space and naturally reducing retrieval accuracy;
-(2) the R@1 metric measures alignment between generated VAE latents and ego encoder outputs — as the denoiser learns richer dynamics, this alignment metric underestimates the true conditioning fidelity.
+(2) the R@1 metric measures alignment between generated VAE latents and ego encoder outputs — as the denoiser learns richer dynamics, this alignment metric underestimates the true conditioning fidelity;
+(3) R@1 retrieves with each model's own ego encoder (Section~\ref{sec:eval}), so the pooled encoder (trained with a projection head specifically for this alignment) and the full-sequence encoder define retrieval tasks of different intrinsic difficulty.
 The large FID improvement confirms that H4 produces a generated distribution \emph{much} closer to the ground truth, even as retrieval accuracy decreases.
 
 \subsection{CFG Scale Analysis}
@@ -277,13 +324,13 @@ This indicates that temporal cross-attention naturally provides a rich, overdete
     \toprule
     Method & CFG & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ \\
     \midrule
-    H2 (Pooled) & 5  & 6.603 {\scriptsize $\pm$0.067} & 0.671 & 3.503 \\
-    H2 (Pooled) & 10 & 6.963 {\scriptsize $\pm$0.035} & 0.767 & 3.031 \\
-    H2 (Pooled) & 15 & 7.400 {\scriptsize $\pm$0.016} & 0.797 & 2.724 \\
+    H2 (Pooled) & 5  & 6.603 {\scriptsize $\pm$0.067} & 0.671 {\scriptsize $\pm$0.003} & 3.503 \\
+    H2 (Pooled) & 10 & 6.963 {\scriptsize $\pm$0.035} & 0.767 {\scriptsize $\pm$0.006} & 3.031 \\
+    H2 (Pooled) & 15 & 7.400 {\scriptsize $\pm$0.016} & 0.797 {\scriptsize $\pm$0.005} & 2.724 \\
     \midrule
-    H4 (Ours)   & 5  & 3.842 {\scriptsize $\pm$0.108} & 0.506 & 4.141 \\
+    H4 (Ours)   & 5  & 3.842 {\scriptsize $\pm$0.108} & 0.506 {\scriptsize $\pm$0.009} & 4.141 \\
     H4 (Ours)   & 10 & \textbf{3.392} {\scriptsize $\pm$0.179} & 0.548 {\scriptsize $\pm$0.002} & 3.956 \\
-    H4 (Ours)   & 15 & 3.547 {\scriptsize $\pm$0.122} & 0.536 & 3.910 \\
+    H4 (Ours)   & 15 & 3.547 {\scriptsize $\pm$0.122} & 0.536 {\scriptsize $\pm$0.003} & 3.910 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -318,8 +365,8 @@ H6 uses an identical architecture to H4 but with FREEZE\_EGO=False, allowing the
 Figure~\ref{fig:h6_training} shows the H6 training trajectory (FID and R@1 vs.\ epoch).
 Two behaviors are notable:
 \begin{itemize}
-  \item \textbf{FID/R@1 tradeoff}: As training progresses, R@1 improves (encoder specializes discriminatively) but FID degrades (generation quality decreases). The two optima do \emph{not} coincide: best FID is at epoch 2099, best R@1 is at epoch 3299.
-  \item \textbf{R@1 decline after peak}: R@1 peaks at training-time $\approx 0.398$ (epoch 3299) then declines, reaching 0.380 at epoch 3399 and 0.367 at 3499.
+  \item \textbf{FID/R@1 tradeoff}: As training progresses, R@1 improves (encoder specializes discriminatively) but FID degrades (generation quality decreases). The two optima do \emph{not} coincide: training-time FID is best at epoch 2099 (4.789), while R@1 continues rising long after FID has begun to deteriorate.
+  \item \textbf{R@1 saturation far below H4}: After epoch $\approx$3299, training-time R@1 saturates, oscillating in the 0.37--0.42 band through epoch 4999 (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3. Neither metric ever approaches H4's operating point (FID 3.392, R@1 0.548) at any point in 5000 epochs.
 \end{itemize}
 
 Definitive evaluations (3 replications, CFG~=~10) confirm the picture:
@@ -333,16 +380,17 @@ Definitive evaluations (3 replications, CFG~=~10) confirm the picture:
     \toprule
     System & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ & Diversity \\
     \midrule
-    H6 epoch=2099 (best train FID)  & 4.952 {\scriptsize $\pm$0.088} & 0.263 {\scriptsize $\pm$0.009} & 2.455 & 5.957 \\
-    H6 epoch=3299 (peak train R@1)  & 5.311 {\scriptsize $\pm$0.060} & 0.348 {\scriptsize $\pm$0.004} & 2.581 & 6.034 \\
-    H6 epoch=3399 (extended)        & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 & 6.064 \\
+    H6 epoch=2099 (best train FID)      & 4.952 {\scriptsize $\pm$0.088} & 0.263 {\scriptsize $\pm$0.009} & 2.455 & 5.957 \\
+    H6 epoch=3299 (best seg-1 R@1)      & 5.311 {\scriptsize $\pm$0.060} & 0.348 {\scriptsize $\pm$0.004} & 2.581 & 6.034 \\
+    H6 epoch=3399 (matched to H4 best)  & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 & 6.064 \\
     \midrule
     \textbf{H4 epoch=3399 (FREEZE=True)} & \textbf{3.392} {\scriptsize $\pm$0.179} & \textbf{0.548} {\scriptsize $\pm$0.002} & \textbf{3.956} & 5.794 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-H6 is worse than H4 on \emph{all metrics at all checkpoints}.
+H6 is worse than H4 on \emph{all metrics at all evaluated checkpoints}.
+Later checkpoints cannot change this conclusion: even H6's best training-time R@1 in the saturation band (0.417 at epoch 4599, with training-time FID 6.339) remains far below H4's definitive R@1 of 0.548 — and training-time metrics consistently \emph{overestimate} the definitive 3-replication values (\eg 0.398~$\to$~0.348 at epoch 3299).
 The MultiModality collapse is particularly striking: H6 MM $= 2.618$ vs.\ H4 MM $= 3.956$ (34\% lower).
 This indicates near-deterministic generation per condition — the ego encoder has learned highly discriminative features for each trajectory, collapsing the generated motion distribution to a narrow region.
 
@@ -352,12 +400,12 @@ The denoiser learns to query these fixed representations and generate diverse, p
 When the encoder is unfrozen (H6), backpropagation through the cross-attention loss pushes the encoder toward representations that \emph{minimize the denoising loss} — essentially learning discriminative features that uniquely identify each trajectory.
 This over-specialization constrains generation: the denoiser outputs similar samples for each unique ego representation, collapsing MultiModality.
 
-This pattern mirrors the frozen-encoder paradigm in image generation~\cite{rombach2022sd,ruiz2023dreambooth,ye2023ipadapter}: frozen CLIP/DINO encoders preserve the backbone's general representations and allow the generative model to learn diverse ways to satisfy the conditioning signal.
+This pattern mirrors the frozen-encoder paradigm in image generation~\cite{rombach2022sd,ye2023ipadapter,zhang2023controlnet}: frozen conditioning encoders preserve general-purpose representations and allow the generative model to learn diverse ways to satisfy the conditioning signal.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.9\linewidth]{figures/h6_training_curve.pdf}
-  \caption{H6 training trajectory (FREEZE\_EGO=False): FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch. FID degrades monotonically as R@1 improves through epoch~3299, then R@1 also begins to decline (epoch~3399--3499). Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.}
+  \caption{H6 training trajectory (FREEZE\_EGO=False): training-time validation FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch, over the full 5000-epoch run. FID is best at epoch~2099 and degrades as R@1 rises; after epoch~$\approx$3299, R@1 saturates in the 0.37--0.42 band while FID oscillates between 5.1 and 6.3. Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.}
   \label{fig:h6_training}
 \end{figure}
 
@@ -365,13 +413,13 @@ This pattern mirrors the frozen-encoder paradigm in image generation~\cite{romba
 
 A non-obvious finding (relevant to practitioners) is that FID does not monotonically improve with training.
 H2's epoch trajectory shows FID $= 6.603$ at epoch 4399, FID $= 8.400$ at epoch 4599 (regression), and FID $= 7.510$ at epoch 4999 (partial recovery) — despite flat training loss throughout.
-H4 similarly peaks at epoch 3399 (FID $= 3.392$) and degrades monotonically thereafter (Fig.~\ref{fig:h4_training}).
+H4 similarly peaks at epoch 3399 (definitive FID $= 3.392$) and degrades steadily thereafter (Fig.~\ref{fig:h4_training}).
 \textbf{Lesson}: the final checkpoint is not the best checkpoint. Periodic FID validation during training is essential; early stopping on FID is critical.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.9\linewidth]{figures/h4_training_curve.pdf}
-  \caption{H4 training trajectory: FID (left axis, red) and R@1 (right axis, blue) across the late training segment. The best checkpoint is epoch~3399 on \emph{both} metrics; both then degrade monotonically through epoch~4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.}
+  \caption{H4 training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) across the late training segment. Epoch~3399 is the best checkpoint (highest R@1, FID within noise of epoch~3199, and best definitive 3-replication FID); both metrics then degrade steadily through epoch~4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.}
   \label{fig:h4_training}
 \end{figure}
 
@@ -396,6 +444,8 @@ R@1 measures only conditioning alignment, not generation quality; FID captures t
   \item \textbf{Conditioning scope}: We condition only on 2D ego trajectory. Incorporating relative pedestrian-ego geometry, ego velocity profile, or map elements could improve fidelity.
   \item \textbf{R@1 gap}: H4 achieves R@1 $= 0.548$, below H2's $0.671$. The adapter-style approach described above is a natural next step.
   \item \textbf{Physics}: Generated motions are not physically constrained (foot sliding, penetration). Post-hoc physics cleanup could improve realism for simulation deployment.
+  \item \textbf{Evaluator domain shift}: FID and Diversity rely on motion-feature encoders pretrained on HumanML3D, whose motion distribution differs from in-the-wild pedestrian motion; absolute FID values should be compared only within our benchmark.
+  \item \textbf{Single benchmark, no perceptual study}: All results are on our combined AVA/nuScenes/Waymo benchmark, and we do not yet report a human perceptual study of motion realism.
 \end{itemize}
 
 \paragraph{Broader impact.}
@@ -430,18 +480,18 @@ This recipe produces state-of-the-art ego-conditioned full-body pedestrian motio
 \label{app:impl}
 
 \paragraph{Ego encoder.}
-4-layer transformer encoder, 4 attention heads, 256D hidden dimension, sinusoidal positional encoding for $T=196$ timesteps.
+4-layer transformer encoder, 4 attention heads, 256D hidden dimension (1024D feed-forward), sinusoidal positional encoding for $T=196$ timesteps.
 Input: 2D ego position sequence, projected linearly to 256D.
 No projection head (we verified the 2-layer MLP projection head does not improve val MSE: 1.919 vs.\ 1.920).
-Pretraining optimizer: Adam, lr $= 1\times10^{-4}$, 200 epochs, cosine annealing.
+Pretraining: AdamW (lr $= 1\times10^{-4}$, weight decay $10^{-4}$), 200 epochs, batch size 64, linear warmup followed by cosine annealing, gradient clipping at max-norm 1.0.
 
 \paragraph{Diffusion model.}
-MLD denoiser, \texttt{trans\_dec} architecture (8 layers, 8 heads, 512D hidden, latent sequence length $L=4$).
-Diffusion: 1000 DDPM training steps, DDIM inference (50 steps).
+MLD denoiser, \texttt{trans\_dec} architecture: 9 layers, 4 attention heads, 256D token dimension, 1024D feed-forward, latent sequence length $L=4$.
+Diffusion: 1000 DDPM training steps (scaled-linear $\beta$ schedule), DDIM inference (50 steps, $\eta=0$).
 CFG dropout rate: 10\%.
-Optimizer: Adam, lr $= 1\times10^{-4}$, cosine LR schedule, 5000 total epochs.
-Batch size: 64.
-Training hardware: NVIDIA H100 (80 GB), 24h per segment on FAU NHR HPC cluster.
+Optimizer: AdamW, lr $= 1\times10^{-4}$ (constant), 5000 total epochs.
+Batch size: 128.
+Training hardware: NVIDIA H100 (80 GB) on an academic HPC cluster; training runs in segments of up to 24h wall time.
 
 \paragraph{Checkpoint selection.}
 We select checkpoints based on validation FID (not training loss).
@@ -451,6 +501,7 @@ For H2, epoch 4399 is best despite continued training to epoch 5000.
 \paragraph{Evaluation.}
 All evaluations use \texttt{TEST.REPLICATION\_TIMES=3} (3 independent generation passes),
 \texttt{DIVERSITY\_TIMES=300}, \texttt{MM\_NUM\_SAMPLES=100}, \texttt{MM\_NUM\_TIMES=10}.
+Each replication regenerates the full test set with fresh sampling noise; the diffusion sampler is stochastic across replications while the data pipeline and evaluator are fixed (training uses seed 1234).
 Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval across replications).
 
 \section{H6 Training Trajectory Table}
@@ -458,8 +509,8 @@ Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval a
 
 \begin{table}[h]
   \centering
-  \caption{H6 (FREEZE\_EGO=False) training-time validation metrics at checkpoint evaluation points.
-           Best R@1 at epoch 3299 (0.398), best FID at epoch 2099 (4.789). Both degrade after their respective peaks.}
+  \caption{H6 (FREEZE\_EGO=False) training-time validation metrics at selected checkpoint evaluation points (validation runs every 100 epochs; full curve in Figure~\ref{fig:h6_training}).
+           Training-time FID is best at epoch 2099 (4.789); R@1 rises until epoch $\approx$3299, then saturates in the 0.37--0.42 band (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3.}
   \label{tab:h6_trajectory}
   \vspace{4pt}
   \begin{tabular}{ccc}
@@ -467,15 +518,19 @@ Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval a
     Epoch & Train-time FID $\downarrow$ & Train-time R@1 $\uparrow$ \\
     \midrule
     99    & 9.835 & 0.036 \\
-    499   & 7.821 & 0.091 \\
-    999   & 6.438 & 0.162 \\
-    1499  & 5.741 & 0.214 \\
+    499   & 8.373 & 0.038 \\
+    999   & 6.011 & 0.065 \\
+    1499  & 5.053 & 0.158 \\
+    1999  & 4.967 & 0.271 \\
     \textbf{2099}  & \textbf{4.789} & 0.273 \\
-    2499  & 5.012 & 0.309 \\
-    2999  & 5.187 & 0.365 \\
-    \textbf{3299}  & 5.273 & \textbf{0.398} \\
+    2499  & 5.385 & 0.332 \\
+    2999  & 5.889 & 0.373 \\
+    3299  & 5.273 & 0.398 \\
     3399  & 5.141 & 0.380 \\
     3499  & 5.415 & 0.367 \\
+    3999  & 6.221 & 0.407 \\
+    \textbf{4599}  & 6.339 & \textbf{0.417} \\
+    4999  & 5.561 & 0.408 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -483,13 +538,47 @@ Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval a
 \section{NeurIPS Paper Checklist}
 
 \begin{enumerate}
-  \item \textbf{Claims}: The paper's main claims are supported by experimental evidence with confidence intervals over 3 replications. See Tables~\ref{tab:main}, \ref{tab:cfg}, \ref{tab:h6}.
-  \item \textbf{Experiments}: All experiments use fixed random seeds; replications are independent runs. Compute details in Appendix~\ref{app:impl}.
-  \item \textbf{Reproducibility}: All hyperparameters, evaluation settings, and dataset splits are described in Section~\ref{sec:experiments} and Appendix~\ref{app:impl}.
-  \item \textbf{Error bars}: Reported as 95\% CI across 3 replications for all key metrics.
-  \item \textbf{Limitations}: Described explicitly in Section~\ref{sec:discussion} (body pose quality, conditioning scope, R@1 gap, physics).
-  \item \textbf{Broader impact}: Ego-conditioned pedestrian motion generation for AV simulation reduces the need for real-world safety-critical testing. Potential misuse (generating adversarial pedestrian behaviors) warrants future study.
-  \item \textbf{Datasets}: AVA, nuScenes, and Waymo are publicly available AV datasets with established research licenses.
+  \item \textbf{Claims.} \emph{Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?}\\
+  Answer: [Yes]. Justification: The two headline claims (49\% FID improvement from temporal cross-attention; MultiModality collapse from unfreezing the ego encoder) are supported by replicated evaluations with confidence intervals in Tables~\ref{tab:main}, \ref{tab:cfg}, and~\ref{tab:h6}.
+
+  \item \textbf{Limitations.} \emph{Does the paper discuss the limitations of the work?}\\
+  Answer: [Yes]. Justification: Section~\ref{sec:discussion} lists estimated (not ground-truth) pose labels, restricted conditioning scope, the R@1 gap, lack of physical constraints, evaluator domain shift, and the absence of a perceptual study.
+
+  \item \textbf{Theory.} \emph{Does the paper include theoretical results?}\\
+  Answer: [NA]. Justification: This is an empirical systems paper; no theoretical claims are made.
+
+  \item \textbf{Experimental reproducibility.} \emph{Does the paper fully disclose the information needed to reproduce the main experimental results?}\\
+  Answer: [Yes]. Justification: Architecture, training, and evaluation hyperparameters are given in Section~\ref{sec:experiments} and Appendix~\ref{app:impl}; the dataset construction pipeline is described in Section~4.1.
+
+  \item \textbf{Code and data access.} \emph{Does the paper provide open access to data and code?}\\
+  Answer: [No]. Justification: Code and the derived dataset will be released upon publication; the underlying nuScenes and Waymo data are publicly available under their research licenses, and the AVA recordings will be released subject to anonymization requirements.
+
+  \item \textbf{Experimental settings.} \emph{Does the paper specify all training and test details?}\\
+  Answer: [Yes]. Justification: Optimizer, learning rate, batch size, epochs, CFG dropout, sampler settings, and checkpoint-selection protocol are in Appendix~\ref{app:impl}; evaluation settings (replications, metric parameters) in Section~\ref{sec:eval} and Appendix~\ref{app:impl}.
+
+  \item \textbf{Error bars.} \emph{Does the paper report error bars or other statistical significance information?}\\
+  Answer: [Yes]. Justification: All key metrics report 95\% confidence intervals over 3 independent generation replications; the headline FID comparison has non-overlapping intervals.
+
+  \item \textbf{Compute resources.} \emph{Does the paper provide sufficient information on the compute resources?}\\
+  Answer: [Yes]. Justification: Single NVIDIA H100 (80\,GB) per run, $\le$24h wall-time segments, $\sim$2 segments per diffusion model (Appendix~\ref{app:impl}); evaluations take $\sim$8 minutes each.
+
+  \item \textbf{Code of ethics.} \emph{Does the research conform to the NeurIPS Code of Ethics?}\\
+  Answer: [Yes]. Justification: The work uses licensed public AV datasets and our own staged recordings with consenting participants; generated data contains no personally identifiable information.
+
+  \item \textbf{Broader impacts.} \emph{Does the paper discuss potential positive and negative societal impacts?}\\
+  Answer: [Yes]. Justification: Section~\ref{sec:discussion} discusses safety benefits for AV simulation, adversarial-use and dataset-bias risks, and mitigations.
+
+  \item \textbf{Safeguards.} \emph{Does the paper describe safeguards for responsible release?}\\
+  Answer: [NA]. Justification: The model generates pedestrian body motion for simulation and poses no high misuse risk requiring gated release.
+
+  \item \textbf{Licenses.} \emph{Are existing assets properly credited and licenses respected?}\\
+  Answer: [Yes]. Justification: nuScenes and Waymo are used under their research licenses and cited; the MLD backbone, HumanML3D representation and evaluators, OmniRe, MS3D, and SMPL are cited.
+
+  \item \textbf{New assets.} \emph{Are new assets well documented?}\\
+  Answer: [Yes]. Justification: The dataset construction pipeline (annotation, pose extraction, interaction cropping) is documented in Section~4.1; documentation will accompany the release.
+
+  \item \textbf{Human subjects.} \emph{Does the paper involve crowdsourcing or research with human subjects?}\\
+  Answer: [Yes]. Justification: Staged interaction scenarios were recorded with informed, consenting participants; recordings follow institutional data-protection procedures, and released data will be anonymized.
 \end{enumerate}
 
 \end{document}

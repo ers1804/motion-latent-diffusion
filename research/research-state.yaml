@@ -675,6 +675,11 @@ hypotheses:
       Warm-start: loads pretrained H4 ego encoder, then unfreezes all params for joint training.
     priority: high  # H4 R@1 ceiling confirmed — H6 is the next logical step
 
+  # CORRECTION (2026-06-12): full seg-2 log (368901) shows train-time R@1 does NOT decline
+  # after ep=3299 — it saturates at 0.37–0.42 through ep=4999 (max 0.417 @ ep=4599), FID 5.1–6.3.
+  # H6 rejection unchanged (both metrics far below H4 at all epochs). Paper fig/table updated
+  # from verified log extraction; findings.md trajectory tables corrected (had transcription errors).
+
   H7-larger-denoiser:
     description: "Increase denoiser transformer capacity (more layers, or larger hidden dim) to handle 196 K/V tokens better"
     prediction: "Better FID and potentially R-precision. H3 showed denoiser capacity is the FID bottleneck; H4 adds 196 K/V tokens which requires more capacity to leverage."
@@ -686,8 +691,27 @@ hypotheses:
       Risk: increased compute cost (~2× per step); may need shorter training.
     priority: low  # expensive; activate only after H4 + H6 explored
 
+# Trivial / reference baselines (2026-06-12, val split N=2937, same t2m evaluator as main table)
+trivial_baselines:
+  note: |
+    Fixed 2026-06-12: eval_retrieval/eval_vae_interp/eval_traj_kinematic built
+    EgoMotionDataModule with mean/std=None → motions unnormalized → collapsed t2m
+    embeddings (gt_Div~0.6). Fix: construct via get_datasets() + pl.seed_everything(SEED_VALUE).
+    eval_traj_kinematic also had --mode arg rejected by parse_args (stripped from sys.argv now).
+  results:
+    retrieval_nn_ego:      {FID: 0.042, Diversity: 5.67, gt_Diversity: 5.83, note: "copies real train motion; FID~0 is memorization sanity-check, not generative"}
+    uncond_mld:            {FID: 8.90, Diversity: 5.95, gt_Diversity: 5.9, R_precision_top_1: 0.031, MultiModality: 5.25, note: "trained model, ego zeroed; key reference — ego conditioning beats this"}
+    vae_latent_interp:     {FID: 12.18, Diversity: 5.76, gt_Diversity: 5.74, note: "random latent interp; worse than uncond prior"}
+    traj_kinematic_oracle: {FID: 53.93, Diversity: 0.72, gt_Diversity: 5.72, note: "GT root vel + mean body; floor"}
+    traj_kinematic_mean:   {FID: 56.16, Diversity: 0.52, gt_Diversity: 5.72, note: "training-mean motion; absolute floor"}
+  takeaway: |
+    H4 (FID=3.392) beats uncond MLD (8.90) by 62% → cross-attention exploits ego signal.
+    Traj+kinematic floor (54-56) proves the task needs articulated body motion, not just root translation.
+    Retrieval (0.042) shows FID is gameable by memorization → conditioning fidelity (R@1) is the real differentiator.
+
 next_actions:
   - "CONCLUDE: write paper using ml-paper-writing skill"
+  - "Add trivial-baselines table to paper Experiments (uncond/retrieval/vae-interp/traj-kinematic)"
   - "H4 (epoch=3399, CFG=10) is the best system: FID=3.392 ±0.179, R@1=0.548 ±0.002, MM=3.956"
   - "H6 DEFINITIVELY REJECTED (ep=3399 seg-2): FID=5.079, R@1=0.352, MM=2.618 — worse on all"
   - "Paper narrative: H4 cross-attention (49% FID improvement) + H6 ablation (unfreezing hurts)"
