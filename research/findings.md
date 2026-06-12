@@ -364,33 +364,48 @@ Cross-attention ego conditioning with frozen encoder (H4) achieves **49% FID imp
 | H4 | trans_dec, EgoEncoder×196, FREEZE=True, CFG=10 | **3.392** | **0.548** | **3.956** | **BEST** |
 | H6 | trans_dec, EgoEncoder×196, FREEZE=False, CFG=10 | 5.079 | 0.352 | 2.618 | REJECTED (worse all) |
 
-### Trivial Baselines (2026-06-12 — all on the main-table t2m-evaluator scale)
+### Trivial Baselines (2026-06-12, RERUN under matched config — supersedes earlier same-day numbers)
 Four non-learned / reference baselines establish the lower and upper bounds of the metric space.
-All evaluated on the val split (2937 samples) with the same 512-D t2m evaluator as the main results.
+
+> **CORRECTION / RERUN (2026-06-12 evening):** the first 2026-06-12 baseline numbers
+> (retrieval 0.042, uncond 8.90, interp 12.18, kinematic 54–56) were computed under the
+> WRONG pipeline: `MEAN_STD_PATH=ava_human_nuscenes_waymo` (old normalization AND old
+> split lists — MEAN_STD_PATH doubles as split_list_root in EgoMotion.py), and the uncond
+> baseline used the old H0 model (`ego_motion_diffusion_all_new_vae_stochastic` ep1599,
+> latent-1, different VAE). gt_Diversity ≈5.7–5.9 instead of the main table's ≈5.50
+> exposed the mismatch. Also, the recorded uncond FID=8.90/MM=5.25 did not match its own
+> JSON (9.088/5.423). All four baselines rerun with `MEAN_STD_PATH=ava_nuscenes_waymo`
+> (the directory the helma eval scripts override to for ALL main-table evals) and the
+> uncond baseline now uses the actual H4 model (trans_dec, latent-4, ep=3399, ego zeroed).
+> Sanity check: uncond gt_Diversity = 5.515 ± 0.081 — consistent with main-table 5.496. ✓
+
+All rows now 3 replications (2026-06-12: non-learned baselines rerun with seeds 1234/2345/3456;
+CI = 1.96·σ/√3, same formula as test.py; randomness comes from the dataset's stochastic
+pad/crop + metric subsampling + interpolation draws):
 
 | Baseline | What it does | FID↓ | Diversity | gt_Div | R@1 | MM |
 |----------|--------------|------|-----------|--------|-----|-----|
-| Retrieval (NN ego) | copy training motion of nearest-ego-trajectory neighbour | **0.042** | 5.67 | 5.83 | — | — |
-| Unconditional MLD | trained model with ego zeroed (CFG cancels) | 8.90 | 5.95 | 5.9 | 0.031 | 5.25 |
-| VAE latent interp | decode random interpolation of two train latents | 12.18 | 5.76 | 5.74 | — | — |
-| Traj+kinematic (oracle) | GT root velocity + mean body (zeros) | 53.93 | 0.72 | 5.72 | — | — |
-| Traj+kinematic (mean) | training-mean motion (all zeros) | 56.16 | 0.52 | 5.72 | — | — |
+| Retrieval (NN ego) | copy training motion of nearest-ego-trajectory neighbour | **0.062 ±0.004** | 5.34 ±0.04 | 5.34 ±0.06 | — | — |
+| Unconditional H4 | H4 ep3399 with ego zeroed (CFG cancels exactly) | 5.18 ±0.21 | 5.96 ±0.13 | 5.51 ±0.08 | 0.031 (=chance 1/32) | 5.16 ±0.63 |
+| VAE latent interp | decode random interpolation of two train latents | 7.91 ±0.03 | 5.82 ±0.01 | 5.33 ±0.06 | — | — |
+| Traj+kinematic (oracle) | GT root features + mean body (zeros) | 47.67 ±0.08 | 0.72 ±0.00 | 5.36 ±0.06 | — | — |
+| Traj+kinematic (mean) | training-mean motion (all zeros) | 49.60 ±0.09 | 0.46 ±0.01 | 5.36 ±0.06 | — | — |
 | H2 (pooled) | — | 6.603 | 5.78 | — | 0.671 | 3.50 |
 | **H4 (ours)** | — | **3.392** | 5.79 | — | 0.548 | 3.96 |
 
-**What the baselines establish:**
-- **Retrieval FID≈0 is a sanity check, not a competitor**: copying real training motions trivially matches the GT distribution (FID 0.042), but retrieval is not generative and has no ego-conditioned R-precision. It shows FID alone is gameable by memorization — conditioning fidelity (R@1) is what separates real methods.
-- **Unconditional MLD (FID=8.90)** is the key reference: it is the same model with ego removed. H4 (3.392) and H2 (6.603) both beat it, proving ego conditioning measurably improves realism, and H4's 62% FID reduction over uncond shows cross-attention exploits the ego signal far more than pooling.
-- **VAE interp (12.18)** > uncond: arbitrary latent interpolation leaves the data manifold; the learned diffusion prior matters.
-- **Traj+kinematic (54–56)** is the floor: following the trajectory with a static/mean body is catastrophic for FID (and near-zero Diversity 0.5–0.7), proving the task genuinely requires generating articulated body motion, not just root translation.
+**What the baselines establish (REVISED with matched numbers):**
+- **Retrieval FID≈0 is a sanity check, not a competitor**: copying real training motions trivially matches the GT distribution (FID 0.062), but retrieval is not generative and has no ego-conditioned R-precision. FID alone is gameable by memorization.
+- **Unconditional H4 (FID=5.18) is the key reference**: it is exactly the H4 model with ego removed. Ego conditioning improves FID 5.18→3.39 (**34%**, not the previously claimed 62%). STRIKING: the H4 *unconditional* prior (5.18) already beats H2's *conditional* FID (6.60) — the trans_dec architecture is a better generative model even before conditioning. It also ≈matches H6's conditional FID (5.08).
+- **Uncond R@1 = 0.03125 = exactly 1/32 = chance**: protocol sanity check — without ego info, retrieval is random.
+- **VAE interp (7.91)** worse than uncond prior (5.18): arbitrary latent interpolation leaves the data manifold; the learned diffusion prior matters.
+- **Traj+kinematic (48–50)** is the floor: following the trajectory with a static/mean body is catastrophic (near-zero Diversity 0.5–0.7) — the task genuinely requires articulated body motion, not just root translation.
 
-**Implementation note (bug fixed 2026-06-12):** the three non-model baseline scripts
+**Implementation note (bug fixed 2026-06-12, morning):** the three non-model baseline scripts
 (`eval_retrieval`, `eval_vae_interp`, `eval_traj_kinematic`) originally built
 `EgoMotionDataModule` directly with `mean=None, std=None`, so motions were fed to the
-t2m evaluator **unnormalized** → collapsed embeddings (gt_Diversity≈0.6 instead of ≈5.8,
-FID meaningless). Fixed by constructing the datamodule via `get_datasets()` (loads
-mean/std from `MEAN_STD_PATH`) and seeding with `cfg.SEED_VALUE` for determinism — exactly
-as `eval_uncond` already did. The earlier Feb-26 baseline JSONs are stale; current numbers above.
+t2m evaluator **unnormalized** → collapsed embeddings. Fixed via `get_datasets()` +
+`pl.seed_everything`. The Feb-26 JSONs and the first Jun-12 JSONs are both stale;
+current numbers (evening rerun, matched pipeline) above.
 
 ### Paper Narrative
 The paper tells a clean 3-part story:

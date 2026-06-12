@@ -691,23 +691,38 @@ hypotheses:
       Risk: increased compute cost (~2× per step); may need shorter training.
     priority: low  # expensive; activate only after H4 + H6 explored
 
-# Trivial / reference baselines (2026-06-12, val split N=2937, same t2m evaluator as main table)
+# Trivial / reference baselines (2026-06-12 EVENING RERUN under matched pipeline)
 trivial_baselines:
   note: |
-    Fixed 2026-06-12: eval_retrieval/eval_vae_interp/eval_traj_kinematic built
+    Morning fix: eval_retrieval/eval_vae_interp/eval_traj_kinematic built
     EgoMotionDataModule with mean/std=None → motions unnormalized → collapsed t2m
     embeddings (gt_Div~0.6). Fix: construct via get_datasets() + pl.seed_everything(SEED_VALUE).
     eval_traj_kinematic also had --mode arg rejected by parse_args (stripped from sys.argv now).
+    EVENING RERUN (supersedes morning numbers): morning runs used the WRONG pipeline —
+    MEAN_STD_PATH=ava_human_nuscenes_waymo (old normalization + old split lists; MEAN_STD_PATH
+    doubles as split_list_root) and uncond used the old H0 model (all_new_vae_stochastic ep1599,
+    latent-1, different VAE). Detected via gt_Div mismatch (5.7-5.9 vs main-table 5.496); the
+    recorded uncond FID=8.90 also did not match its own JSON (9.088). Rerun with
+    MEAN_STD_PATH=ava_nuscenes_waymo (same dir the helma eval scripts override to for all
+    main-table evals) and uncond = H4 trans_dec latent-4 ep=3399 with ego zeroed.
+    Sanity: uncond gt_Diversity=5.515±0.081 ~ main-table 5.496. NOTE: the local
+    ava_nuscenes_waymo_interactive dir has only 108 val samples (fails DIVERSITY_TIMES=300) —
+    it is NOT what the main evals used.
   results:
-    retrieval_nn_ego:      {FID: 0.042, Diversity: 5.67, gt_Diversity: 5.83, note: "copies real train motion; FID~0 is memorization sanity-check, not generative"}
-    uncond_mld:            {FID: 8.90, Diversity: 5.95, gt_Diversity: 5.9, R_precision_top_1: 0.031, MultiModality: 5.25, note: "trained model, ego zeroed; key reference — ego conditioning beats this"}
-    vae_latent_interp:     {FID: 12.18, Diversity: 5.76, gt_Diversity: 5.74, note: "random latent interp; worse than uncond prior"}
-    traj_kinematic_oracle: {FID: 53.93, Diversity: 0.72, gt_Diversity: 5.72, note: "GT root vel + mean body; floor"}
-    traj_kinematic_mean:   {FID: 56.16, Diversity: 0.52, gt_Diversity: 5.72, note: "training-mean motion; absolute floor"}
+    # 3 replications each (seeds 1234/2345/3456 for non-learned; resampled generation for uncond).
+    # CI = 1.96*std/sqrt(3), same as test.py.
+    retrieval_nn_ego:      {FID: 0.062, FID_ci: 0.004, Diversity: 5.336, Diversity_ci: 0.036, gt_Diversity: 5.336, note: "copies real train motion; FID~0 is memorization sanity-check, not generative"}
+    uncond_h4:             {FID: 5.177, FID_ci: 0.209, Diversity: 5.961, Diversity_ci: 0.130, gt_Diversity: 5.515, gt_Diversity_ci: 0.081, R_precision_top_1: 0.031, MultiModality: 5.157, MultiModality_ci: 0.633, note: "H4 ep3399 with ego zeroed (CFG cancels exactly); R@1 = exactly chance 1/32"}
+    vae_latent_interp:     {FID: 7.913, FID_ci: 0.033, Diversity: 5.817, Diversity_ci: 0.008, gt_Diversity: 5.334, note: "random latent interp; worse than uncond prior"}
+    traj_kinematic_oracle: {FID: 47.668, FID_ci: 0.085, Diversity: 0.719, Diversity_ci: 0.003, gt_Diversity: 5.360, note: "GT root features + mean body; floor"}
+    traj_kinematic_mean:   {FID: 49.599, FID_ci: 0.087, Diversity: 0.463, Diversity_ci: 0.007, gt_Diversity: 5.360, note: "training-mean motion; absolute floor"}
   takeaway: |
-    H4 (FID=3.392) beats uncond MLD (8.90) by 62% → cross-attention exploits ego signal.
-    Traj+kinematic floor (54-56) proves the task needs articulated body motion, not just root translation.
-    Retrieval (0.042) shows FID is gameable by memorization → conditioning fidelity (R@1) is the real differentiator.
+    Ego conditioning improves H4 FID by 34% over its own unconditional prior (5.18 → 3.39).
+    STRIKING: H4's UNCONDITIONAL prior (5.18) already beats H2's CONDITIONAL FID (6.60) —
+    trans_dec is a better generative model even before conditioning; ~matches H6 cond (5.08).
+    Uncond R@1 = exactly chance (1/32) — R-Precision protocol sanity check passes.
+    Traj+kinematic floor (48-50) proves the task needs articulated body motion, not just root translation.
+    Retrieval (0.065) shows FID is gameable by memorization → conditioning fidelity (R@1) is the real differentiator.
 
 next_actions:
   - "CONCLUDE: write paper using ml-paper-writing skill"

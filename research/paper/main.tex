@@ -187,7 +187,7 @@ At each denoising step, the 4 latent queries attend to all 196 ego tokens, enabl
 
 \subsection{Classifier-Free Guidance}
 
-We train with classifier-free guidance~\cite{ho2022cfg}: during 10\% of training batches, the ego condition is dropped (replaced with a learned null embedding), enabling unconditional generation.
+We train with classifier-free guidance~\cite{ho2022cfg}: for 10\% of training samples, the input ego trajectory is zeroed before encoding, so the encoder's response to the all-zero trajectory serves as the unconditional embedding (the same construction is used for the unconditional branch at inference).
 At inference, the guided score is:
 \begin{equation}
   \hat{\boldsymbol{\epsilon}}_t = \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, \emptyset) + w \cdot \bigl(\boldsymbol{\epsilon}_\theta(\mathbf{z}_t, \mathbf{c}) - \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, \emptyset)\bigr),
@@ -244,14 +244,14 @@ R-Precision, in contrast, retrieves with each model's \emph{own} ego encoder emb
 \end{itemize}
 
 We additionally report four non-learned or reference baselines (Table~\ref{tab:trivial}) that bound the metric space.
-\textbf{Unconditional MLD} runs our trained model with the ego trajectory zeroed (classifier-free guidance cancels), isolating the contribution of ego conditioning.
+\textbf{Unconditional MLD} runs our H4 model (epoch 3399) with every ego trajectory zeroed; because CFG training dropout uses the same zeroed-trajectory construction, both guidance branches receive identical embeddings and guidance cancels exactly, yielding the model's pure unconditional prior and isolating the contribution of ego conditioning.
 \textbf{Retrieval} returns, for each test ego trajectory, the training motion whose ego trajectory is the nearest neighbour (32-point resampled L2).
 \textbf{VAE interpolation} decodes a random latent interpolation of two training motions.
 \textbf{Trajectory$+$kinematic} replaces all body features with the training mean, keeping either the ground-truth root velocity (\emph{oracle}) or nothing (\emph{mean}), simulating a trajectory-prediction-then-fitting pipeline with no learned body model.
 
 \begin{table}[t]
   \centering
-  \caption{Reference baselines bounding the metric space (val split, same t2m evaluator as Table~\ref{tab:main}). Retrieval attains near-zero FID by copying real motions but is non-generative and has no ego-conditioned R-Precision; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. \method (H4) reduces FID by 62\% relative to the unconditional model.}
+  \caption{Reference baselines bounding the metric space (val split; same evaluator, normalization, and split lists as Table~\ref{tab:main}). All rows are mean $\pm$ 95\% CI over 3 replications (the unconditional row resamples the diffusion model; the non-learned rows are reseeded end-to-end). Retrieval attains near-zero FID by copying real motions but is non-generative; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. Ego conditioning improves \method's FID by 34\% over its own unconditional prior (5.18~$\to$~3.39) — and even the unconditional H4 prior outperforms conditionally generated H2 motions, underscoring the architectural advantage of the cross-attention denoiser.}
   \label{tab:trivial}
   \vspace{4pt}
   \small
@@ -260,18 +260,18 @@ We additionally report four non-learned or reference baselines (Table~\ref{tab:t
     \toprule
     Method & FID $\downarrow$ & Diversity & R@1 $\uparrow$ \\
     \midrule
-    Retrieval (NN ego)$^\ast$        & 0.042  & 5.67 & -- \\
-    Trajectory+kinematic (mean)      & 56.16  & 0.52 & -- \\
-    Trajectory+kinematic (oracle)    & 53.93  & 0.72 & -- \\
-    VAE latent interpolation         & 12.18  & 5.76 & -- \\
-    Unconditional MLD                & 8.90   & 5.95 & 0.031 \\
+    Retrieval (NN ego)$^\ast$        & 0.062 {\scriptsize $\pm$0.004} & 5.34 & -- \\
+    Trajectory+kinematic (mean)      & 49.60 {\scriptsize $\pm$0.087} & 0.46 & -- \\
+    Trajectory+kinematic (oracle)    & 47.67 {\scriptsize $\pm$0.085} & 0.72 & -- \\
+    VAE latent interpolation         & 7.91 {\scriptsize $\pm$0.033}  & 5.82 & -- \\
+    Unconditional \method (ego zeroed) & 5.18 {\scriptsize $\pm$0.209} & 5.96 & 0.031$^\dagger$ \\
     \midrule
     H2 (Pooled)                      & 6.603  & 5.78 & 0.671 \\
     H4 (\method, ours)               & \textbf{3.392} & 5.79 & 0.548 \\
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\ast$Non-generative upper bound: copies real training motions, so low FID reflects memorization rather than conditioned synthesis.}
+  {\footnotesize $^\ast$Non-generative upper bound: copies real training motions, so low FID reflects memorization rather than conditioned synthesis. $^\dagger$Exactly chance level ($1/32 = 0.031$), confirming the R-Precision protocol: without ego information, retrieval is random.}
 \end{table}
 
 \subsection{Main Results}

@@ -1,10 +1,15 @@
 ####################################
-# Baseline 1: Unconditional MLD
+# Baseline 1: Unconditional MLD (matched to H4 main config)
 #
-# Runs the trained ego-conditioned diffusion model with ALL ego trajectories
-# replaced by zeros before encoding.  Since the model was trained with 10 %
-# null-ego dropout (guidance_uncondp = 0.1), its unconditional prior is
-# well-defined.
+# Runs the H4 diffusion model (trans_dec, epoch=3399) with ALL ego
+# trajectories replaced by zeros before encoding.  Since the model was
+# trained with 10 % zero-ego dropout (guidance_uncondp = 0.1), its
+# unconditional prior is well-defined; with zeroed ego both CFG branches
+# receive the same embedding, so guidance cancels exactly.
+#
+# 2026-06-12: matched to the main eval pipeline — ava_nuscenes_waymo
+# MEAN_STD_PATH (also the split-list root; same as the helma eval-script
+# override), latent-4 VAE, H4 ego encoder + checkpoint, epsilon prediction.
 #
 # Run with:
 #   python baselines/eval_uncond.py \
@@ -31,8 +36,8 @@ TRAIN:
   END_EPOCH: 5000
 
   RESUME: ''
-  PRETRAINED_VAE: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/mld/vae_ava_nuscenes_waymo/checkpoints/epoch=6999.ckpt'
-  PRETRAINED_EGO: '/home/erik/ssd2/gitprojects/motion-latent-diffusion/experiments/ego_encoder_pretrain_full/checkpoints/best.pt'
+  PRETRAINED_VAE: '/home/erik/NAS/methods/diffusion_gen/models/helma_models/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt'
+  PRETRAINED_EGO: '/home/erik/NAS/methods/diffusion_gen/models/helma_models/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt'
   PRETRAINED: ''
   FREEZE_EGO: True
   DETERMINISTIC_Z: False
@@ -62,7 +67,7 @@ EVAL:
 # Testing Settings
 #####################################
 TEST:
-  CHECKPOINTS: '/home/erik/NAS/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_all_new_vae_stochastic/checkpoints/epoch=1599.ckpt'
+  CHECKPOINTS: '/home/erik/NAS/methods/diffusion_gen/models/helma_models/models/mld/ego_motion_diffusion_h4_trans_dec/checkpoints/epoch=3399.ckpt'
   DATASETS: ['egomotion']
   SPLIT: val
   BATCH_SIZE: 1       # one sample at a time (batch > 1 changes diffusion timing)
@@ -97,8 +102,8 @@ DATASET:
     FPS: 20
     EGO_SCALE: 50.0
 
-    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'
-    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/stats'
+    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'
+    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'
 
   SAMPLER:
     MAX_LEN: 196
@@ -112,17 +117,18 @@ model:
   vae: true
   model_type: mld
   condition: 'ego'
-  latent_dim: [1, 256]
+  latent_dim: [4, 256]      # H4 latent-4
   ff_size: 1024
   num_layers: 9
   num_heads: 4
   dropout: 0.1
   activation: gelu
-  guidance_scale: 7.5       # CFG still enabled — both branches receive zero ego
+  guidance_scale: 10        # H4 operating point — cancels anyway (both branches zero ego)
   guidance_uncondp: 0.1
 
+  # H4 ego encoder: full sequence (no pooling), outputs (B, T, 256)
   ego_encoder:
-    target: mld.models.architectures.ego_encoder.EgoEncoderPooled
+    target: mld.models.architectures.ego_encoder.EgoEncoder
     params:
       input_dim: 2
       latent_dim: 256
@@ -131,7 +137,6 @@ model:
       ff_size: 1024
       dropout: 0.1
       activation: gelu
-      pool_type: mean
 
   motion_vae:
     target: mld.models.architectures.mld_vae.MldVae
@@ -160,6 +165,7 @@ model:
       ablation: ${TRAIN.ABLATION}
       condition: ${model.condition}
       nfeats: ${DATASET.NFEATS}
+      arch: trans_dec              # H4: cross-attention (z queries full ego sequence)
 
   scheduler:
     target: diffusers.DDIMScheduler
@@ -171,7 +177,7 @@ model:
       clip_sample: false
       set_alpha_to_one: false
       steps_offset: 0
-      prediction_type: sample
+      prediction_type: epsilon
     num_inference_timesteps: 50
     eta: 0.0
 
@@ -184,7 +190,7 @@ model:
       beta_schedule: scaled_linear
       variance_type: fixed_small
       clip_sample: false
-      prediction_type: sample
+      prediction_type: epsilon
 
 #####################################
 # Loss Settings

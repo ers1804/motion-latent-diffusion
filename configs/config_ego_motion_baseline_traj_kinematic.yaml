@@ -99,8 +99,8 @@ DATASET:
     FPS: 20
     EGO_SCALE: 50.0
 
-    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_human_nuscenes_waymo'
-    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/stats'
+    MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'
+    EGO_MEAN_STD_PATH: '/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo'
 
   SAMPLER:
     MAX_LEN: 196
