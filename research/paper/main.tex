@@ -238,20 +238,20 @@ The improvement is significant: the confidence intervals are non-overlapping (H4
 
 \begin{table}[t]
   \centering
-  \caption{Main evaluation results. All values are mean $\pm$ 95\% CI over 3 replications.
-           Best values in \textbf{bold}. H4 = \method (ours). $\dagger$: H2 evaluated at CFG=5 (its optimal); H4 and H6 at CFG=10 (their optimal).
-           CI: confidence interval from 3 replications.}
+  \caption{Main evaluation results. Each method is reported at its own optimal CFG (sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}. H4 = \method (ours).}
   \label{tab:main}
   \vspace{4pt}
+  \small
+  \setlength{\tabcolsep}{4pt}
   \begin{tabular}{lcccccc}
     \toprule
-    Method & Epoch & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ & Diversity \\
+    Method & Epoch & CFG & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ & Diversity \\
     \midrule
-    H2 (Pooled, baseline)$^\dagger$          & 4399 & 6.603 {\scriptsize $\pm$0.067} & 0.671 & 3.503 & 5.779 \\
-    H3 (Latent-8 VAE)$^\dagger$              & 4399 & 7.563 {\scriptsize $\pm$0.078} & 0.676 & 3.245 & 5.842 \\
+    H2 (Pooled, baseline)            & 4399 & 5  & 6.603 {\scriptsize $\pm$0.067} & 0.671 & 3.503 & 5.779 \\
+    H3 (Latent-8 VAE)                & 4399 & 5  & 7.563 {\scriptsize $\pm$0.078} & 0.676 & 3.245 & 5.842 \\
     \midrule
-    H4 (Ours, FREEZE\_EGO=True)$^\dagger$   & 3399 & \textbf{3.392} {\scriptsize $\pm$0.179} & \textbf{0.548} {\scriptsize $\pm$0.002} & \textbf{3.956} {\scriptsize $\pm$0.406} & 5.794 \\
-    H6 (Ablation, FREEZE\_EGO=False)$^\dagger$ & 3399 & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 {\scriptsize $\pm$0.309} & 6.064 \\
+    H4 (Ours, FREEZE\_EGO=True)      & 3399 & 10 & \textbf{3.392} {\scriptsize $\pm$0.179} & \textbf{0.548} {\scriptsize $\pm$0.002} & \textbf{3.956} {\scriptsize $\pm$0.406} & 5.794 \\
+    H6 (Ablation, FREEZE\_EGO=False) & 3399 & 10 & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 {\scriptsize $\pm$0.309} & 6.064 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -397,6 +397,13 @@ R@1 measures only conditioning alignment, not generation quality; FID captures t
   \item \textbf{R@1 gap}: H4 achieves R@1 $= 0.548$, below H2's $0.671$. The adapter-style approach described above is a natural next step.
   \item \textbf{Physics}: Generated motions are not physically constrained (foot sliding, penetration). Post-hoc physics cleanup could improve realism for simulation deployment.
 \end{itemize}
+
+\paragraph{Broader impact.}
+The primary intended use of ego-conditioned pedestrian motion generation is autonomous-driving simulation: synthesizing realistic, ego-aware pedestrian behaviors enables larger-scale safety testing without exposing real pedestrians to risk, and is particularly valuable for the long tail of rare or safety-critical interactions that are unsafe or impractical to collect.
+We note two risks.
+First, generated pedestrian motions could in principle be used adversarially, e.g.\ to seed motion-planning policies that learn to expect only nominal behaviors and consequently fail on out-of-distribution pedestrians; we mitigate this by reporting MultiModality and diversity metrics, which expose the breadth of the generated distribution rather than only its mean.
+Second, training data inherit demographic biases of the source AV datasets (AVA, nuScenes, Waymo): generated motion is conditioned on the distribution of pedestrians actually observed in U.S./European urban environments, so deployment in other settings should be preceded by additional validation.
+Generated motion data is synthetic and contains no personally identifiable information.
 
 %----------------------------------------------------------------------
 \section{Conclusion}

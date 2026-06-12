@@ -1,0 +1,121 @@
+\relax 
+\providecommand\hyper@newdestlabel[2]{}
+\providecommand\HyperFirstAtBeginDocument{\AtBeginDocument}
+\HyperFirstAtBeginDocument{\ifx\hyper@anchor\@undefined
+\global\let\oldnewlabel\newlabel
+\gdef\newlabel#1#2{\newlabelxx{#1}#2}
+\gdef\newlabelxx#1#2#3#4#5#6{\oldnewlabel{#1}{{#2}{#3}}}
+\AtEndDocument{\ifx\hyper@anchor\@undefined
+\let\newlabel\oldnewlabel
+\fi}
+\fi}
+\global\let\hyper@last\relax 
+\gdef\HyperFirstAtBeginDocument#1{#1}
+\providecommand\HyField@AuxAddToFields[1]{}
+\providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{chen2023mld,tevet2023mdm,zhang2022motiondiffuse,guo2024momask}
+\citation{mao2023led}
+\citation{feng2024unitraj}
+\citation{chen2023mld}
+\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\citation{rombach2022sd}
+\citation{ruiz2023dreambooth}
+\citation{mao2023led}
+\citation{feng2024unitraj}
+\citation{zhang2023remodiffuse}
+\citation{liang2024intergen}
+\citation{chen2023mld}
+\citation{tevet2023mdm}
+\citation{zhang2023t2mgpt}
+\citation{guo2024momask}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{2}{section.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Ego-conditioned and context-conditioned motion generation.}{2}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Interaction-aware and retrieval-augmented motion generation.}{2}{section*.3}\protected@file@percent }
+\citation{ho2022cfg}
+\citation{rombach2022sd}
+\citation{ruiz2023dreambooth}
+\citation{ye2023ipadapter}
+\citation{zhang2023controlnet}
+\citation{guo2022humanml3d}
+\citation{chen2023mld}
+\@writefile{toc}{\contentsline {paragraph}{Latent diffusion for human motion.}{3}{section*.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Classifier-free guidance.}{3}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Frozen encoders in generative models.}{3}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Method}{3}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Problem Formulation}{3}{subsection.3.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Motion VAE}{3}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Ego Encoder}{3}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Ego encoder pretraining.}{3}{section*.7}\protected@file@percent }
+\citation{ho2022cfg}
+\citation{song2021ddim}
+\citation{guo2022humanml3d}
+\citation{guo2022humanml3d}
+\citation{guo2022humanml3d}
+\@writefile{toc}{\contentsline {paragraph}{Frozen encoder (key design choice).}{4}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Diffusion Denoiser}{4}{subsection.3.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Classifier-Free Guidance}{4}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Training Objective}{4}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{4}{section.4}\protected@file@percent }
+\newlabel{sec:experiments}{{4}{4}{Experiments}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Dataset and Splits}{4}{subsection.4.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Main evaluation results. Each method is reported at its own optimal CFG (sweep in Table\nobreakspace  {}\ref {tab:cfg}). All values are mean $\pm $ 95\% CI over 3 replications. Best values in \textbf  {bold}. H4 = EgoPed\xspace  (ours).\relax }}{5}{table.caption.9}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:main}{{1}{5}{Main evaluation results. Each method is reported at its own optimal CFG (sweep in Table~\ref {tab:cfg}). All values are mean $\pm $ 95\% CI over 3 replications. Best values in \textbf {bold}. H4 = \method (ours).\relax }{table.caption.9}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Evaluation Protocol}{5}{subsection.4.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Baselines}{5}{subsection.4.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Main Results}{5}{subsection.4.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}CFG Scale Analysis}{5}{subsection.4.5}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces CFG sweep at epoch 3399. H4 FID is nearly flat across guidance scales; H2 degrades steeply.\relax }}{6}{table.caption.10}\protected@file@percent }
+\newlabel{tab:cfg}{{2}{6}{CFG sweep at epoch 3399. H4 FID is nearly flat across guidance scales; H2 degrades steeply.\relax }{table.caption.10}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces Qualitative results from H4 (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The body motion exhibits realistic gait, foot contact, and orientation changes that respond to the ego context.\relax }}{6}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:qualitatives}{{1}{6}{Qualitative results from H4 (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The body motion exhibits realistic gait, foot contact, and orientation changes that respond to the ego context.\relax }{figure.caption.11}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {5}Ablation Study}{6}{section.5}\protected@file@percent }
+\newlabel{sec:ablation}{{5}{6}{Ablation Study}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Latent Dimension: 4 vs.\ 8 (H3)}{6}{subsection.5.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Encoder Freeze vs.\ Unfreeze (H6)}{6}{subsection.5.2}\protected@file@percent }
+\citation{rombach2022sd,ruiz2023dreambooth,ye2023ipadapter}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces H6 training trajectory (FREEZE\_EGO=False): FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch. FID degrades monotonically as R@1 improves through epoch\nobreakspace  {}3299, then R@1 also begins to decline (epoch\nobreakspace  {}3399--3499). Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.\relax }}{7}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:h6_training}{{2}{7}{H6 training trajectory (FREEZE\_EGO=False): FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch. FID degrades monotonically as R@1 improves through epoch~3299, then R@1 also begins to decline (epoch~3399--3499). Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.\relax }{figure.caption.14}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces H6 definitive evaluation at three checkpoints. H4 reference included for comparison.\relax }}{7}{table.caption.12}\protected@file@percent }
+\newlabel{tab:h6}{{3}{7}{H6 definitive evaluation at three checkpoints. H4 reference included for comparison.\relax }{table.caption.12}{}}
+\@writefile{toc}{\contentsline {paragraph}{Mechanism.}{7}{section*.13}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces H4 training trajectory: FID (left axis, red) and R@1 (right axis, blue) across the late training segment. The best checkpoint is epoch\nobreakspace  {}3399 on \emph  {both} metrics; both then degrade monotonically through epoch\nobreakspace  {}4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.\relax }}{8}{figure.caption.15}\protected@file@percent }
+\newlabel{fig:h4_training}{{3}{8}{H4 training trajectory: FID (left axis, red) and R@1 (right axis, blue) across the late training segment. The best checkpoint is epoch~3399 on \emph {both} metrics; both then degrade monotonically through epoch~4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.\relax }{figure.caption.15}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Checkpoint Selection}{8}{subsection.5.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{8}{section.6}\protected@file@percent }
+\newlabel{sec:discussion}{{6}{8}{Discussion}{section.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Architecture recommendation.}{8}{section*.16}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{R-Precision@1 and the conditioning-diversity tradeoff.}{8}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Limitations.}{8}{section*.18}\protected@file@percent }
+\bibstyle{plainnat}
+\bibdata{refs}
+\bibcite{chen2023mld}{{1}{2023}{{Chen et~al.}}{{Chen, Jiang, Liu, Huang, Fu, Chen, and Yu}}}
+\bibcite{feng2024unitraj}{{2}{2024}{{Feng et~al.}}{{Feng, Bahari, Amor, Zablocki, Cord, and Alahi}}}
+\bibcite{guo2022humanml3d}{{3}{2022}{{Guo et~al.}}{{Guo, Zou, Zuo, Wang, Ji, Li, and Cheng}}}
+\bibcite{guo2024momask}{{4}{2024}{{Guo et~al.}}{{Guo, Mu, Javed, Wang, and Cheng}}}
+\bibcite{ho2022cfg}{{5}{2022}{{Ho and Salimans}}{{}}}
+\bibcite{liang2024intergen}{{6}{2024}{{Liang et~al.}}{{Liang, Zhang, Li, Yu, and Xu}}}
+\bibcite{mao2023led}{{7}{2023}{{Mao et~al.}}{{Mao, Xu, Zhu, Chen, and Wang}}}
+\bibcite{rombach2022sd}{{8}{2022}{{Rombach et~al.}}{{Rombach, Blattmann, Lorenz, Esser, and Ommer}}}
+\bibcite{ruiz2023dreambooth}{{9}{2023}{{Ruiz et~al.}}{{Ruiz, Li, Jampani, Pritch, Rubinstein, and Aberman}}}
+\@writefile{toc}{\contentsline {paragraph}{Broader impact.}{9}{section*.19}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{9}{section.7}\protected@file@percent }
+\bibcite{song2021ddim}{{10}{2021}{{Song et~al.}}{{Song, Meng, and Ermon}}}
+\bibcite{tevet2023mdm}{{11}{2023}{{Tevet et~al.}}{{Tevet, Raab, Gordon, Shafir, Cohen-Or, and Bermano}}}
+\bibcite{ye2023ipadapter}{{12}{2023}{{Ye et~al.}}{{Ye, Zhang, Liu, Han, and Yang}}}
+\bibcite{zhang2023t2mgpt}{{13}{2023{a}}{{Zhang et~al.}}{{Zhang, Zhang, Cun, Zhang, Zhao, Lu, Shen, and Shan}}}
+\bibcite{zhang2023controlnet}{{14}{2023{b}}{{Zhang et~al.}}{{Zhang, Rao, and Agrawala}}}
+\bibcite{zhang2023remodiffuse}{{15}{2023{c}}{{Zhang et~al.}}{{Zhang, Guo, Pan, Cai, Hong, Li, Yang, and Liu}}}
+\bibcite{zhang2022motiondiffuse}{{16}{2024}{{Zhang et~al.}}{{Zhang, Cai, Pan, Hong, Guo, Yang, and Liu}}}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Implementation Details}{10}{appendix.A}\protected@file@percent }
+\newlabel{app:impl}{{A}{10}{Implementation Details}{appendix.A}{}}
+\@writefile{toc}{\contentsline {paragraph}{Ego encoder.}{10}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Diffusion model.}{10}{section*.22}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Checkpoint selection.}{10}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Evaluation.}{10}{section*.24}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {B}H6 Training Trajectory Table}{10}{appendix.B}\protected@file@percent }
+\newlabel{app:h6_trajectory}{{B}{10}{H6 Training Trajectory Table}{appendix.B}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {C}NeurIPS Paper Checklist}{10}{appendix.C}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces H6 (FREEZE\_EGO=False) training-time validation metrics at checkpoint evaluation points. Best R@1 at epoch 3299 (0.398), best FID at epoch 2099 (4.789). Both degrade after their respective peaks.\relax }}{11}{table.caption.25}\protected@file@percent }
+\newlabel{tab:h6_trajectory}{{4}{11}{H6 (FREEZE\_EGO=False) training-time validation metrics at checkpoint evaluation points. Best R@1 at epoch 3299 (0.398), best FID at epoch 2099 (4.789). Both degrade after their respective peaks.\relax }{table.caption.25}{}}
+\gdef \@abspage@last{11}

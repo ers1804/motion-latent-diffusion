@@ -40,9 +40,9 @@
             "console": "integratedTerminal",
             "python": "/home/erik/anaconda3/envs/mld/bin/python",
             "args": [
-                "--config", "configs/config_ego_motion_new_vae_stoch.yaml",
-                "--checkpoint", "/home/erik/NAS/methods/diffusion_gen/models/diffusion/mld/ego_motion_diffusion_interactive_4_stochastic/checkpoints/epoch=4999.ckpt",
-                "--ego_json", "/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava/val/0002_26.json",
+                "--config", "configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
+                "--checkpoint", "/home/erik/NAS/methods/diffusion_gen/models/helma_models/models/mld/ego_motion_diffusion_h4_trans_dec/checkpoints/epoch=3399.ckpt",
+                "--ego_json", "/home/erik/NAS/methods/diffusion_gen/data/diffusion/ava/val/0005_26.json",
                 "--mean_std_path", "/home/erik/NAS/methods/diffusion_gen/data/vae/mean_std_txt/ava_nuscenes_waymo_interactive",
                 "--trajectories",
             ]
