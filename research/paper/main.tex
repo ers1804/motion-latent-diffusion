@@ -214,7 +214,27 @@ As there are no datasets available for the problem investigated in this work, we
 
 With the data in nuScenes format fully annotated, we extract 3D human poses in SMPL~\cite{SMPL:2015} format using an adapted version of OmniRe~\cite{chen2025omnire} from all three data sources: AVA, nuScenes, and Waymo Open Dataset. We estimate poses for every pedestrian instance from all available camera images, using the projected 3D bounding box to localize the person in each view. Per-instance pose estimates from different cameras are then stitched into a single continuous sequence using the extrinsic calibration of the camera rigs. Finally, the SMPL pose sequences are converted to the 263D HumanML3D motion representation~\cite{guo2022humanml3d}. In addition to the pedestrian pose sequences, we extract the synchronized ego-vehicle trajectory from each scene's odometry. \TODO{EXPLAIN GOD SCRIPT}.
 
-Using all three data sources we get \TODO{NUMBER} in total. \TODO{Detailed numbers can be found in Table ??.}
+Using all three data sources we obtain \textbf{11{,}954} paired ego--pedestrian motion samples in total, split by scene into 9{,}540 training and 2{,}414 validation samples with no scene overlap between the two splits. Per-source counts are given in Table~\ref{tab:dataset}. Waymo and nuScenes dominate the sample count, while the AVA recordings contribute a small but deliberately high-interaction subset of staged vehicle--pedestrian encounters.
+
+\begin{table}[t]
+  \centering
+  \caption{Dataset composition. Each sample is a paired sequence of ego odometry ($196\times2$) and pedestrian body motion ($196\times263$), extracted from AVA, nuScenes, and Waymo. Train/validation splits are disjoint at the scene level; the validation split is the evaluation set used for all reported metrics.}
+  \label{tab:dataset}
+  \vspace{4pt}
+  \small
+  \setlength{\tabcolsep}{8pt}
+  \begin{tabular}{lccc}
+    \toprule
+    Source & Train & Validation & Total \\
+    \midrule
+    AVA (ours)          & 27    & 7     & 34 \\
+    nuScenes            & 3{,}637 & 943   & 4{,}580 \\
+    Waymo Open Dataset  & 5{,}876 & 1{,}464 & 7{,}340 \\
+    \midrule
+    Total               & 9{,}540 & 2{,}414 & 11{,}954 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 Each sample is a paired sequence of ego odometry $\mathbf{e} \in \mathbb{R}^{196 \times 2}$ and pedestrian body motion $\mathbf{x} \in \mathbb{R}^{196 \times 263}$, both expressed in the pedestrian-centric frame.
 

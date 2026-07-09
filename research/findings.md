@@ -25,12 +25,12 @@ Paper §4.1 had 8 unresolved `\TODO`s. Audited the real data pipeline
   master list; `full_dataset/` in ava (34 = 27+7) is their union. Train/val scenarios do not overlap.
 - **Sample counts** (physical JSON files per split subdir): train = ava 27 + nusc 3,611 + waymo
   7,699 = **11,337**; val = ava 7 + nusc 903 + waymo 1,925 = **2,835**.
-- **Loaded counts** (standalone replica of `_load_paths_from_split_file`, exact resolver logic):
-  train ≈ 9,540 (ava 27 / nusc 3,637 / waymo 5,876), val ≈ 2,414 (ava 7 / nusc 943 / waymo 1,464).
-  Deltas vs physical come from name-list vs filename prefix quirks (list uses A/N/W prefixes; files
-  use M-prefix/bare-number names) + global fallback. **TODO: pin EXACT runtime count** by
-  instantiating `EgoMotionDataset` in the conda env (it prints `Loaded N samples for {split}` at
-  line ~106) — needed before writing the counts table into the paper.
+- **Loaded counts — CONFIRMED** (real `EgoMotionDataset` instantiated in conda env `mld`;
+  authoritative `Loaded N samples` printout): **train = 9,540** (ava 27 / nusc 3,637 / waymo 5,876),
+  **val = 2,414** (ava 7 / nusc 943 / waymo 1,464), **total = 11,954**. Val=2,414 is the eval set
+  for ALL reported tables. The "not found" warnings (val 9,372 / train 2,246) are exactly the names
+  living in the OTHER split's directory → re-confirms the disjoint physical split. These numbers are
+  now IN THE PAPER (Table `tab:dataset`, §4.1). Standalone resolver replica matched runtime exactly.
 - **Interaction score** (`_compute_interaction_weights`, verified):
   `s = ped_travel · (pct_within_5m/100) · (1 + heading_change/180)`. Used for `WeightedRandomSampler`
   (train only; floored 0.01, normalized to N) — NOT a hard filter. Paper's old "we only use samples

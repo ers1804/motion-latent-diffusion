@@ -748,9 +748,13 @@ paper_strengthening:
     counts_physical: {train: 11337, val: 2835,
       train_by_source: {ava: 27, nuscenes: 3611, waymo: 7699},
       val_by_source:   {ava: 7,  nuscenes: 903,  waymo: 1925}}
-    counts_loaded_replica: {train: 9540, val: 2414,
-      note: "standalone replica of resolver; name-prefix (A/N/W) vs filename (M/bare) quirks +
-             global fallback cause deltas. PIN EXACT via real EgoMotionDataset instantiation."}
+    counts_loaded_CONFIRMED: {train: 9540, val: 2414, total: 11954,
+      train_by_source: {ava: 27, nuscenes: 3637, waymo: 5876},
+      val_by_source:   {ava: 7,  nuscenes: 943,  waymo: 1464},
+      note: "AUTHORITATIVE — from real EgoMotionDataset instantiation in conda env `mld`
+             ('Loaded N samples for {split}' printout). Val=2414 is the eval set for ALL
+             tables. 'not found' warnings (val 9372 / train 2246) = names in the OTHER
+             split's dir → confirms disjoint physical split. This is now IN THE PAPER (Table tab:dataset)."}
     interaction_score: "s = ped_travel * (pct_within_5m/100) * (1 + heading_change/180); WeightedRandomSampler (train only, floor 0.01), NOT a hard filter"
     interaction_crop: "centre window on closest-approach frame ±25% jitter, clamped; shared ego/motion index; zero-pad if <196"
   tex_todos_status:
@@ -769,7 +773,7 @@ paper_strengthening:
     - "Draft 'god script' pipeline paragraph from the extraction code (OmniRe/MS3D → nuScenes fmt → 263D)"
     - "Sweep paper for remaining \\TODO and reviewer-objection gaps (compile main.tex, check figures render)"
 
-last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop TODOs resolved; CONCLUDE result unchanged)"
+arc_last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop/counts TODOs resolved; CONCLUDE result unchanged)"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.
