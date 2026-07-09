@@ -216,9 +216,22 @@ With the data in nuScenes format fully annotated, we extract 3D human poses in S
 
 Using all three data sources we get \TODO{NUMBER} in total. \TODO{Detailed numbers can be found in Table ??.}
 
-Each sample is a paired sequence of ego odometry $\mathbf{e} \in \mathbb{R}^{196 \times 2}$ and pedestrian body motion $\mathbf{x} \in \mathbb{R}^{196 \times 263}$, extracted from time windows where a pedestrian is within interaction range of the ego vehicle.
-\TODO{We score the interaction in each extracted sample using the following formula: FORMULA. We only use samples that adhere to the following criteria: CRITERIA.}
-To reduce the complexity of the generation process, we crop the length of each scenario to 196 timesteps. For this, we apply interaction-aware cropping: sequences are windowed to the pedestrian-ego interaction event (high proximity, shared heading change), and oversampled proportionally to interaction density. \TODO{DETAILED INTERACTION CROP ALGO OR FORMULA.}
+Each sample is a paired sequence of ego odometry $\mathbf{e} \in \mathbb{R}^{196 \times 2}$ and pedestrian body motion $\mathbf{x} \in \mathbb{R}^{196 \times 263}$, both expressed in the pedestrian-centric frame.
+
+\paragraph{Interaction scoring.}
+Rather than hard-filtering samples, we assign each scenario a scalar \emph{interaction score} that quantifies how strongly the pedestrian and ego vehicle interact, and use it both to bias training-time sampling and to guide cropping.
+Let $\mathbf{r}_t, \mathbf{g}_t \in \mathbb{R}^2$ denote the ground-plane (XZ) positions of the pedestrian pelvis and the ego vehicle at frame $t$. The score combines three factors:
+\begin{equation}
+  s = \underbrace{\sum_{t} \lVert \mathbf{r}_{t+1} - \mathbf{r}_t \rVert_2}_{\text{pedestrian travel}} \;\cdot\; \underbrace{\frac{1}{T}\sum_t \mathbb{1}\!\left[\lVert \mathbf{g}_t - \mathbf{r}_t \rVert_2 < 5\,\text{m}\right]}_{\text{proximity fraction}} \;\cdot\; \left(1 + \frac{1}{180^\circ}\sum_t \lvert \Delta\phi_t \rvert\right),
+\end{equation}
+where $\phi_t = \operatorname{atan2}(\mathbf{r}_t - \mathbf{g}_t)$ is the pedestrian's bearing relative to the ego vehicle and $\Delta\phi_t$ is the (wrap-corrected) inter-frame change in bearing.
+Intuitively, a scenario scores highly when the pedestrian moves substantially, spends many frames within 5\,m of the vehicle, and sweeps a large relative bearing (\eg crossing in front of the vehicle).
+
+\paragraph{Interaction-weighted sampling.}
+During diffusion (and VAE) training we draw samples with a \texttt{WeightedRandomSampler} whose weights are the interaction scores $s$ (floored at $0.01$ so low-interaction scenarios are still occasionally seen, then normalized to sum to the dataset size). This concentrates gradient updates on the ego-relevant portion of the data distribution without discarding any samples. Evaluation uses uniform (unweighted) sampling.
+
+\paragraph{Interaction-aware cropping.}
+To bound the generation problem to a fixed horizon, we crop each scenario to $T=196$ timesteps. For scenarios longer than 196 frames, rather than taking a random window we centre the crop on the \emph{closest-approach frame} $t^\star = \arg\min_t \lVert \mathbf{g}_t - \mathbf{r}_t \rVert_2$, then add uniform jitter of $\pm 25\%$ of the window length to the centre so the moment of closest approach is not memorized at a fixed position; the resulting window is clamped to lie within the sequence. Ego and motion streams are cropped with a shared index so they stay temporally aligned. Scenarios shorter than 196 frames are zero-padded at the end and their true length is recorded for masking.
 
 \subsection{Evaluation Protocol}
 \label{sec:eval}

@@ -733,7 +733,43 @@ next_actions:
   - "H6 seg-2 training still running (job 368901 ~ep3551) — can let it finish, won't change story"
   - "Save 11 literature papers found to literature/ directory"
 
-last_updated: "2026-04-15 (H6 REJECTED — ep=3399 seg-2 definitive; CONCLUDE decision made)"
+# =========================================================================
+# PAPER-STRENGTHENING ARC (started 2026-07-09) — phase: strengthen_paper
+# Direction chosen by user: strengthen the paper (deepen H4, no new hypotheses)
+# =========================================================================
+paper_strengthening:
+  phase: strengthen_paper
+  target: research/paper/main.tex
+  dataset_audit_2026_07_09:
+    leakage_check: "RESOLVED — no leakage. ava_nuscenes_waymo/train.txt==val.txt (11786 names,
+      byte-identical) but split is PHYSICAL by directory: root/train vs root/val subdirs are
+      DISJOINT (0 overlapping scenario files across ava/nuscenes/waymo). Verified via comm -12."
+    split_root: "/home/erik/NAS/.../mean_std_txt/ava_nuscenes_waymo (used by BOTH train & eval; helma override)"
+    counts_physical: {train: 11337, val: 2835,
+      train_by_source: {ava: 27, nuscenes: 3611, waymo: 7699},
+      val_by_source:   {ava: 7,  nuscenes: 903,  waymo: 1925}}
+    counts_loaded_replica: {train: 9540, val: 2414,
+      note: "standalone replica of resolver; name-prefix (A/N/W) vs filename (M/bare) quirks +
+             global fallback cause deltas. PIN EXACT via real EgoMotionDataset instantiation."}
+    interaction_score: "s = ped_travel * (pct_within_5m/100) * (1 + heading_change/180); WeightedRandomSampler (train only, floor 0.01), NOT a hard filter"
+    interaction_crop: "centre window on closest-approach frame ±25% jitter, clamped; shared ego/motion index; zero-pad if <196"
+  tex_todos_status:
+    resolved_2026_07_09:
+      - "interaction-score formula + equation (was FORMULA/CRITERIA TODO)"
+      - "interaction-weighted-sampling paragraph"
+      - "interaction-crop algorithm (was CROP ALGO TODO)"
+    remaining:
+      - "vehicle/sensor-setup figure (7x128-layer LiDAR + 8 RGB) + staged-scenario NUMBER"
+      - "example interactive-scene figure (ped waving vehicle through)"
+      - "'god script' data-extraction pipeline explanation"
+      - "total-samples NUMBER + per-source dataset statistics Table (needs EXACT runtime count)"
+  next_steps:
+    - "Instantiate EgoMotionDataset (val split, conda env) → EXACT loaded per-source counts → dataset stats table"
+    - "Write per-source dataset statistics table into §4.1"
+    - "Draft 'god script' pipeline paragraph from the extraction code (OmniRe/MS3D → nuScenes fmt → 263D)"
+    - "Sweep paper for remaining \\TODO and reviewer-objection gaps (compile main.tex, check figures render)"
+
+last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop TODOs resolved; CONCLUDE result unchanged)"
 
 current_understanding: |
   MAJOR FINDING 1: CFG=5 gives FID=6.603 (10.8% better than CFG=15). Use CFG=5 for all evals.

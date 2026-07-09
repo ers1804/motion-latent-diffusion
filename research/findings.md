@@ -1,6 +1,52 @@
 # Findings — Ego-Conditioned Pedestrian Motion Generation
 
-*Last updated: 2026-04-15 (H6 definitive REJECTED — ep=3399 seg-2 eval FID=5.079/R@1=0.352/MM=2.618; H4 confirmed best; CONCLUDE decision made)*
+*Last updated: 2026-07-09 (PAPER-STRENGTHENING arc: dataset-provenance audit + Dataset §4.1 TODO cleanup)*
+
+## Paper-Strengthening Arc (started 2026-07-09)
+
+The research CONCLUDED 2026-04-15 with a drafted NeurIPS paper (`research/paper/main.tex`).
+This arc targets the paper itself: resolve open `\TODO`s, add missing dataset facts/tables,
+and preempt reviewer objections. Direction chosen by user: **strengthen the paper** (deepen H4,
+do not open new hypotheses).
+
+### Dataset Provenance Audit (2026-07-09) — VERIFIED, no leakage
+
+Paper §4.1 had 8 unresolved `\TODO`s. Audited the real data pipeline
+(`mld/data/EgoMotion.py`, H4 config, helma SLURM scripts) against the on-NAS data.
+
+- **Data location**: `/home/erik/NAS/methods/diffusion_gen/data/diffusion/{ava,nuscenes,waymo}`,
+  one JSON per sample (`{scene}_{obj}.json`) with fields `ego_in_ped_frame`, `ped_in_ped_frame`,
+  `vectors_263`. Split-list root = `.../mean_std_txt/ava_nuscenes_waymo` (both train AND eval use
+  this dir — verified in `diffusion_training_h4_trans_dec_helma.sh` and all `eval_h4_*` scripts).
+- **⚠️ Investigated potential leakage**: `ava_nuscenes_waymo/train.txt` and `val.txt` are
+  BYTE-IDENTICAL (11,786 names each). RESOLVED — **not leakage**. The real split is *physical by
+  directory*: names resolve against `root/train/` vs `root/val/`, and those subdirs are DISJOINT
+  (0 overlapping scenario files across all 3 sources). The identical name lists are just a shared
+  master list; `full_dataset/` in ava (34 = 27+7) is their union. Train/val scenarios do not overlap.
+- **Sample counts** (physical JSON files per split subdir): train = ava 27 + nusc 3,611 + waymo
+  7,699 = **11,337**; val = ava 7 + nusc 903 + waymo 1,925 = **2,835**.
+- **Loaded counts** (standalone replica of `_load_paths_from_split_file`, exact resolver logic):
+  train ≈ 9,540 (ava 27 / nusc 3,637 / waymo 5,876), val ≈ 2,414 (ava 7 / nusc 943 / waymo 1,464).
+  Deltas vs physical come from name-list vs filename prefix quirks (list uses A/N/W prefixes; files
+  use M-prefix/bare-number names) + global fallback. **TODO: pin EXACT runtime count** by
+  instantiating `EgoMotionDataset` in the conda env (it prints `Loaded N samples for {split}` at
+  line ~106) — needed before writing the counts table into the paper.
+- **Interaction score** (`_compute_interaction_weights`, verified):
+  `s = ped_travel · (pct_within_5m/100) · (1 + heading_change/180)`. Used for `WeightedRandomSampler`
+  (train only; floored 0.01, normalized to N) — NOT a hard filter. Paper's old "we only use samples
+  that adhere to criteria" framing was INACCURATE; corrected to weighted-sampling description.
+- **Interaction crop** (`_pad_or_crop_ego_motion`, verified): window centred on closest-approach
+  frame $t^\star=\arg\min_t\lVert g_t-r_t\rVert$, ±25% jitter, clamped; shared index for ego+motion;
+  zero-pad at end if shorter than 196.
+
+**Paper edits made 2026-07-09**: §4.1 now has code-accurate interaction-score equation,
+weighted-sampling paragraph, and interaction-crop algorithm (replaced 2 of 8 `\TODO`s).
+Remaining `\TODO`s: vehicle/sensor figure, staged-scenario count, example-scene figure,
+"god script" pipeline explanation, total-samples number + per-source dataset table.
+
+---
+
+*Prior conclusion (2026-04-15): H6 definitive REJECTED — ep=3399 seg-2 eval FID=5.079/R@1=0.352/MM=2.618; H4 confirmed best; CONCLUDE decision made.*
 
 ## Current Understanding
 
