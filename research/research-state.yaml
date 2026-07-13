@@ -779,6 +779,19 @@ paper_strengthening:
     - "Full-paper reviewer-objection hardening pass (e.g. AVA=34 framing, R@1 gap, single-benchmark)"
     - "Optional: reduce 0.83pt overfull hbox in CFG table (cosmetic)"
 
+  convergence_2026_07_13: |
+    AUTONOMOUS WORK CONVERGED. Full-paper mechanical sweep is clean: only remaining \TODOs are the
+    3 human-only §4.1 items (2 figures + staged-scenario count, all one sentence, line 213); no
+    undefined refs/citations; all 4 referenced figures exist & render; compiles exit 0.
+    The remaining "strengthening" is NOT safely automatable:
+      - figures + staged count  -> need human assets/numbers
+      - AVA=34 framing          -> deferred to human (judgment call, flagged in report 007)
+      - held-out test set / external baseline / R@1 hardening -> would need new experiments (forbidden)
+                                   or are already thoroughly covered in Discussion/Limitations.
+    DECISION: paused the 20-min loop (deleted cron aee657e2) to avoid no-op churn / prose-degradation
+    risk. Re-arm when human provides the 3 assets or a new scope. See report 007.
+  loop_status: "PAUSED 2026-07-13 (cron aee657e2 deleted). Re-arm: /loop 20m <scope> or provide the 3 human items."
+
 arc_last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop/counts TODOs resolved; CONCLUDE result unchanged)"
 
 current_understanding: |
