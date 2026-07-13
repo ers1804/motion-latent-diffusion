@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Progress Report 007 — Paper Strengthening (Dataset §4.1)</title>
+<style>
+  :root{--bg:#0f1216;--card:#171b21;--ink:#e6e9ee;--mut:#9aa4b2;--good:#3fb950;--warn:#d29922;--bad:#f85149;--acc:#58a6ff;--line:#242a33}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:920px;margin:0 auto;padding:32px 22px 64px}
+  h1{font-size:24px;margin:0 0 4px}
+  h2{font-size:17px;margin:30px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600}
+  .done{background:rgba(63,185,80,.15);color:var(--good)}
+  .human{background:rgba(210,153,34,.15);color:var(--warn)}
+  .tag{color:var(--acc);font-weight:600}
+  code{background:#0c0f13;padding:1px 6px;border-radius:5px;color:#d6deea;font-size:13px}
+  ul{margin:8px 0 0;padding-left:20px}
+  li{margin:5px 0}
+  .kpi{display:flex;gap:14px;flex-wrap:wrap;margin-top:6px}
+  .kpi div{background:#0c0f13;border:1px solid var(--line);border-radius:8px;padding:10px 14px;min-width:120px}
+  .kpi b{display:block;font-size:20px}
+  .kpi span{color:var(--mut);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Progress Report 007 — Paper Strengthening</h1>
+  <div class="sub">Ego-Conditioned Pedestrian Motion Generation · Dataset §4.1 · 2026-07-13</div>
+
+  <div class="card">
+    <p style="margin:0 0 6px"><b>Arc:</b> the research concluded (H4 best, paper drafted). This arc strengthens the paper.
+    Focus this cycle: the Dataset section (§4.1), which held <b>8 unresolved <code>\TODO</code>s</b> — the most reviewer-exposed weakness.</p>
+    <div class="kpi">
+      <div><b>5 / 8</b><span>§4.1 TODOs resolved</span></div>
+      <div><b>11,954</b><span>samples (9,540 tr / 2,414 val)</span></div>
+      <div><b>0 errors</b><span>paper compiles clean</span></div>
+      <div><b>3</b><span>human-only items left</span></div>
+    </div>
+  </div>
+
+  <h2>Data-integrity audit — a scare, then an all-clear</h2>
+  <div class="card">
+    <p style="margin:0 0 8px">The main-table split directory has <code>train.txt</code> and <code>val.txt</code> that are
+    <b>byte-identical</b> (11,786 names each) — which looks like a train/test leak.</p>
+    <p style="margin:0"><span class="pill done">RESOLVED — no leakage</span>&nbsp; The real split is <b>physical, by directory</b>
+    (<code>&lt;source&gt;/train/</code> vs <code>&lt;source&gt;/val/</code>). Those subdirectories are <b>disjoint — 0 overlapping
+    scenes</b> across AVA, nuScenes, and Waymo (verified with <code>comm&nbsp;-12</code>). The identical name lists are just a shared
+    master list; the loader resolves each name against the split's own directory.</p>
+  </div>
+
+  <h2>Verified dataset composition (now in the paper, Table&nbsp;<span class="tag">tab:dataset</span>)</h2>
+  <div class="card">
+    <p class="sub" style="margin-top:0">Authoritative — from instantiating the real <code>EgoMotionDataset</code> in the <code>mld</code> env
+    (its <code>Loaded N samples for {split}</code> printout). Validation split is the evaluation set for every reported metric.</p>
+    <table>
+      <tr><th>Source</th><th class="n">Train</th><th class="n">Val</th><th class="n">Total</th></tr>
+      <tr><td>AVA (ours)</td><td class="n">27</td><td class="n">7</td><td class="n">34</td></tr>
+      <tr><td>nuScenes</td><td class="n">3,637</td><td class="n">943</td><td class="n">4,580</td></tr>
+      <tr><td>Waymo Open Dataset</td><td class="n">5,876</td><td class="n">1,464</td><td class="n">7,340</td></tr>
+      <tr style="font-weight:700"><td>Total</td><td class="n">9,540</td><td class="n">2,414</td><td class="n">11,954</td></tr>
+    </table>
+  </div>
+
+  <h2>What got written into §4.1</h2>
+  <div class="card">
+    <table>
+      <tr><th>Item</th><th>Status</th></tr>
+      <tr><td>Interaction-score equation <code>s = travel · prox · (1+Δbearing/180)</code></td><td><span class="pill done">done</span></td></tr>
+      <tr><td>Interaction-<b>weighted sampling</b> paragraph (corrected: it's oversampling, <i>not</i> a hard filter)</td><td><span class="pill done">done</span></td></tr>
+      <tr><td>Interaction-<b>crop</b> algorithm (closest-approach centre ±25% jitter)</td><td><span class="pill done">done</span></td></tr>
+      <tr><td>Total sample count + per-source <b>statistics table</b></td><td><span class="pill done">done</span></td></tr>
+      <tr><td>"God script" <b>extraction-pipeline</b> paragraph (ped-centric frame, 20fps, 22 joints → 263D)</td><td><span class="pill done">done</span></td></tr>
+      <tr><td>Vehicle / sensor-setup figure</td><td><span class="pill human">needs you</span></td></tr>
+      <tr><td>Example interactive-scene figure (ped waving vehicle through)</td><td><span class="pill human">needs you</span></td></tr>
+      <tr><td>Staged-scenario count (# staged AVA scenarios)</td><td><span class="pill human">needs you</span></td></tr>
+    </table>
+    <p style="margin:10px 0 0" class="sub">Paper compiles cleanly: <code>pdflatex+bibtex</code>, exit 0, no undefined refs/citations, one 0.83pt overfull hbox (cosmetic).</p>
+  </div>
+
+  <h2 style="border-color:var(--warn)">⚠ I need 3 things from you</h2>
+  <div class="card">
+    <ul>
+      <li><b>Vehicle/sensor figure</b> — a photo or diagram of the AVA vehicle (7×128-layer LiDAR + 8 RGB cameras). No such asset exists in the repo.</li>
+      <li><b>Example-scene figure</b> — the "pedestrian waving a vehicle through" staged scene. No asset found.</li>
+      <li><b>Staged-scenario count</b> — AVA yields 34 <i>samples</i>, but how many scenarios did you actually stage? I won't fabricate this.</li>
+    </ul>
+    <p style="margin:10px 0 0"><b>Also worth a decision:</b> AVA contributes only <b>34 samples</b>. A reviewer may push on "our sensor-equipped research vehicle" carrying so little data. Consider framing AVA explicitly as a small, targeted high-interaction subset rather than a primary source.</p>
+  </div>
+
+  <h2>Next (autonomous, via the 20-min loop)</h2>
+  <div class="card">
+    <ul>
+      <li>Full-paper reviewer-objection hardening pass (AVA framing, the H4 R@1&lt;H2 gap, single-benchmark / no perceptual study).</li>
+      <li>Hold the 3 human-only items above until you provide assets/numbers.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

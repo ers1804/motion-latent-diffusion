@@ -762,16 +762,22 @@ paper_strengthening:
       - "interaction-score formula + equation (was FORMULA/CRITERIA TODO)"
       - "interaction-weighted-sampling paragraph"
       - "interaction-crop algorithm (was CROP ALGO TODO)"
-    remaining:
-      - "vehicle/sensor-setup figure (7x128-layer LiDAR + 8 RGB) + staged-scenario NUMBER"
-      - "example interactive-scene figure (ped waving vehicle through)"
-      - "'god script' data-extraction pipeline explanation"
-      - "total-samples NUMBER + per-source dataset statistics Table (needs EXACT runtime count)"
+      - "total-samples NUMBER + per-source dataset statistics Table tab:dataset (EXACT runtime counts)"
+    resolved_2026_07_13:
+      - "'god script' data-extraction pipeline paragraph — grounded in verified JSON structure
+         (scene_id/object_id/ego_in_ped_frame T×3/ped_in_ped_frame T×22×3/vectors_263 T×263),
+         pedestrian-centric frame, 20fps resample, variable T windowed to 196. Did NOT fabricate
+         external-script internals (script lives in separate data-prep repo, not this training repo)."
+    remaining_HUMAN_ONLY:
+      - "vehicle/sensor-setup FIGURE (7×128-layer LiDAR + 8 RGB) — needs a photo/diagram asset (none in repo)"
+      - "example interactive-scene FIGURE (ped waving vehicle through) — needs an image asset (none in repo)"
+      - "staged-scenario NUMBER — how many AVA scenarios were staged (AVA=34 SAMPLES, but #scenarios unknown; do not fabricate)"
+  compile_status_2026_07_13: "main.tex compiles CLEAN (pdflatex+bibtex, exit 0, 918KB PDF, no
+    undefined refs/citations, only 0.83pt overfull hbox). All edits render incl. tab:dataset."
   next_steps:
-    - "Instantiate EgoMotionDataset (val split, conda env) → EXACT loaded per-source counts → dataset stats table"
-    - "Write per-source dataset statistics table into §4.1"
-    - "Draft 'god script' pipeline paragraph from the extraction code (OmniRe/MS3D → nuScenes fmt → 263D)"
-    - "Sweep paper for remaining \\TODO and reviewer-objection gaps (compile main.tex, check figures render)"
+    - "AWAIT HUMAN: 2 figure assets (vehicle/sensor, example scene) + staged-scenario count"
+    - "Full-paper reviewer-objection hardening pass (e.g. AVA=34 framing, R@1 gap, single-benchmark)"
+    - "Optional: reduce 0.83pt overfull hbox in CFG table (cosmetic)"
 
 arc_last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop/counts TODOs resolved; CONCLUDE result unchanged)"
 

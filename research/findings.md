@@ -40,9 +40,20 @@ Paper §4.1 had 8 unresolved `\TODO`s. Audited the real data pipeline
   zero-pad at end if shorter than 196.
 
 **Paper edits made 2026-07-09**: §4.1 now has code-accurate interaction-score equation,
-weighted-sampling paragraph, and interaction-crop algorithm (replaced 2 of 8 `\TODO`s).
-Remaining `\TODO`s: vehicle/sensor figure, staged-scenario count, example-scene figure,
-"god script" pipeline explanation, total-samples number + per-source dataset table.
+weighted-sampling paragraph, interaction-crop algorithm, and per-source dataset stats table
+(`tab:dataset`, authoritative counts train 9,540 / val 2,414 / total 11,954).
+
+**Paper edits made 2026-07-13**: added the "god script" data-extraction pipeline paragraph,
+grounded in the verified per-sample JSON structure (`scene_id`, `object_id`,
+`ego_in_ped_frame` T×3, `ped_in_ped_frame` T×22×3, `vectors_263` T×263), pedestrian-centric
+frame, 20fps resample, variable T windowed to 196. Did NOT invent external-script internals
+(the JSON-producing script lives in a separate data-prep repo, not this training repo).
+**5 of 8 §4.1 `\TODO`s resolved.** Paper compiles CLEAN (pdflatex+bibtex, exit 0, no undefined
+refs/citations). Progress report: `research/to_human/progress_report_007_paper_strengthening.html`.
+
+**Remaining §4.1 `\TODO`s are HUMAN-ONLY** (flagged in report 007): vehicle/sensor-setup figure,
+example interactive-scene figure, and the staged-scenario count — assets/numbers not in the repo.
+Also flagged for human decision: AVA=34 samples framing (reviewer risk).
 
 ---
 
