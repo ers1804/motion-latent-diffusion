@@ -2,6 +2,51 @@
 
 *Last updated: 2026-07-09 (PAPER-STRENGTHENING arc: dataset-provenance audit + Dataset §4.1 TODO cleanup)*
 
+## ⚠️ CRITICAL FINDING (2026-07-14): paper misdescribes the core architecture
+
+While setting up a held-out-test eval locally (RTX 4090), inspecting the actual checkpoints
+revealed that **the paper's central "cross-attention / trans_dec" claim is FALSE**. Verified two
+independent ways (checkpoint weights + denoiser code):
+
+- **Checkpoint weights** (`epoch=3399.ckpt` H4, also H2 & H6): denoiser has **118 `encoder.*`
+  keys, 0 `decoder.*` keys, 0 `multihead_attn` (cross-attention) keys, 36 `self_attn` keys**.
+  → All three models are `trans_enc` (self-attention encoders). No cross-attention exists anywhere.
+- **Code** (`mld_denoiser.py:192-224`, `arch=="trans_enc"` + `condition=='ego'`): the ego encoder
+  output is concatenated with the latent — `xseq = cat([z (4 tok), time (1), ego_seq (196)])` = 201
+  tokens — and run through **self-attention** (`self.encoder`). The first 4 tokens are taken as the
+  denoised latent.
+- **Why**: the H4 config sets `denoiser.params.arch: trans_dec`, but that override never took effect
+  (silent config-merge bug); the runtime merged config shows `arch: trans_enc`. Training used
+  trans_enc; the paper was written to the *intended* design, not the *actual* one.
+
+**What is FALSIFIED in the paper** (Abstract, §Method "Diffusion Denoiser", Fig 1, Related Work):
+  1. "trans_dec ... z_t forms queries and ego tokens form K/V" — FALSE (it's a self-attn encoder).
+  2. "Cross-attention makes full-sequence conditioning affordable: O(L×T) vs O((L+T)²)" — FALSE and
+     backwards; H4 actually pays the O((L+T)²) self-attention-over-concatenation cost it disclaims.
+  3. The denoiser equation (TransformerDecoder) and Fig 1 cross-attention arrows.
+
+**What SURVIVES (the real, still-valid contribution)** — reproduced on held-out test below:
+  - Full per-timestep ego conditioning (196 tokens) via self-attention concat dramatically beats
+    pooled single-token conditioning (H2): the H2→H4 delta is purely ego granularity (1 vs 196
+    condition tokens fed to the SAME trans_enc), NOT enc-vs-dec.
+  - H6 frozen-encoder ablation (also trans_enc, differs only by unfreezing) — unaffected.
+  - All empirical numbers (FID 3.392, 49% improvement, H6 rejection) are real and reproduce.
+
+**Recommended fix**: rewrite §Method (Diffusion Denoiser + Fig 1 + Abstract wording) to describe
+the true mechanism — self-attention over the concatenated [latent, time, full-ego-sequence]
+token set, with H2 vs H4 = pooled-token vs full-sequence conditioning. Drop the O(L×T) cross-
+attention complexity argument (or reframe honestly: full-sequence conditioning costs more attention
+than pooled, and is worth it). **Deferred to human — substantive scientific correction, not an
+autonomous edit.**
+
+### Held-out test set eval (2026-07-14) — headline result GENERALIZES
+Built a scene-disjoint split of `val` (no reserve data exists): `val_sel` (1,140 samples / 522
+scenes) + `val_test` (1,190 / 521), stats copied, run locally on the 4090.
+- **H4 on val_test (CFG=10, 1 replication): FID = 3.377, R@1 = 0.541, Div = 5.729, gt_Div = 5.393.**
+- Paper full-val H4: FID = 3.392, R@1 = 0.548. → Held-out ≈ full-val: the selection-bias concern is
+  addressed; the result is not an artifact of evaluating on the checkpoint-selection set.
+- TODO: run H2/H3/H6 on val_test (3 reps each) for a full held-out test table.
+
 ## Paper-Strengthening Arc (started 2026-07-09)
 
 The research CONCLUDED 2026-04-15 with a drafted NeurIPS paper (`research/paper/main.tex`).
