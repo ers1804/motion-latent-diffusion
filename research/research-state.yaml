@@ -813,10 +813,21 @@ paper_strengthening:
     recipe: "SAME as H4 (frozen VAE ep5999 + frozen ego_encoder h4 best.pt, data ava_nuscenes_waymo)
       EXCEPT batch=64 (4090 mem; H4 used 128 — minor confound, note in paper; could add grad-accum)."
     script: "scratchpad/train_real_trans_dec.sh ; output experiments/mld/ego_motion_diffusion_h4_real_trans_dec/"
-    status: "QUEUED. GPU-watch auto-launcher (scratchpad/gpu_watch_launch.sh, bg task) waits for 4090 to
-      free (user's navsim DiffusionDrive eval pid 2474403 holds ~20GB), launches when ≥14GB free ×2 polls."
-    on_launch: "verify trans_dec build in log; eval intermediate ckpts (every 100 ep) on val + val_test;
-      target ~epoch 3400 for comparison; ~30-40h wall (est ~30s/epoch @ batch64 on 4090)."
+    status: "RUNNING (2026-07-14 22:41). Launched after user's navsim job freed the 4090. Harness-tracked
+      task bjpx2gqlm. CONFIRMED arch=trans_dec in merged config (model.denoiser.PARAMS.arch — the earlier
+      override at model.denoiser.arch was the WRONG level and silently did nothing; fixed). Verified cross-
+      attention denoiser (9.9M params). Loss decreasing from 1.96. 0 OOM. ~33s/epoch (149 batches @ batch64,
+      4.5 it/s). GPU saturated ~22GB → CANNOT eval concurrently (eval waits for training to stop)."
+    fix_detail: "override MUST be model.denoiser.params.arch=trans_dec (instantiate_from_config uses .params).
+      configs/modules/denoiser.yaml sets params.arch=trans_enc and get_module_config merges it into
+      cfg.model, clobbering the H4 config's params.arch=trans_dec. This is the SAME merge bug that made
+      the ORIGINAL H4 accidentally trans_enc."
+    timeline: "epoch1000≈9h, epoch3400≈31h, epoch5000≈46h. Checkpoints every 100 epochs to
+      experiments/mld/ego_motion_diffusion_h4_real_trans_dec/checkpoints/."
+    eval_plan: "scratchpad/eval_trans_dec.sh (forces params.arch=trans_dec). Cron c78335a5 (every 3h)
+      monitors; at epoch>=3500 it kills training, runs sweep on val_test (CFG=10, 3 reps) over epochs
+      2000/2500/3000/3399/3500, picks best, compares to trans_enc H4 (3.392/0.548; val_test 3.377),
+      updates findings/state, commits, writes to_human report, self-deletes."
 
 arc_last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop/counts TODOs resolved; CONCLUDE result unchanged)"
 
