@@ -792,6 +792,32 @@ paper_strengthening:
     risk. Re-arm when human provides the 3 assets or a new scope. See report 007.
   loop_status: "PAUSED 2026-07-13 (cron aee657e2 deleted). Re-arm: /loop 20m <scope> or provide the 3 human items."
 
+  # =======================================================================
+  # NEW EXPERIMENT (2026-07-14): user greenlit local training on RTX 4090
+  # =======================================================================
+  local_compute:
+    gpu: "RTX 4090 24GB (local). Eval-capable; MLD diffusion model is tiny."
+    helma: "reachable via SLURM (h100) — not used per user 'do it locally'."
+    assets_all_local: "VAE ep5999, ego_encoder h4 best.pt, all diffusion ckpts (H4/H2/H3/H6),
+      t2m evaluator (deps/t2m/egomotion/...) — all on NAS/local. No large pulls needed."
+  heldout_test_2026_07_14:
+    status: "H4 DONE (1 rep). H2/H3/H6 pending (blocked w/ trans_dec on GPU contention)."
+    split: "scene-disjoint halves of val (no reserve data): research/data/heldout_split/{val_sel(1140),val_test(1190)}"
+    H4_val_test_cfg10_1rep: {FID: 3.377, R_top_1: 0.541, Diversity: 5.729, gt_Diversity: 5.393}
+    interpretation: "≈ paper full-val (3.392/0.548) → headline generalizes; selection-bias concern addressed."
+    todo: "run H2/H3/H6 on val_test (3 reps) for full held-out table; rerun H4 at 3 reps."
+  trans_dec_training_2026_07_14:
+    goal: "Train the REAL cross-attention (trans_dec) denoiser to compare vs the accidental trans_enc H4.
+      Turns the config-merge bug into a genuine ablation."
+    fix: "CLI override model.denoiser.arch=trans_dec (merges last; verified builds decoder+cross-attn, 9.9M params)."
+    recipe: "SAME as H4 (frozen VAE ep5999 + frozen ego_encoder h4 best.pt, data ava_nuscenes_waymo)
+      EXCEPT batch=64 (4090 mem; H4 used 128 — minor confound, note in paper; could add grad-accum)."
+    script: "scratchpad/train_real_trans_dec.sh ; output experiments/mld/ego_motion_diffusion_h4_real_trans_dec/"
+    status: "QUEUED. GPU-watch auto-launcher (scratchpad/gpu_watch_launch.sh, bg task) waits for 4090 to
+      free (user's navsim DiffusionDrive eval pid 2474403 holds ~20GB), launches when ≥14GB free ×2 polls."
+    on_launch: "verify trans_dec build in log; eval intermediate ckpts (every 100 ep) on val + val_test;
+      target ~epoch 3400 for comparison; ~30-40h wall (est ~30s/epoch @ batch64 on 4090)."
+
 arc_last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop/counts TODOs resolved; CONCLUDE result unchanged)"
 
 current_understanding: |
