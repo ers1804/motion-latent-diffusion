@@ -836,6 +836,17 @@ paper_strengthening:
       architecture. NOT run yet. GPU had leaked memory (dead pid 2200243 holding 21GB) after eval crash."
     next: "Run trans_enc@batch64 matched control (same recipe, arch=trans_enc, ~5h to ep2500). Then
       finalize trans_dec-vs-trans_enc conclusion + paper Method correction."
+  bs128_control_2026_07_16:
+    decision: "User chose: retrain trans_dec at MATCHED batch 128 (vs published trans_enc bs128) to
+      close the confound from the other side."
+    method: "effective batch 128 = micro-batch 64 x grad-accum 2. Added env-driven accumulate_grad_batches
+      to train.py (ACCUM_GRAD_BATCHES, default 1). Script scratchpad/train_trans_dec_bs128.sh
+      (NAME=ego_motion_diffusion_h4_real_trans_dec_bs128, arch=trans_dec, END_EPOCH=4000)."
+    status: "QUEUED behind GPU-watcher (scratchpad/gpu_watch_launch_bs128.sh, task bf7xe8j50) — user's
+      navsim task9 holds the 4090 again (~21GB); launches when >=14GB free. ~17h to ep3400."
+    finalize: "cron d081aa05 (every 3h) evals at epoch>=3400 via scratchpad/eval_trans_dec_bs128.sh on
+      val_test, compares 3-way (trans_dec@bs128 vs trans_enc 3.38 vs trans_dec@bs64 3.725), updates
+      findings/state, commits, writes to_human report, self-deletes."
 
 arc_last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop/counts TODOs resolved; CONCLUDE result unchanged)"
 
