@@ -202,6 +202,9 @@ def main():
         logger=loggers,
         callbacks=callbacks,
         check_val_every_n_epoch=cfg.LOGGER.VAL_EVERY_STEPS,
+        # Gradient accumulation (env-driven, default 1 = no effect). Used to reach an
+        # effective batch size larger than what fits in GPU memory (e.g. bs64 x 2 = 128).
+        accumulate_grad_batches=int(os.environ.get("ACCUM_GRAD_BATCHES", "1")),
     )
     logger.info("Trainer initialized")
 
