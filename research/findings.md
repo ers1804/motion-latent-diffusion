@@ -2,6 +2,45 @@
 
 *Last updated: 2026-07-09 (PAPER-STRENGTHENING arc: dataset-provenance audit + Dataset §4.1 TODO cleanup)*
 
+## RESULT (2026-07-16): real cross-attention (trans_dec) is WORSE than the accidental trans_enc
+
+Trained the REAL cross-attention denoiser (trans_dec) locally on the 4090 — same recipe as H4
+(frozen VAE ep5999 + frozen ego encoder, data ava_nuscenes_waymo) EXCEPT batch=64 (H4 used 128;
+4090 memory limit). Fixed the config-merge bug via CLI `model.denoiser.params.arch=trans_dec`
+(verified builds decoder + cross-attention, 9.9M params vs trans_enc 8.0M). Trained to epoch 4999
+(~18s/epoch, full trajectory saved every 100 epochs), then evaluated on the held-out `val_test`.
+
+**Definitive comparison (held-out val_test, CFG=10, 3 replications unless noted):**
+
+| Model | arch | batch | FID ↓ | R@1 | MM |
+|---|---|---|---|---|---|
+| **trans_enc** (accidental — the paper's ACTUAL reported H4) | self-attn concat | 128 | **3.377** (1 rep) | 0.541 | 3.96 |
+| trans_dec (real cross-attention, best ep=2499) | cross-attn | 64 | 3.725 ±0.085 | 0.509 | 4.56 |
+| trans_dec (ep=1999) | cross-attn | 64 | 4.163 ±0.126 | 0.505 | 4.52 |
+
+**trans_dec 1-rep FID trajectory (val_test, CFG=10)** — note the instability:
+1999→4.05, 2499→**3.64**, 2999→5.59, 3399→5.11, 3499→4.90, 3999→4.45, 4499→4.54, 4999→4.33.
+Finer scan 2000–2700: 2099→4.92, 2199→4.32, 2299→4.36, 2399→4.70, 2599→5.00. The ep=2499 dip
+is a sharp outlier among 4.3–5.0 neighbours → largely 1-rep noise; the honest trans_dec best is
+~3.7 (3-rep). trans_enc's curve was smooth and bottomed at 3.38–3.39.
+
+**Conclusion**: the *intended* cross-attention architecture is ~10% WORSE on FID and trains far
+less stably than the *accidental* self-attention-over-concatenation that the paper's model actually
+uses. The config bug was fortuitous. trans_dec does have higher MultiModality (4.56 vs 3.96) —
+more diverse per condition — but worse distributional fidelity (FID). Both still crush pooled H2 (6.6).
+
+**⚠️ CONFOUND (must close before claiming)**: trans_dec ran at batch=64, published trans_enc at
+batch=128. Smaller batch could handicap trans_dec. The clean control is trans_enc @ batch=64 (same
+recipe as this trans_dec run) → isolates architecture. NOT yet run. Until then the comparison is
+suggestive, not airtight. [held-out test H4=3.377 and the trans_dec numbers are on the same val_test split.]
+
+**Paper implication**: whichever way the batch-matched control lands, the paper's Method/Fig1/Abstract
+still need correcting (reported model is trans_enc, not trans_dec). If trans_enc stays better even at
+matched batch, the honest framing is "full-sequence conditioning via self-attention concatenation" +
+this trans_dec comparison as an ablation (self-attn concat > cross-attention here). Deferred to human.
+
+---
+
 ## ⚠️ CRITICAL FINDING (2026-07-14): paper misdescribes the core architecture
 
 While setting up a held-out-test eval locally (RTX 4090), inspecting the actual checkpoints

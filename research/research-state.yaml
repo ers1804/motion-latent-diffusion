@@ -824,10 +824,18 @@ paper_strengthening:
       the ORIGINAL H4 accidentally trans_enc."
     timeline: "epoch1000≈9h, epoch3400≈31h, epoch5000≈46h. Checkpoints every 100 epochs to
       experiments/mld/ego_motion_diffusion_h4_real_trans_dec/checkpoints/."
-    eval_plan: "scratchpad/eval_trans_dec.sh (forces params.arch=trans_dec). Cron c78335a5 (every 3h)
-      monitors; at epoch>=3500 it kills training, runs sweep on val_test (CFG=10, 3 reps) over epochs
-      2000/2500/3000/3399/3500, picks best, compares to trans_enc H4 (3.392/0.548; val_test 3.377),
-      updates findings/state, commits, writes to_human report, self-deletes."
+    eval_plan: "scratchpad/eval_trans_dec.sh (forces params.arch=trans_dec). [cron c78335a5 deleted;
+      did eval manually.] Training ran to epoch 4999 (full trajectory)."
+    RESULT_2026_07_16: |
+      DONE. trans_dec (real cross-attention, batch64) is WORSE + noisier than accidental trans_enc.
+      Held-out val_test, CFG=10, 3-rep: trans_dec best (ep2499) FID=3.725±0.085, R@1=0.509, MM=4.56;
+      ep1999 FID=4.163±0.126. trans_enc (accidental, batch128) val_test FID=3.377 (1rep) / full-val
+      3.392±0.179. trans_dec 1-rep trajectory noisy 3.6-5.6 (ep2499=3.64 is an outlier dip). Real
+      cross-attention ~10% worse FID. Higher MM though (4.56 vs 3.96).
+    CONFOUND: "trans_dec batch=64 vs trans_enc batch=128. Need trans_enc@batch64 control to isolate
+      architecture. NOT run yet. GPU had leaked memory (dead pid 2200243 holding 21GB) after eval crash."
+    next: "Run trans_enc@batch64 matched control (same recipe, arch=trans_enc, ~5h to ep2500). Then
+      finalize trans_dec-vs-trans_enc conclusion + paper Method correction."
 
 arc_last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop/counts TODOs resolved; CONCLUDE result unchanged)"
 
