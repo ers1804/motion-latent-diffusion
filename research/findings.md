@@ -2,7 +2,43 @@
 
 *Last updated: 2026-07-09 (PAPER-STRENGTHENING arc: dataset-provenance audit + Dataset §4.1 TODO cleanup)*
 
-## RESULT (2026-07-16): real cross-attention (trans_dec) is WORSE than the accidental trans_enc
+## FINAL RESULT (2026-07-17): at matched batch, cross-attention ≈ self-attention-concat
+
+Closed the batch confound by retraining trans_dec at effective batch 128 (micro 64 × grad-accum 2,
+via env ACCUM_GRAD_BATCHES added to train.py). Trained to epoch 3775 (stopped), scanned + 3-rep
+definitive on held-out val_test. Also ran trans_enc's own 3-rep on val_test for a same-split CI.
+
+**Definitive 3-way comparison — held-out val_test, CFG=10, 3 replications:**
+
+| Model | arch | batch | FID ↓ | R@1 | MM |
+|---|---|---|---|---|---|
+| **trans_enc** (accidental — paper's ACTUAL model) | self-attn concat | 128 | **3.338 ±0.190** | 0.537 | 4.14 |
+| trans_dec (real cross-attention, best ep=2499) | cross-attn | 128 | 3.490 ±0.059 | 0.501 | 4.61 |
+| trans_dec (real cross-attention, best ep=2499) | cross-attn | 64  | 3.725 ±0.085 | 0.509 | 4.56 |
+
+**Verdict**: at MATCHED batch 128, trans_enc (3.338) and trans_dec (3.490) are **statistically
+comparable** — 95% CIs overlap ([3.15,3.53] vs [3.43,3.55]); the 0.15 FID gap is not significant.
+The batch size explained most of the bs64 gap (3.725→3.490). So the *real cross-attention is NOT
+better* than the accidental self-attention-over-concatenation — if anything marginally worse and it
+trains less stably (noisy FID trajectory 3.5–4.8 across epochs vs trans_enc's smooth curve).
+trans_enc also has slightly better R@1 (0.537 vs 0.501); trans_dec has slightly higher MM (4.61 vs 4.14).
+
+**What this means for the paper (the real contribution is intact, the mechanism story changes):**
+- The 49% win over pooled H2 (6.6 → ~3.3–3.5) is REAL and is about **full-sequence temporal
+  conditioning** (196 ego tokens) beating **pooled single-token** conditioning — this is
+  architecture-agnostic (holds for both self-attn-concat AND cross-attention).
+- The specific "cross-attention / trans_dec / O(L×T)-is-affordable" mechanism claim is FALSE and
+  also unnecessary: the model actually uses self-attention over the concatenated sequence, and
+  cross-attention gives no benefit.
+- **Recommended paper fix**: (a) rewrite §Method / Fig 1 / Abstract to the true self-attention-concat
+  mechanism; (b) reframe the contribution as full-sequence vs pooled conditioning; (c) ADD the
+  trans_dec-vs-trans_enc comparison as an ablation ("cross-attention is not required; self-attention
+  over the concatenated ego sequence is comparable"); (d) drop the O(L×T) affordability argument.
+  This turns the config-merge bug into a rigorous ablation and keeps the headline result honest.
+
+---
+
+## RESULT (2026-07-16): real cross-attention (trans_dec) is WORSE than the accidental trans_enc  [SUPERSEDED — was batch-confounded; see FINAL RESULT above]
 
 Trained the REAL cross-attention denoiser (trans_dec) locally on the 4090 — same recipe as H4
 (frozen VAE ep5999 + frozen ego encoder, data ava_nuscenes_waymo) EXCEPT batch=64 (H4 used 128;

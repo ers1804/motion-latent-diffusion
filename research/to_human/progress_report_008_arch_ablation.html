@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report 008 — Architecture Ablation: cross-attention vs the accidental self-attention</title>
+<style>
+  :root{--bg:#0f1216;--card:#171b21;--ink:#e6e9ee;--mut:#9aa4b2;--good:#3fb950;--warn:#d29922;--bad:#f85149;--acc:#58a6ff;--line:#242a33}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:940px;margin:0 auto;padding:32px 22px 64px}
+  h1{font-size:23px;margin:0 0 4px}
+  h2{font-size:17px;margin:30px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600}
+  .good{background:rgba(63,185,80,.15);color:var(--good)}
+  .warn{background:rgba(210,153,34,.15);color:var(--warn)}
+  .bad{background:rgba(248,81,73,.15);color:var(--bad)}
+  code{background:#0c0f13;padding:1px 6px;border-radius:5px;color:#d6deea;font-size:13px}
+  ul{margin:8px 0 0;padding-left:20px} li{margin:6px 0}
+  .win{color:var(--good);font-weight:700}
+  .hl{background:rgba(88,166,255,.10);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Report 008 — Architecture Ablation</h1>
+  <div class="sub">Ego-Conditioned Pedestrian Motion · Is the paper's "cross-attention" actually better? · 2026-07-17</div>
+
+  <div class="hl">
+    <b>Bottom line:</b> The paper describes a cross-attention (<code>trans_dec</code>) denoiser, but a config-merge bug
+    meant the reported model is actually a <b>self-attention encoder</b> (<code>trans_enc</code>). I trained the real
+    cross-attention model to settle whether the intended architecture is better. <b>At matched batch size, the two are
+    statistically indistinguishable</b> — cross-attention gives no benefit. The real result (full-sequence conditioning
+    ≫ pooled) stands; only the <i>mechanism description</i> needs fixing.
+  </div>
+
+  <h2>The definitive 3-way comparison</h2>
+  <div class="card">
+    <p class="sub" style="margin-top:0">Held-out <code>val_test</code> (scene-disjoint, 1,190 samples) · CFG=10 · 3 replications · best checkpoint each.</p>
+    <table>
+      <tr><th>Model</th><th>Denoiser</th><th>Batch</th><th class="n">FID ↓</th><th class="n">R@1</th><th class="n">MM</th></tr>
+      <tr>
+        <td><b>trans_enc</b> <span class="pill good">paper's ACTUAL model</span></td>
+        <td>self-attn concat</td><td>128</td>
+        <td class="n"><b>3.338</b> <span class="sub">±0.190</span></td><td class="n">0.537</td><td class="n">4.14</td>
+      </tr>
+      <tr>
+        <td>trans_dec (real cross-attention)</td>
+        <td>cross-attn</td><td>128</td>
+        <td class="n">3.490 <span class="sub">±0.059</span></td><td class="n">0.501</td><td class="n">4.61</td>
+      </tr>
+      <tr>
+        <td>trans_dec (real cross-attention)</td>
+        <td>cross-attn</td><td>64</td>
+        <td class="n">3.725 <span class="sub">±0.085</span></td><td class="n">0.509</td><td class="n">4.56</td>
+      </tr>
+      <tr style="opacity:.7">
+        <td>H2 pooled (single ego token)</td><td>self-attn concat</td><td>128</td>
+        <td class="n">6.603</td><td class="n">0.671</td><td class="n">3.50</td>
+      </tr>
+    </table>
+    <p style="margin:10px 0 0"><b>trans_enc 3.338 vs trans_dec 3.490 at matched batch 128:</b> 95% CIs
+    <b>overlap</b> ([3.15, 3.53] vs [3.43, 3.55]) → the 0.15 gap is <b>not statistically significant</b>.
+    The batch size explained most of the earlier bs64 gap (3.725 → 3.490).</p>
+  </div>
+
+  <h2>What we learned</h2>
+  <div class="card">
+    <ul>
+      <li><span class="win">Cross-attention is not the source of the win.</span> At matched batch it ties (marginally
+        loses to) the accidental self-attention model, and it trains <b>less stably</b> (FID bounced 3.5–4.8 across
+        epochs vs trans_enc's smooth curve).</li>
+      <li><span class="win">The real driver is full-sequence conditioning.</span> Both architectures feed the denoiser
+        all 196 per-timestep ego tokens and land at ~3.3–3.5 FID; the pooled single-token baseline (H2) is stuck at 6.6.
+        The 49% improvement is about <b>temporal granularity of conditioning</b>, not the attention mechanism.</li>
+      <li>trans_enc has slightly better conditioning alignment (R@1 0.537 vs 0.501); trans_dec generates slightly more
+        diverse motion per condition (MM 4.61 vs 4.14).</li>
+    </ul>
+  </div>
+
+  <h2 style="border-color:var(--warn)">Recommended paper fix</h2>
+  <div class="card">
+    <ul>
+      <li><b>Correct the mechanism.</b> Rewrite §Method (Diffusion Denoiser), Fig 1, and the Abstract to describe the
+        actual model: self-attention over the concatenated <code>[latent, time, full-ego-sequence]</code> token set. Drop
+        the "cross-attention makes it affordable (O(L·T) vs O((L+T)²))" argument — the model pays the O((L+T)²) cost and
+        it's fine at this scale.</li>
+      <li><b>Reframe the contribution</b> as full-sequence vs pooled temporal conditioning (architecture-agnostic).</li>
+      <li><b>Turn the bug into a strength:</b> add this <code>trans_dec</code> vs <code>trans_enc</code> comparison as an
+        ablation — "cross-attention is not required; self-attention over the concatenated ego sequence is comparable."</li>
+    </ul>
+    <p style="margin:10px 0 0" class="sub">All headline numbers (FID ~3.3–3.5, 49% over pooled, H6 rejection, held-out
+    generalization) remain valid. This is a description fix + a bonus ablation, not a result retraction.</p>
+  </div>
+
+  <h2>Method notes (reproducibility)</h2>
+  <div class="card">
+    <ul>
+      <li>Config-merge bug: <code>configs/modules/denoiser.yaml</code> (<code>arch: trans_enc</code>) overrode the H4
+        config's <code>arch: trans_dec</code>. Correct override is <code>model.denoiser.params.arch=trans_dec</code>.</li>
+      <li>trans_dec trained locally on an RTX 4090, same recipe as H4 (frozen VAE + frozen ego encoder, same data);
+        effective batch 128 via gradient accumulation (micro 64 × 2), env-driven <code>ACCUM_GRAD_BATCHES</code> added to
+        <code>train.py</code>.</li>
+      <li>Held-out test set: scene-disjoint split of <code>val</code> (no reserve data existed) → <code>val_test</code>
+        (1,190) / <code>val_sel</code> (1,140).</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

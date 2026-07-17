@@ -847,6 +847,17 @@ paper_strengthening:
     finalize: "cron d081aa05 (every 3h) evals at epoch>=3400 via scratchpad/eval_trans_dec_bs128.sh on
       val_test, compares 3-way (trans_dec@bs128 vs trans_enc 3.38 vs trans_dec@bs64 3.725), updates
       findings/state, commits, writes to_human report, self-deletes."
+    FINAL_RESULT_2026_07_17: |
+      DONE. Trained trans_dec@bs128 to ep3775 (grad-accum 2), scanned + 3-rep definitive on val_test.
+      3-way (val_test, CFG=10, 3-rep):
+        trans_enc (accidental, bs128):        FID=3.338±0.190, R@1=0.537, MM=4.14   [paper's ACTUAL model]
+        trans_dec (real cross-attn, bs128, ep2499): FID=3.490±0.059, R@1=0.501, MM=4.61
+        trans_dec (real cross-attn, bs64,  ep2499): FID=3.725±0.085, R@1=0.509, MM=4.56
+      VERDICT: at matched batch, trans_enc ≈ trans_dec (CIs overlap [3.15,3.53] vs [3.43,3.55]).
+      Cross-attention is NOT better (marginally worse + noisier). Batch explained the bs64 gap.
+      Real contribution = full-sequence vs pooled conditioning (both ~3.3-3.5 vs H2 6.6), architecture-agnostic.
+      Paper fix: correct Method/Fig1/Abstract to self-attn-concat; add trans_dec as ablation; drop O(LxT) claim.
+      Report: research/to_human/progress_report_008_arch_ablation.html. Cron d081aa05 deleted.
 
 arc_last_updated: "2026-07-09 (PAPER-STRENGTHENING arc started — dataset audit done, §4.1 formula/crop/counts TODOs resolved; CONCLUDE result unchanged)"
 
