@@ -33,7 +33,7 @@
 \newcommand{\TODO}[1]{{\textcolor{red}{{#1}}}} % TODOs in red
 
 % Submission: Anonymous
-\title{Ego-Conditioned Pedestrian Body Motion Generation\\via Latent Diffusion with Temporal Cross-Attention}
+\title{Ego-Conditioned Pedestrian Body Motion Generation\\via Latent Diffusion with Full-Sequence Ego Conditioning}
 
 \author{
   Anonymous Author(s) \\
@@ -48,7 +48,7 @@
 \begin{abstract}
 We introduce \method, a system that generates realistic 3D full-body pedestrian motions conditioned on vehicle ego trajectory observations from autonomous driving data.
 Existing pedestrian motion synthesis methods rely on text descriptions or action class labels, ignoring the driving context that fundamentally shapes pedestrian behavior — how a person walks, stops, or reacts is strongly influenced by nearby vehicle speed and proximity.
-We condition a Motion Latent Diffusion (MLD) model on vehicle ego odometry via cross-attention, using a frozen ego encoder that maps the full 196-timestep ego trajectory sequence to per-timestep conditioning tokens attending to the denoiser at every diffusion step.
+We condition a Motion Latent Diffusion (MLD) model on vehicle ego odometry by exposing the denoiser to the full 196-timestep ego trajectory sequence (rather than a pooled summary), using a frozen ego encoder that produces per-timestep conditioning tokens available to the denoiser at every diffusion step.
 Experiments on a combined dataset built from nuScenes, Waymo, and recordings from our sensor-equipped research vehicle (AVA) demonstrate a \textbf{49\% FID improvement} (6.603~$\to$~3.392) over the strongest pooled-conditioning baseline, and an ablation study reveals that the frozen encoder is critical: unfreezing causes a 34\% MultiModality collapse (3.956~$\to$~2.618) as the encoder over-specializes for discriminative per-condition features.
 Our best system achieves FID $= 3.392 \pm 0.179$ with R-Precision@1 $= 0.548 \pm 0.002$ at CFG $= 10$, providing a strong foundation for generating behavior-consistent pedestrian motions for AV simulation and safety-critical scenario generation.
 \end{abstract}
@@ -73,12 +73,12 @@ The key architectural question is: \emph{how should the ego trajectory be inject
 We study two families of conditioning mechanisms:
 \begin{itemize}
 \item \textbf{Pooled conditioning (H2)}: The ego trajectory is encoded by a transformer encoder and mean-pooled to a single 256D token, which is concatenated alongside the time embedding in the denoiser's self-attention. This gives the denoiser a coarse summary of the ego trajectory but no temporal resolution.
-\item \textbf{Temporal cross-attention conditioning (H4)}: The ego trajectory is encoded to a full 196-token sequence, and the denoiser uses cross-attention ($z$ queries ego as K/V at each denoising step). This exposes every denoising step to the full ego trajectory, enabling temporally fine-grained conditioning.
+\item \textbf{Full-sequence conditioning (H4)}: The ego trajectory is encoded to a full 196-token sequence, which is concatenated with the latent tokens and jointly self-attended at each denoising step. This exposes every denoising step to the full ego trajectory, enabling temporally fine-grained conditioning.
 \end{itemize}
 
-Our main finding is that temporal cross-attention dramatically outperforms pooled conditioning.
+Our main finding is that full-sequence conditioning dramatically outperforms pooled conditioning.
 H4 achieves \textbf{FID = 3.392}, a 49\% improvement over the best H2 result (FID = 6.603), with the same denoiser capacity — and its best checkpoint occurs \emph{earlier} in training (epoch 3399 vs.\ 4399), so the improvement does not come from additional compute.
-The cross-attention denoiser can attend to specific moments in the ego trajectory rather than a coarse average, producing motion that more closely follows the ground truth distribution.
+The full-sequence denoiser can attend to specific moments in the ego trajectory rather than a coarse average, producing motion that more closely follows the ground truth distribution.
 
 A secondary but equally important finding concerns the ego encoder's training regime.
 H4 uses a \emph{frozen} ego encoder — pretrained to align mean-pooled ego trajectories with VAE motion latents, then fixed during diffusion training.
@@ -89,9 +89,9 @@ We show that this occurs because the unfrozen encoder specializes to discriminat
 Our contributions are:
 \begin{enumerate}
 \item The first system to generate full 3D HumanML3D body motions conditioned on vehicle ego odometry, trained on AVA, nuScenes, and Waymo data.
-\item A demonstration that temporal cross-attention over the full ego sequence achieves 49\% FID improvement over single-token pooled conditioning, with non-overlapping confidence intervals across 3 evaluation replications.
+\item A demonstration that full-sequence temporal conditioning achieves 49\% FID improvement over single-token pooled conditioning, with non-overlapping confidence intervals across 3 evaluation replications; an ablation further shows this holds regardless of whether the ego sequence is injected by self-attention over the concatenated sequence or by cross-attention.
 \item An ablation showing that frozen ego encoders are critical for generative diversity in ego-conditioned motion: unfreezing causes MultiModality collapse and worsens all metrics.
-\item A design recommendation: frozen ego encoder + cross-attention denoiser (H4) is the correct architecture for this task.
+\item A design recommendation: frozen ego encoder + full-sequence conditioning (H4) is the correct architecture for this task.
 \end{enumerate}
 
 %----------------------------------------------------------------------
@@ -107,10 +107,10 @@ Our work differs in generating 263D full-body motion in the HumanML3D representa
 \paragraph{Interaction-aware and retrieval-augmented motion generation.}
 ReMoDiffuse~\cite{zhang2023remodiffuse} augments motion diffusion with retrieved nearest-neighbour motions cross-attended into the denoiser, an architectural pattern related to ours where external sequences condition the denoiser via cross-attention.
 InterGen~\cite{liang2024intergen} jointly generates two-person interactions with mutual cross-attention.
-Our setting is a degenerate version where one agent (the ego vehicle) has a fixed, observed trajectory — enabling a simpler asymmetric architecture where ego trajectory serves as the conditioning K/V.
+Our setting is a degenerate version where one agent (the ego vehicle) has a fixed, observed trajectory — enabling a simpler asymmetric design in which the observed ego trajectory conditions the denoiser as a fixed token sequence.
 
 \paragraph{Latent diffusion for human motion.}
-MLD~\cite{chen2023mld} is our backbone: it diffuses in the latent space of a pre-trained HumanML3D VAE, using a cross-attention transformer denoiser conditioned on CLIP text embeddings.
+MLD~\cite{chen2023mld} is our backbone: it diffuses in the latent space of a pre-trained HumanML3D VAE, using a transformer denoiser conditioned on CLIP text embeddings.
 We retain the VAE, denoiser architecture, evaluation metrics, and DDIM sampling from MLD, replacing text conditioning with ego trajectory.
 MDM~\cite{tevet2023mdm} operates in raw motion space and conditions on text, action labels, or trajectory waypoints.
 T2M-GPT~\cite{zhang2023t2mgpt} uses discrete VQ-VAE tokenization — less suitable for continuous ego trajectory signals.
@@ -118,7 +118,7 @@ MoMask~\cite{guo2024momask} achieves state-of-the-art FID on HumanML3D with mask
 
 \paragraph{Classifier-free guidance.}
 CFG~\cite{ho2022cfg} trains conditional and unconditional models jointly, enabling quality-diversity tradeoff at inference.
-We find that CFG interacts strongly with conditioning granularity: pooled conditioning (H2) shows monotonically increasing FID with CFG scale, while temporal cross-attention (H4) is nearly CFG-insensitive. This suggests that richer conditioning naturally prevents the over-constraint that degrades FID at high CFG.
+We find that CFG interacts strongly with conditioning granularity: pooled conditioning (H2) shows monotonically increasing FID with CFG scale, while full-sequence conditioning (H4) is nearly CFG-insensitive. This suggests that richer conditioning naturally prevents the over-constraint that degrades FID at high CFG.
 
 \paragraph{Frozen encoders in generative models.}
 A recurring pattern in conditional image generation is that frozen encoders preserve generative diversity better than fine-tuned ones.
@@ -133,7 +133,7 @@ Our H6 ablation provides direct empirical evidence for the same phenomenon in mo
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.82\linewidth]{figures/architecture.png}
-  \caption{\method architecture. The ego trajectory is encoded by a \emph{frozen} transformer encoder into 196 per-timestep conditioning tokens. At every denoising step, the noisy latent $\mathbf{z}_t$ queries the full ego token sequence via cross-attention (\texttt{trans\_dec} denoiser). Diffusion runs in the latent space of a frozen HumanML3D VAE; only the denoiser is trained.}
+  \caption{\method architecture. The ego trajectory is encoded by a \emph{frozen} transformer encoder into 196 per-timestep conditioning tokens. At every denoising step, the noisy latent $\mathbf{z}_t$ is concatenated with the full 196-token ego sequence (and the timestep embedding) and jointly processed by a self-attention transformer denoiser; the latent output tokens predict the noise. Diffusion runs in the latent space of a frozen HumanML3D VAE; only the denoiser is trained. Section~\ref{sec:xattn} ablates an alternative cross-attention denoiser.}
   \label{fig:architecture}
 \end{figure}
 
@@ -174,16 +174,18 @@ We ablate this choice in Section~\ref{sec:ablation}.
 
 \subsection{Diffusion Denoiser}
 
-We use the MLD denoiser with \texttt{trans\_dec} architecture: a transformer \emph{decoder} where the noisy latent $\mathbf{z}_t$ forms the queries and the ego conditioning tokens $\mathbf{c}$ form the keys and values.
-The denoiser predicts the noise component,
+We use the MLD denoiser as a self-attention transformer that operates over a single concatenated token sequence.
+At each denoising step, the $L=4$ noisy latent tokens $\mathbf{z}_t$, the timestep embedding $\mathbf{t}_{\mathrm{emb}}$, and the full $T=196$-token ego conditioning sequence $\mathbf{c}$ are concatenated into one sequence of length $L + 1 + T = 201$ and processed by the transformer; the first $L$ output tokens are read out as the predicted noise:
 \begin{equation}
-  \hat{\boldsymbol{\epsilon}} = \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \mathbf{c}) = \mathrm{TransformerDecoder}\bigl(\mathbf{z}_t;\, [\mathbf{t}_{\mathrm{emb}}, \mathbf{c}]\bigr),
+  \hat{\boldsymbol{\epsilon}} = \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, t, \mathbf{c}) = \mathrm{Transformer}\bigl([\mathbf{z}_t,\, \mathbf{t}_{\mathrm{emb}},\, \mathbf{c}]\bigr)_{1:L},
 \end{equation}
-where the time step $t$ is embedded and prepended to the K/V sequence alongside $\mathbf{c}$, and the sampler computes $\mathbf{z}_{t-1}$ from $\hat{\boldsymbol{\epsilon}}$.
-Cross-attention makes full-sequence conditioning affordable: attention cost is $\mathcal{O}(L \times T)$, whereas concatenating all $T = 196$ ego tokens into the denoiser's \emph{self}-attention would cost $\mathcal{O}((L+T)^2)$.
-Relative to the pooled baseline (self-attention over only $L+2$ tokens), the added cost is modest — and in exchange, every denoising step gains temporal resolution over the full ego trajectory.
+where the transformer applies self-attention over the joint sequence and the sampler computes $\mathbf{z}_{t-1}$ from $\hat{\boldsymbol{\epsilon}}$.
+Because every ego token participates in the same self-attention as the latent tokens, each denoising step has access to the full ego trajectory at per-timestep resolution: the denoiser can attend to specific moments in the ego trajectory (e.g., a braking event or sharp turn) rather than a global average.
+This is the key distinction from the pooled baseline (H2), whose denoiser sees only a single mean-pooled ego token ($L+2$ tokens in total) and therefore has no temporal resolution over the ego trajectory.
 
-At each denoising step, the 4 latent queries attend to all 196 ego tokens, enabling temporally fine-grained conditioning: the denoiser can attend to specific moments in the ego trajectory (e.g., a braking event or sharp turn) rather than a global average.
+The added cost over the pooled baseline is modest at this scale: self-attention over $201$ tokens versus $L+2$.
+A natural alternative is a \emph{cross-attention} denoiser, in which the $L$ latent tokens act as queries and the ego sequence as keys/values, reducing the attention cost to $\mathcal{O}(L \times T)$ rather than $\mathcal{O}((L+T)^2)$.
+We evaluate this variant in Section~\ref{sec:ablation} and find it performs \emph{comparably}, indicating that the benefit comes from exposing the denoiser to the full ego sequence, not from the specific attention mechanism used to inject it.
 
 \subsection{Classifier-Free Guidance}
 
@@ -286,7 +288,7 @@ We additionally report four non-learned or reference baselines (Table~\ref{tab:t
 
 \begin{table}[t]
   \centering
-  \caption{Reference baselines bounding the metric space (val split; same evaluator, normalization, and split lists as Table~\ref{tab:main}). All rows are mean $\pm$ 95\% CI over 3 replications (the unconditional row resamples the diffusion model; the non-learned rows are reseeded end-to-end). Retrieval attains near-zero FID by copying real motions but is non-generative; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. Ego conditioning improves \method's FID by 34\% over its own unconditional prior (5.18~$\to$~3.39) — and even the unconditional H4 prior outperforms conditionally generated H2 motions, underscoring the architectural advantage of the cross-attention denoiser.}
+  \caption{Reference baselines bounding the metric space (val split; same evaluator, normalization, and split lists as Table~\ref{tab:main}). All rows are mean $\pm$ 95\% CI over 3 replications (the unconditional row resamples the diffusion model; the non-learned rows are reseeded end-to-end). Retrieval attains near-zero FID by copying real motions but is non-generative; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. Ego conditioning improves \method's FID by 34\% over its own unconditional prior (5.18~$\to$~3.39) — and even the unconditional H4 prior outperforms conditionally generated H2 motions, underscoring the architectural advantage of full-sequence conditioning.}
   \label{tab:trivial}
   \vspace{4pt}
   \small
@@ -348,7 +350,7 @@ The large FID improvement confirms that H4 produces a generated distribution \em
 
 We sweep CFG $\in \{5, 10, 15\}$ for H4 at epoch 3399 (Table~\ref{tab:cfg}).
 A striking finding: H4 FID is nearly flat across CFG scales (3.842~$\to$~3.617), while H2 shows steep monotonic FID degradation at higher CFG (6.603~$\to$~7.400).
-This indicates that temporal cross-attention naturally provides a rich, overdetermined conditioning signal — the denoiser attends to 196 ego tokens, so higher guidance amplifies an already high-fidelity signal rather than forcing mode collapse onto a coarse pooled token.
+This indicates that full-sequence conditioning naturally provides a rich, overdetermined conditioning signal — the denoiser attends to 196 ego tokens, so higher guidance amplifies an already high-fidelity signal rather than forcing mode collapse onto a coarse pooled token.
 
 \begin{table}[t]
   \centering
@@ -432,7 +434,7 @@ This indicates near-deterministic generation per condition — the ego encoder h
 \paragraph{Mechanism.}
 When the encoder is frozen (H4), it maps ego trajectories to general-purpose representations aligned with the VAE latent space.
 The denoiser learns to query these fixed representations and generate diverse, plausible motions for each condition.
-When the encoder is unfrozen (H6), backpropagation through the cross-attention loss pushes the encoder toward representations that \emph{minimize the denoising loss} — essentially learning discriminative features that uniquely identify each trajectory.
+When the encoder is unfrozen (H6), backpropagation through the denoising loss pushes the encoder toward representations that \emph{minimize the denoising loss} — essentially learning discriminative features that uniquely identify each trajectory.
 This over-specialization constrains generation: the denoiser outputs similar samples for each unique ego representation, collapsing MultiModality.
 
 This pattern mirrors the frozen-encoder paradigm in image generation~\cite{rombach2022sd,ye2023ipadapter,zhang2023controlnet}: frozen conditioning encoders preserve general-purpose representations and allow the generative model to learn diverse ways to satisfy the conditioning signal.
@@ -443,6 +445,33 @@ This pattern mirrors the frozen-encoder paradigm in image generation~\cite{romba
   \caption{H6 training trajectory (FREEZE\_EGO=False): training-time validation FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch, over the full 5000-epoch run. FID is best at epoch~2099 and degrades as R@1 rises; after epoch~$\approx$3299, R@1 saturates in the 0.37--0.42 band while FID oscillates between 5.1 and 6.3. Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.}
   \label{fig:h6_training}
 \end{figure}
+
+\subsection{Conditioning Mechanism: Self-Attention vs.\ Cross-Attention}
+\label{sec:xattn}
+
+Our denoiser injects the ego sequence by concatenating it with the latent tokens and applying self-attention over the joint sequence (Section~\ref{sec:experiments}).
+A common alternative for sequence conditioning is \emph{cross-attention}, where the latent tokens act as queries and the ego sequence as keys and values, so the ego tokens never attend among themselves and the attention cost is $\mathcal{O}(L\times T)$ rather than $\mathcal{O}((L+T)^2)$.
+To test whether the specific mechanism matters, we train an otherwise-identical cross-attention denoiser (same frozen VAE and frozen ego encoder, same data, same effective batch size) and evaluate it on the held-out test split.
+
+\begin{table}[h]
+  \centering
+  \caption{Conditioning-mechanism ablation. Both denoisers consume the full 196-token ego sequence and differ only in how they attend to it. Evaluated on the held-out test split (a scene-disjoint half of the validation set), CFG~=~10, mean~$\pm$~95\% CI over 3 replications, best checkpoint each. The two mechanisms are statistically comparable (overlapping FID intervals); cross-attention provides no advantage.}
+  \label{tab:xattn}
+  \vspace{4pt}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Denoiser & Attention over ego & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ \\
+    \midrule
+    Self-attention (\method) & concatenation      & \textbf{3.338} {\scriptsize $\pm$0.190} & \textbf{0.537} & 4.14 \\
+    Cross-attention          & queries/keys-values & 3.490 {\scriptsize $\pm$0.059} & 0.501 & \textbf{4.61} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+As shown in Table~\ref{tab:xattn}, the self-attention and cross-attention denoisers achieve statistically comparable FID (3.338 vs.\ 3.490; 95\% CIs $[3.15, 3.53]$ and $[3.43, 3.55]$ overlap), with self-attention holding a slight edge on retrieval alignment (R@1) and cross-attention generating marginally more diverse motion per condition (MM).
+We also observed that the cross-attention variant trained less stably, with a noisier FID-vs-epoch trajectory.
+\textbf{Takeaway}: the large improvement over pooled conditioning (Table~\ref{tab:main}) comes from exposing the denoiser to the \emph{full} per-timestep ego sequence, not from any particular attention mechanism -- either self-attention over the concatenated sequence or cross-attention works, and neither is required over the other.
 
 \subsection{Checkpoint Selection}
 
@@ -464,12 +493,12 @@ H4 similarly peaks at epoch 3399 (definitive FID $= 3.392$) and degrades steadil
 %----------------------------------------------------------------------
 
 \paragraph{Architecture recommendation.}
-The experimental evidence strongly favors the H4 architecture: frozen ego encoder + cross-attention trans\_dec denoiser.
+The experimental evidence strongly favors the H4 architecture: frozen ego encoder + full-sequence conditioning denoiser (self-attention over the concatenated latent and ego sequence; cross-attention works equally well, Section~\ref{sec:xattn}).
 Future work seeking to improve conditioning fidelity (R@1) should explore adapter-style approaches — fine-tuning a lightweight adapter on the frozen encoder while keeping the backbone fixed — rather than end-to-end unfreezing.
 
 \paragraph{R-Precision@1 and the conditioning-diversity tradeoff.}
 H4's R@1 (0.548) is lower than H2's (0.671) despite dramatically better FID.
-This seemingly paradoxical result reflects a genuine tradeoff: richer conditioning via temporal cross-attention enables the denoiser to generate \emph{more diverse} motions per condition, spreading the generated embedding distribution and reducing retrieval accuracy.
+This seemingly paradoxical result reflects a genuine tradeoff: richer conditioning via the full ego sequence enables the denoiser to generate \emph{more diverse} motions per condition, spreading the generated embedding distribution and reducing retrieval accuracy.
 In the context of AV simulation, diversity within valid behaviors is a feature — a single ego trajectory should plausibly lead to multiple pedestrian behaviors (crossing, waiting, accelerating).
 R@1 measures only conditioning alignment, not generation quality; FID captures the latter more faithfully.
 
@@ -494,12 +523,12 @@ Generated motion data is synthetic and contains no personally identifiable infor
 \section{Conclusion}
 %----------------------------------------------------------------------
 
-We introduced \method, an ego-conditioned pedestrian body motion generation system based on latent diffusion with temporal cross-attention.
-Our key finding is that attending to the full 196-token ego trajectory sequence via cross-attention dramatically outperforms single-token pooled conditioning: 49\% FID improvement (6.603~$\to$~3.392) with non-overlapping confidence intervals.
+We introduced \method, an ego-conditioned pedestrian body motion generation system based on latent diffusion with full-sequence ego conditioning.
+Our key finding is that exposing the denoiser to the full 196-token ego trajectory sequence dramatically outperforms single-token pooled conditioning: 49\% FID improvement (6.603~$\to$~3.392) with non-overlapping confidence intervals.
 A paired ablation reveals that frozen ego encoders are critical: unfreezing causes 34\% MultiModality collapse as the encoder over-specializes to discriminative features.
 
 These results establish a clear design recipe for ego-conditioned motion generation in AV settings:
-train the ego encoder contrastively on frozen VAE latents, then freeze it during diffusion training and use a cross-attention decoder as the denoiser.
+train the ego encoder contrastively on frozen VAE latents, then freeze it during diffusion training and condition the denoiser on the full ego sequence.
 This recipe produces state-of-the-art ego-conditioned full-body pedestrian motions across AVA, nuScenes, and Waymo, and provides a foundation for scalable, behavior-consistent pedestrian simulation.
 
 %----------------------------------------------------------------------
@@ -521,7 +550,7 @@ No projection head (we verified the 2-layer MLP projection head does not improve
 Pretraining: AdamW (lr $= 1\times10^{-4}$, weight decay $10^{-4}$), 200 epochs, batch size 64, linear warmup followed by cosine annealing, gradient clipping at max-norm 1.0.
 
 \paragraph{Diffusion model.}
-MLD denoiser, \texttt{trans\_dec} architecture: 9 layers, 4 attention heads, 256D token dimension, 1024D feed-forward, latent sequence length $L=4$.
+MLD denoiser, \texttt{trans\_enc} architecture (self-attention over the concatenated latent, timestep, and ego tokens): 9 layers, 4 attention heads, 256D token dimension, 1024D feed-forward, latent sequence length $L=4$. The cross-attention variant of Section~\ref{sec:xattn} uses the same hyperparameters in a \texttt{trans\_dec} configuration (latent tokens as queries, ego sequence as keys/values).
 Diffusion: 1000 DDPM training steps (scaled-linear $\beta$ schedule), DDIM inference (50 steps, $\eta=0$).
 CFG dropout rate: 10\%.
 Optimizer: AdamW, lr $= 1\times10^{-4}$ (constant), 5000 total epochs.
@@ -574,7 +603,7 @@ Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval a
 
 \begin{enumerate}
   \item \textbf{Claims.} \emph{Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?}\\
-  Answer: [Yes]. Justification: The two headline claims (49\% FID improvement from temporal cross-attention; MultiModality collapse from unfreezing the ego encoder) are supported by replicated evaluations with confidence intervals in Tables~\ref{tab:main}, \ref{tab:cfg}, and~\ref{tab:h6}.
+  Answer: [Yes]. Justification: The two headline claims (49\% FID improvement from full-sequence conditioning; MultiModality collapse from unfreezing the ego encoder) are supported by replicated evaluations with confidence intervals in Tables~\ref{tab:main}, \ref{tab:cfg}, and~\ref{tab:h6}.
 
   \item \textbf{Limitations.} \emph{Does the paper discuss the limitations of the work?}\\
   Answer: [Yes]. Justification: Section~\ref{sec:discussion} lists estimated (not ground-truth) pose labels, restricted conditioning scope, the R@1 gap, lack of physical constraints, evaluator domain shift, and the absence of a perceptual study.
