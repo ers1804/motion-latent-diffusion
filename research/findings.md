@@ -36,6 +36,13 @@ trans_enc also has slightly better R@1 (0.537 vs 0.501); trans_dec has slightly 
   over the concatenated ego sequence is comparable"); (d) drop the O(L×T) affordability argument.
   This turns the config-merge bug into a rigorous ablation and keeps the headline result honest.
 
+**APPLIED 2026-07-18** (commit 98544ac): paper corrected throughout — title, abstract, intro, §Method
+Diffusion Denoiser (+equation), Fig 1 caption, CFG analysis, discussion, conclusion, appendix,
+checklist all reframed to full-sequence self-attention-concat; dropped the false O(L×T) claim; added
+ablation §"Conditioning Mechanism: Self-Attention vs Cross-Attention" (Table tab:xattn) with the
+matched-batch comparison. Compiles clean. Draft for human review — figures/staged-count §4.1 items
+(human-only) still outstanding.
+
 ---
 
 ## RESULT (2026-07-16): real cross-attention (trans_dec) is WORSE than the accidental trans_enc  [SUPERSEDED — was batch-confounded; see FINAL RESULT above]
