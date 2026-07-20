@@ -71,7 +71,7 @@ while ablation is on held-out; H2/H3/H6 never rerun on val_test.
 - **Status**: agent running now (evals + stats tooling; no decisions needed).
 
 ## Structural / disclosed (no action beyond awareness)
-- AVA = 34 samples framing ("targeted high-interaction subset") — recommended, needs user sign-off.
+- ✅ AVA = 34 samples framing — SIGNED OFF by user 2026-07-22; applied to abstract, §4.1 opening, and deck (staged high-interaction complement to nuScenes/Waymo scale).
 - "First system" claim — qualified to full-body 3D + ego odometry; defend boundary vs WoSAD-style 2D work.
 - **Reproducibility landmine**: `configs/*trans_dec.yaml` silently trains `trans_enc`
   (module-merge bug); run dirs named `h4_trans_dec` contain trans_enc models. MUST fix configs +
