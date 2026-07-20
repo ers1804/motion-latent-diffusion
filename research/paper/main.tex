@@ -265,7 +265,7 @@ We report four metrics, following the HumanML3D evaluation protocol~\cite{guo202
 \begin{itemize}
   \item \textbf{FID} (Fréchet Inception Distance): computes the feature-space distance between the generated and real motion distributions, using the pretrained \texttt{t2m\_moveencoder} (stride-2 Conv1D) and \texttt{t2m\_motionencoder} (BiGRU) from~\cite{guo2022humanml3d}. Lower is better.
   \item \textbf{R-Precision@1}: top-1 retrieval accuracy of the ego condition from batches of 32 candidates (1 positive + 31 negatives), using cosine similarity between the mean-pooled VAE latent (from generated motion) and the ego encoder output. Higher is better.
-  \item \textbf{MultiModality (MM)}: average pairwise L2 distance between 10 generated samples for the same ego condition, measuring diversity per condition. Higher is better.
+  \item \textbf{MultiModality (MM)}: average pairwise L2 distance between 10 generated samples for the same ego condition, measuring diversity per condition. Higher indicates more diverse generation per condition, but is only meaningful at comparable conditioning fidelity — an unconditional model maximizes MM trivially (cf.\ Table~\ref{tab:trivial}) — so MM should be read jointly with R-Precision.
   \item \textbf{Diversity}: average pairwise L2 distance in feature space across all generated samples, measuring population-level diversity. Values \emph{closer to the ground-truth diversity} (5.496 on our evaluation set) are better.
 \end{itemize}
 
