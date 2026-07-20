@@ -24,6 +24,27 @@ on the NAS mirror (authoritative):
 - Paper §4.1 as written claims weighted sampling is used in diffusion training — TRUE for H2/H3/VAE,
   FALSE for the main model H4. Text corrected 2026-07-22.
 
+### Eval-side confound RESOLVED (2026-07-21, item 8) — headline refines 49% → ~40% under unified eval
+
+Completed the held-out table + unified-eval H2 re-run locally (3 reps, unified NO-CROP eval pipeline):
+
+| Model (ckpt, CFG) | val_test FID | full-val FID (no-crop eval) | published (own eval) | R@1 (val_test) |
+|---|---|---|---|---|
+| H4 ep3399 CFG10 | **3.338 ±0.190** | 3.392 (orig, no-crop) | 3.392 | 0.537 |
+| H6 ep3399 CFG10 | 5.003 ±0.228 | — | 5.079 | 0.374 |
+| H2 ep4399 CFG5  | 5.690 ±0.151 | **5.620 ±0.117** | 6.603 (CROP-eval) | 0.676 |
+| H3 ep4399 CFG5  | 6.792 ±0.345 | — | 7.563 (CROP-eval) | 0.678 |
+
+- **KEY**: H2's published 6.603 was measured under its own interaction-crop EVAL pipeline; under the
+  unified no-crop eval it is **5.62** (full val) / 5.69 (val_test). The 49% headline mixed eval
+  pipelines. **Unified apples-to-apples: 5.62→3.39 ≈ 40% (full val); 5.69→3.34 ≈ 41% (held-out).**
+- Ranking PRESERVED everywhere (H4 < H6 < H2 < H3); held-out H2-vs-H4 gap formally significant
+  (diff +2.35, Welch p<0.001, bootstrap CI [+2.11,+2.59]).
+- H3's crop-eval 7.563 → similar shift direction expected; its no-crop val_test = 6.79.
+- Symmetric cell (H4 under CROP-eval, full val) running — completes the eval-regime 2×2.
+- **Paper edit pending**: headline + tables rewrite ONCE when (a) the symmetric cell and (b) the
+  helma training 2×2 land. Until then the deck's caveat covers it.
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval

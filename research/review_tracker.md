@@ -65,10 +65,13 @@ The entire dataset is OmniRe-estimated poses; no MPJPE vs any reference, no fail
 ### 8. 🟠 Statistical practice — IN PROGRESS
 CI-overlap eyeballing; n=3 normality assumption; main table on full val (also the selection set)
 while ablation is on held-out; H2/H3/H6 never rerun on val_test.
-- **Plan**: (a) rerun H2/H3/H6 (+H4 3-rep already done) on val_test → complete held-out table;
-  (b) implement Welch t-test + bootstrap on per-replication metrics; (c) add held-out column or
-  appendix table to paper.
-- **Status**: agent running now (evals + stats tooling; no decisions needed).
+- **Status 2026-07-21**: (a) ✅ held-out table COMPLETE — H4 3.34, H6 5.00, H2 5.69, H3 6.79
+  (ranking preserved; H2-vs-H4 gap Welch p<0.001). (b) ✅ stats tooling `research/src/stats_tests.py`
+  (Welch + bootstrap from per-rep logs); formal n.s. verdict for the mechanism-ablation tie.
+  (c) ⏳ paper table edit pending the eval-regime symmetric cell + helma 2×2.
+- **MAJOR (eval-side confound resolved)**: H2's published 6.603 was CROP-eval; unified no-crop eval
+  gives H2=5.62 full-val → **unified headline ≈40%, not 49%** (still significant). H4 crop-eval
+  symmetric cell running.
 
 ## Structural / disclosed (no action beyond awareness)
 - ✅ AVA = 34 samples framing — SIGNED OFF by user 2026-07-22; applied to abstract, §4.1 opening, and deck (staged high-interaction complement to nuScenes/Waymo scale).
