@@ -1,5 +1,36 @@
 # Findings — Ego-Conditioned Pedestrian Motion Generation
 
+## ⚠️ INTEGRITY FINDING #2 (2026-07-22): H2 and H4 trained under DIFFERENT data pipelines
+
+While preparing the item-4 ablation (review_tracker.md), discovered from the DUMPED run configs
+on the NAS mirror (authoritative):
+- **H2** (`interaction_crop_weighted_1_helma`): `INTERACTION_CROP: true`, `INTERACTION_WEIGHTED_SAMPLING: true`
+- **H4** (`h4_trans_dec`): keys ABSENT → code defaults **False** → H4 trained with UNIFORM sampling
+  and RANDOM crops. Same for H6 and both new trans_dec runs (they reuse the H4 config).
+- Cause: the H4 config was written fresh and never carried the `DATASET.EGOMOTION.INTERACTION_*`
+  keys; `get_datasets()` defaults them to False (`EgoMotion.py:613`). Same silent-config-default
+  failure class as the trans_enc/trans_dec bug.
+- **Material**: ~40% of sequences exceed 196 frames (val 39.3%, train 41.0%) → the crop-mode
+  difference is exercised constantly; weighted sampling affects ALL training batches.
+
+**Blast radius:**
+- H2-vs-H4 headline (49%) is CONFOUNDED: conditioning granularity AND data pipeline both differ.
+  Direction: if the pipeline HELPS, the headline is conservative (H4 won while handicapped);
+  if it HURTS, part of H4's edge may be pipeline removal. Unresolved until the 2×2 completes.
+- H4-vs-H6 and self-vs-cross-attention ablations: CLEAN (all no-pipeline).
+- H3-vs-H2: CLEAN (H3 config sets both True). H3-vs-H4 in the main table: mixed (not a claimed head-to-head).
+- EVAL-side: H2's numbers were evaluated under its own config (interaction crop at eval) while
+  H4's used no-crop eval → eval data differs for long sequences. Needs a unified-eval re-run of H2.
+- Paper §4.1 as written claims weighted sampling is used in diffusion training — TRUE for H2/H3/VAE,
+  FALSE for the main model H4. Text corrected 2026-07-22.
+
+**Resolution plan (submitted to helma as part of review items 2/4/6):**
+2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
+H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval
+pipeline (eval-only, local). Seeds runs replicate each model's ORIGINAL recipe (H2 with pipeline,
+H4 without).
+
+
 *Last updated: 2026-07-09 (PAPER-STRENGTHENING arc: dataset-provenance audit + Dataset §4.1 TODO cleanup)*
 
 ## FINAL RESULT (2026-07-17): at matched batch, cross-attention ≈ self-attention-concat
