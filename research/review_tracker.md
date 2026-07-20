@@ -78,12 +78,22 @@ while ablation is on held-out; H2/H3/H6 never rerun on val_test.
   naming before any code release.
 - Paper `\TODO`s remaining (user): vehicle/sensor figure, example-scene figure, staged-scenario count.
 
-## Compute ledger (planned training runs)
-| Run | Item | Est. wall (4090 / H100) |
-|---|---|---|
-| H2 seed B, C | 2 | ~2×20h / ~2×12h |
-| H4 seed B, C | 2 | ~2×17h / ~2×10h |
-| H4 no-weighting | 4 | ~17h / ~10h |
-| H4 random-crop | 4 | ~17h / ~10h |
-| H4 random-init frozen ego | 6 | ~17h / ~10h |
-| External baseline (TBD) | 1 | TBD |
+## Compute ledger — SUBMITTED to helma 2026-07-22 (24h H100 each)
+| Run | Item | SLURM job | Notes |
+|---|---|---|---|
+| rv_h2_seedB / rv_h2_seedC | 2 | 575102 / 575103 | original H2 recipe (pipeline ON, bs128, seeds 2345/3456) |
+| rv_h4_seedB / rv_h4_seedC | 2 | 575106 / 575107 | original H4 recipe (pipeline OFF, seeds 2345/3456) |
+| rv_h4_pipeline | 4 (2×2) | 575104 | H4 + interaction crop/weighting |
+| rv_h2_nopipeline | 4 (2×2) | 575101 | H2 − interaction crop/weighting |
+| rv_h4_randinit_ego | 6 | 575105 | H4 with random-init FROZEN ego encoder |
+| Regressor baseline | 1 | (local, next) | deterministic ego→motion seq2seq |
+| MDM-style baseline | 1 | (TBD) | raw-space diffusion + ego encoder |
+
+**Protocol note (seeds)**: single 24h segments; per-seed best checkpoint selected by training-time
+val FID (matches the paper's checkpoint-selection protocol) — NOT a fixed epoch, since seg-1 wall
+time may end slightly before the original best epochs (H4: 3399, H2: 4399).
+
+**⚠️ Item 4 redesign (2026-07-22, after integrity finding #2)**: H2 trained WITH the interaction
+pipeline, H4 WITHOUT (silent config default; ~40% of sequences >196 frames → material). The two
+runs above complete the 2×2 (existing corners: H2+pipe=6.603, H4−pipe=3.392). Also needed:
+unified-eval re-run of H2 ep4399 under the no-crop eval config (local, eval-only).
