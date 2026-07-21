@@ -44,9 +44,9 @@ experiment isolates their effect.
 
 ### 5. 🟠 No evaluator-independent conditioning metric — IN PROGRESS
 R@1 uses each model's own encoder → H2-vs-H4 R@1 not apples-to-apples. Open TODO since April.
-- **Plan**: implement root-trajectory ADE/FDE (generated vs GT, via `recover_from_ric`), plus
-  min-of-K variant for stochastic models; evaluate H2/H4/H6 + uncond. Pure eval work, no training.
-- **Status**: agent implementing now (no decisions needed).
+- **Status 2026-07-21**: ✅ implemented `research/src/eval_ade_fde.py` (root-XZ ADE/FDE + minADE_K/
+  minFDE_K via datamodule.feats2joints; no learned evaluator). ⏳ Running on val_test for
+  H4/H2/H6/H4-uncond (K=5). Results next tick.
 
 ### 6. 🟠 Ego-encoder pretraining never ablated — IN PROGRESS
 H6 tests unfreezing, but random-init+frozen was never run — so "pretrain contrastively then freeze"
