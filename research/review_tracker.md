@@ -57,11 +57,10 @@ R@1 uses each model's own encoder → H2-vs-H4 R@1 not apples-to-apples. Open TO
   Uncond sanity passes. Metric caveats documented (mean rewards collapse, min-of-K rewards
   diversity; H4 alone strong on both). Ready for paper §Eval + results table.
 
-### 6. 🟠 Ego-encoder pretraining never ablated — IN PROGRESS
-H6 tests unfreezing, but random-init+frozen was never run — so "pretrain contrastively then freeze"
-has only half its claim ablated. (Adapter variant from Discussion also untried — stretch goal.)
-- **Plan**: 1 training run: H4 recipe with random-init frozen ego encoder.
-- **Status**: queued for helma (decision 2026-07-22).
+### 6. 🟠 Ego-encoder pretraining never ablated — PRELIMINARY VERDICT (2026-07-21)
+- **Training-time val (rv_h4_randinit_ego, ep~3100)**: best FID 5.45, R@1 = 0.022 (chance).
+  Random frozen encoder ≈ unconditional prior (5.18) → **contrastive pretraining is what injects
+  usable ego information**. Definitive 3-rep eval after job completes.
 
 ### 7. 🟡 Pose pseudo-GT quality unquantified — ⚠️ **USER TODO**
 The entire dataset is OmniRe-estimated poses; no MPJPE vs any reference, no failure-rate stats.
@@ -125,6 +124,20 @@ story semantic teeth. (Full intention *prediction* from prefixes = future work /
 **Protocol note (seeds)**: single 24h segments; per-seed best checkpoint selected by training-time
 val FID (matches the paper's checkpoint-selection protocol) — NOT a fixed epoch, since seg-1 wall
 time may end slightly before the original best epochs (H4: 3399, H2: 4399).
+
+**Pre-completion extraction (2026-07-21, ~22.4h, training-time val — NOT definitive):**
+| Run | best FID @ ep | last | note |
+|---|---|---|---|
+| rv_h4_pipeline | **3.664 @ 1299** | 4.92 @ 2099 | pipeline HELPS H4 (orig no-pipe train-best 3.77) → headline likely conservative |
+| rv_h2_nopipeline | 5.763 @ 1199 | 6.03 @ 1699 | too short (H2 best @4399); CFG-15 val — resume needed |
+| rv_h2_seedB / C | 5.86/5.21 @ 99 | 12.3 @ 1099 | mid-run FID hump or instability; ~69s/epoch (4× slower than orig H2) — resumes needed |
+| rv_h4_seedB | 4.658 @ 3099 | still ↓ | seed variance REAL (orig seed 3.77) — resume to let it bottom out |
+| rv_h4_seedC | 4.973 @ 1799 | 5.27 plateau | seed variance REAL |
+| rv_h4_randinit_ego | 5.453 @ 2699 | 5.56 | ≈ uncond prior; R@1 = chance → pretraining essential |
+
+Seg-2 resume scripts prepared (slurm/review/rv_*_seg2.sh) — submit when seg-1 jobs finish.
+H4 SEED VARIANCE flag: train-time bests 3.77 / 4.66↓ / 4.97 across seeds — definitive evals will
+quantify how much of FID=3.39 is seed luck; must be reported honestly (mean±std across seeds).
 
 **⚠️ Item 4 redesign (2026-07-22, after integrity finding #2)**: H2 trained WITH the interaction
 pipeline, H4 WITHOUT (silent config default; ~40% of sequences >196 frames → material). The two
