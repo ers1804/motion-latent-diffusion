@@ -47,8 +47,8 @@ python -m train \
     "NAME=ego_motion_diffusion_mdm_style" \
     "SEED_VALUE=1234" \
     "model.vae=False" \
-    "model.vae_type=no" \
-    "TRAIN.ABLATION.VAE_TYPE=no" \
+    "model.vae_type='no'" \
+    "TRAIN.ABLATION.VAE_TYPE='no'" \
     "TRAIN.BATCH_SIZE=64" \
     "TRAIN.END_EPOCH=3000" \
     "TRAIN.PRETRAINED_VAE=" \
