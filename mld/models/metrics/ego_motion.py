@@ -118,6 +118,14 @@ class EgoMotionMetrics(Metric):
         metrics["gt_Diversity"] = calculate_diversity_np(gt_np, self.diversity_times)
 
         # ── R-Precision (vehicle-motion alignment) ────────────────────────────
+        # Undefined when the motion "latent" and the ego embedding live in
+        # different spaces (e.g. VAE_TYPE='no' raw-space models: 263-D features
+        # vs 256-D ego embedding). Report 0.0 and skip instead of crashing.
+        if all_ego.shape[1] != all_mot.shape[1]:
+            for k in range(self.top_k):
+                metrics[f"R_precision_top_{k + 1}"] = torch.tensor(0.0)
+            return {**metrics}
+
         # L2-normalize both embeddings so euclidean distance ∝ cosine distance.
         ego_norm = F.normalize(all_ego, dim=1)  # (N, 256)
         mot_norm = F.normalize(all_mot, dim=1)  # (N, 256)
