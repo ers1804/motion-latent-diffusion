@@ -93,7 +93,15 @@ story semantic teeth. (Full intention *prediction* from prefixes = future work /
   marginal); (iv) latent-organization figure (PCA of VAE latents colored by label) as garnish.
   Predictions to test: H6 concentrates one intention/ego (collapse); H2 shifts less with ego than H4.
 - **Order**: QUEUED BEHIND helma verdicts + paper rewrite. Labeler + GT validation can run now (CPU).
-- **Status**: labeler implemented; GT distributions below.
+- **GT validation (2026-07-21)**: val(all) n=2835: crossing 1.7%, stopping 36.5%, walking-only
+  62.1%; val_test: crossing 1.8%, stopping 24.0%; train(1.5k): crossing 1.9%, stopping 35.3%.
+  **Design consequences**: (i) strict path-intersection crossing is too rare (~2%) to be the
+  primary category → lean on stopping-vs-walking (healthy 36/62 split); either broaden crossing
+  (corridor-proximity/lateral-traversal definition) or report it as a rare-event annex.
+  (ii) NOTE: val_test has less stopping than full val (24% vs 36.5%) — the scene-disjoint halves
+  are behaviorally imbalanced; harmless for FID (held-out matched 3.34≈3.39) but report per-split
+  base rates in the analysis. (iii) labeler stem-matching can collide across sources (n=1199 vs
+  1190) — use source-prefix mapping in the final analysis.
 
 ## Structural / disclosed (no action beyond awareness)
 - ✅ AVA = 34 samples framing — SIGNED OFF by user 2026-07-22; applied to abstract, §4.1 opening, and deck (staged high-interaction complement to nuScenes/Waymo scale).
