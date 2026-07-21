@@ -1,6 +1,6 @@
 #!/bin/bash -l
-#SBATCH --job-name=eval_h4_cfg10
-#SBATCH --output=/hnvme/workspace/v103fe12-ped_gen/outputs/eval_h4_cfg10_%j.txt
+#SBATCH --job-name=rv_eval_h4_seedC_ep1799
+#SBATCH --output=/hnvme/workspace/v103fe12-ped_gen/outputs/rv_eval_h4_seedC_ep1799_%j.txt
 #SBATCH --time=4:00:00
 #SBATCH --nodes=1
 #SBATCH --gres=gpu:h100:1
