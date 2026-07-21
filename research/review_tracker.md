@@ -82,6 +82,19 @@ while ablation is on held-out; H2/H3/H6 never rerun on val_test.
   gives H2=5.62 full-val → **unified headline ≈40%, not 49%** (still significant). H4 crop-eval
   symmetric cell running.
 
+### 9. 🟢 Behavioral-validity analysis (added 2026-07-21, user-approved)
+Does the generated distribution match GT in INTENTION space — p(cross/stop/walk | ego)? Tests
+behaviorally meaningful ego→behavior coupling, which FID/R@1/ADE all miss; gives the MM/diversity
+story semantic teeth. (Full intention *prediction* from prefixes = future work / next arc, not this paper.)
+- **Plan**: (i) proxy intention labeler from trajectories (crossing = ped/ego path intersection;
+  stopping = speed <ε sustained; CPU, heuristics documented + spot-checked); (ii) validate label
+  distributions on GT train/val; (iii) extend eval_ade_fde.py to dump root trajectories, label K
+  generated samples per condition for H4/H2/H6, compare intention distributions vs GT (per-scene +
+  marginal); (iv) latent-organization figure (PCA of VAE latents colored by label) as garnish.
+  Predictions to test: H6 concentrates one intention/ego (collapse); H2 shifts less with ego than H4.
+- **Order**: QUEUED BEHIND helma verdicts + paper rewrite. Labeler + GT validation can run now (CPU).
+- **Status**: labeler implemented; GT distributions below.
+
 ## Structural / disclosed (no action beyond awareness)
 - ✅ AVA = 34 samples framing — SIGNED OFF by user 2026-07-22; applied to abstract, §4.1 opening, and deck (staged high-interaction complement to nuScenes/Waymo scale).
 - "First system" claim — qualified to full-body 3D + ego odometry; defend boundary vs WoSAD-style 2D work.
