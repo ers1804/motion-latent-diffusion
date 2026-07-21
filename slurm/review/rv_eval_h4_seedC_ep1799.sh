@@ -79,7 +79,7 @@ cd /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion
 # Evaluate H4 (trans_dec) at CFG=10 — definitive eval at best epoch
 # EPOCH=1799: best training-time val checkpoint (FID=3.770, R@1=0.535, both peak here)
 EPOCH=1799
-CHECKPOINT=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_rv_eval_h4_seedC_ep1799/checkpoints/epoch=${EPOCH}.ckpt
+CHECKPOINT=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_h4_seedC/checkpoints/epoch=${EPOCH}.ckpt
 
 python -m test \
 --cfg configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml \
