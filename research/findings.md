@@ -41,7 +41,10 @@ Completed the held-out table + unified-eval H2 re-run locally (3 reps, unified N
 - Ranking PRESERVED everywhere (H4 < H6 < H2 < H3); held-out H2-vs-H4 gap formally significant
   (diff +2.35, Welch p<0.001, bootstrap CI [+2.11,+2.59]).
 - H3's crop-eval 7.563 → similar shift direction expected; its no-crop val_test = 6.79.
-- Symmetric cell (H4 under CROP-eval, full val) running — completes the eval-regime 2×2.
+- Symmetric cell DONE (2026-07-21): **H4 crop-eval FID = 4.077 ±0.231** (R@1 0.552). Eval-regime
+  2×2 complete and CONSISTENT: crop-eval 6.603→4.077 = 38.3% improvement; no-crop 5.620→3.392 =
+  39.6%. **The robust unified headline is ~38-40% under either regime**; 49% was purely the
+  regime-mixing artifact. Both models find interaction-centered eval windows harder (sensible).
 - **Paper edit pending**: headline + tables rewrite ONCE when (a) the symmetric cell and (b) the
   helma training 2×2 land. Until then the deck's caveat covers it.
 
