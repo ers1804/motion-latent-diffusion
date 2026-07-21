@@ -135,7 +135,12 @@ time may end slightly before the original best epochs (H4: 3399, H2: 4399).
 | rv_h4_seedC | 4.973 @ 1799 | 5.27 plateau | seed variance REAL |
 | rv_h4_randinit_ego | 5.453 @ 2699 | 5.56 | ≈ uncond prior; R@1 = chance → pretraining essential |
 
-Seg-2 resume scripts prepared (slurm/review/rv_*_seg2.sh) — submit when seg-1 jobs finish.
+**Seg-1 COMPLETE (all TIMEOUT@24h, 2026-07-22). Final training-time-val bests:**
+h4_pipeline 3.664@1299 | h4_randinit 5.034@3199 (R1 chance) | h4_seedB 4.658@3099 |
+h4_seedC 4.973@1799 | h2_nopipeline 5.763@1199 | h2_seedB 5.86@99→11.5 | h2_seedC 5.21@99→13.7.
+**Submitted 2026-07-22**: seg-2 resumes 581907-581911 (h2_seedB/C, h2_nopipeline, h4_pipeline,
+h4_seedB); definitive 3-rep evals 581912-581915 (h4_pipeline@1299, h4_randinit@3199,
+h4_seedB@3099, h4_seedC@1799 — all CFG10, unified eval). rv_mdm_style (580009) running @12h.
 H4 SEED VARIANCE flag: train-time bests 3.77 / 4.66↓ / 4.97 across seeds — definitive evals will
 quantify how much of FID=3.39 is seed luck; must be reported honestly (mean±std across seeds).
 
