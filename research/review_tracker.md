@@ -19,7 +19,10 @@
 Every learned comparison is our own variant (H2/H3/H4/H6) + non-learned baselines. No published method in any table.
 - **Decision (2026-07-22)**: build BOTH — (a) deterministic seq2seq regressor ego→motion and
   (b) MDM-style raw-space diffusion with our ego encoder.
-- **Status**: agent implementing. Regressor first (cheap), MDM-style second.
+- **Status**: (a) ✅ Regressor DONE 2026-07-21 — FID 35.96 / ADE 1.80 (K=1): quantifies the
+  realism/accuracy trade-off; H4 minADE_5 (1.29) beats the L2-optimal predictor while staying
+  realistic. (b) ⏳ MDM-style raw-space diffusion: the codebase's VAE_TYPE='no' diffusion_only
+  path is the natural implementation — verify plumbing for condition=ego, then submit to helma.
 
 ### 2. 🔴 Single training seed per configuration — IN PROGRESS
 All conclusions rest on one training run each; 3 "replications" are sampling-only. H2's own FID

@@ -70,6 +70,27 @@ Root-trajectory (pelvis XZ) ADE/FDE, held-out val_test, K=5 samples/condition, N
   following (2.88→2.32 mean ADE).
 - Data: research/data/ade_fde_*_val_test_k5.npz; script research/src/eval_ade_fde.py.
 
+### Regressor baseline (2026-07-21, item 1a) — the realism/accuracy trade-off, quantified
+
+Deterministic seq2seq ego→motion transformer (EgoEncoder backbone + MLP head, masked MSE, H4's
+exact data recipe; val MSE plateaus at ep20 = regression-to-the-conditional-mean saturation).
+Scored via the same baseline_utils t2m path + ADE/FDE:
+
+| Metric | Regressor (K=1) | H4 diffusion | H2 | interpretation |
+|---|---|---|---|---|
+| FID (val_test) | **35.96** | 3.34 | 5.69 | regression mean is UNREALISTIC (10× worse FID) |
+| Diversity | 3.16 | ~5.8 | ~5.8 | severe diversity collapse (GT 5.32) |
+| ADE (mean) | **1.80** | 2.32 | 2.43 | L2-optimal by construction — "wins" mean ADE |
+| minADE_5 | — (deterministic) | **1.29** | 1.48 | H4 with 5 samples BEATS the L2-optimal point predictor |
+
+- **The classic trajectory-prediction insight, now quantified for full-body motion**: the
+  conditional-mean predictor minimizes ADE but produces unrealistic, collapsed motion (FID 36 —
+  sits between the diffusion family ~3-7 and the kinematic floor ~48). Diffusion trades ~0.5m mean
+  ADE for realism + diversity — and with K=5 samples H4's minADE (1.29) beats the regressor's 1.80:
+  **better coverage AND realism**. This is the justification-for-generative-modeling row the
+  external-baseline table needed.
+- Full-val numbers consistent (FID 35.47, ADE 1.86). Data: research/data/regressor_metrics_*.json.
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval
