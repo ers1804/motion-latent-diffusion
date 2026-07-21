@@ -44,9 +44,10 @@ experiment isolates their effect.
 
 ### 5. 🟠 No evaluator-independent conditioning metric — IN PROGRESS
 R@1 uses each model's own encoder → H2-vs-H4 R@1 not apples-to-apples. Open TODO since April.
-- **Status 2026-07-21**: ✅ implemented `research/src/eval_ade_fde.py` (root-XZ ADE/FDE + minADE_K/
-  minFDE_K via datamodule.feats2joints; no learned evaluator). ⏳ Running on val_test for
-  H4/H2/H6/H4-uncond (K=5). Results next tick.
+- **Status 2026-07-21**: ✅ COMPLETE. H4 beats H2 on all 4 trajectory metrics (3/4 significant,
+  paired N=1,190) despite lower R@1 → R@1 cross-model gap shown to be an embedding artifact.
+  Uncond sanity passes. Metric caveats documented (mean rewards collapse, min-of-K rewards
+  diversity; H4 alone strong on both). Ready for paper §Eval + results table.
 
 ### 6. 🟠 Ego-encoder pretraining never ablated — IN PROGRESS
 H6 tests unfreezing, but random-init+frozen was never run — so "pretrain contrastively then freeze"

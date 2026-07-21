@@ -48,6 +48,28 @@ Completed the held-out table + unified-eval H2 re-run locally (3 reps, unified N
 - **Paper edit pending**: headline + tables rewrite ONCE when (a) the symmetric cell and (b) the
   helma training 2×2 land. Until then the deck's caveat covers it.
 
+### ADE/FDE — evaluator-independent conditioning metric (2026-07-21, item 5) — R@1 gap is an ARTIFACT
+
+Root-trajectory (pelvis XZ) ADE/FDE, held-out val_test, K=5 samples/condition, N=1,190, meters:
+
+| Model | ADE ↓ | FDE ↓ | minADE_5 ↓ | minFDE_5 ↓ | (R@1) | (MM) |
+|---|---|---|---|---|---|---|
+| **H4 full-seq** | **2.320** | **4.826** | **1.291** | **2.591** | 0.537 | 4.14 |
+| H2 pooled | 2.434 | 4.990 | 1.482 | 2.979 | 0.676 | 3.83 |
+| H6 unfrozen | 2.227 | 4.578 | 1.528 | 3.090 | 0.374 | 2.44 |
+| H4 uncond (ego=0) | 2.880 | 5.876 | 1.228 | 2.454 | 0.031 | — |
+
+- **KEY: H4 beats H2 on ALL FOUR trajectory metrics** (paired over 1,190 conditions: ADE −0.114
+  sig., minADE −0.190 sig., FDE −0.164 n.s., minFDE −0.388 sig.) **despite R@1 0.537 vs 0.676** →
+  the cross-model R@1 gap is an embedding-space artifact, NOT worse conditioning. Replaces the
+  paper's hand-wavy "diversity explains R@1" paragraph with direct evidence.
+- Metric behavior caveats (report both): ADE_mean rewards mode-concentration — H6 (MM-collapsed)
+  has the best mean ADE but the worst minADE; minADE_K rewards diversity — uncond (max diversity)
+  has the best minADE_5 but the worst mean ADE. H4 is the only model strong on BOTH.
+- Uncond sanity: worst mean ADE/FDE (2.88/5.88) → conditioning demonstrably helps trajectory
+  following (2.88→2.32 mean ADE).
+- Data: research/data/ade_fde_*_val_test_k5.npz; script research/src/eval_ade_fde.py.
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval
