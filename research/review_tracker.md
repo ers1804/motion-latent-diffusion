@@ -24,10 +24,9 @@ Every learned comparison is our own variant (H2/H3/H4/H6) + non-learned baseline
   realistic. (b) ⏳ MDM-style raw-space diffusion: the codebase's VAE_TYPE='no' diffusion_only
   path is the natural implementation — verify plumbing for condition=ego, then submit to helma.
   → 2026-07-21: plumbing verified (forward smoke test OK, 393-token self-attn); job 578124
-  FAILED in 4m (YAML gotcha: bare `no` parsed as bool False → vae_type comparisons broke; fixed
-  by quoting). Resubmit 578473 trained fine (loss 0.287 @ ep99) but crashed at first VALIDATION:
-  R-Precision undefined for raw-space (263-D feats vs 256-D ego emb) → assertion. Fixed in
-  ego_motion.py (skip R-prec on dim mismatch, report 0.0). RESUBMITTED as **580009**.
+  (two early failures fixed: YAML bare-`no` bool gotcha; R-prec dim assertion.) **580009 COMPLETED
+  2026-07-22** (3,000 epochs): best train-time FID **26.2@ep299**, degrading to 33.5 — raw-space
+  diffusion ~9× worse than latent (justifies backbone). Definitive eval: job 589986.
 
 ### 2. 🔴 Single training seed per configuration — IN PROGRESS
 All conclusions rest on one training run each; 3 "replications" are sampling-only. H2's own FID

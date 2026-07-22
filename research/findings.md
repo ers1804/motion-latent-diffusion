@@ -112,6 +112,17 @@ Scored via the same baseline_utils t2m path + ADE/FDE:
   recovered from stdout. Future eval scripts: override NAME per job.
 - Remaining for the full 2×2: H2-side (h2_nopipeline seg-2 running; H2+pipe corner = 5.620 known).
 
+### MDM-style raw-space baseline (2026-07-22, item 1b) — latent diffusion justified
+
+Raw-space ego-conditioned diffusion (VAE_TYPE='no', diffusion_only path; same frozen ego encoder,
+same data recipe, same denoiser width as H4) completed 3,000 epochs on helma.
+**Training-time val trajectory: best FID 26.2 @ ep299**, hovers 26–28 through ~ep1600, degrades to
+33.5 by ep2999 — never approaches latent-space territory (2.9–3.4). **~9× FID gap justifies the
+latent-diffusion backbone**; sits between latent models (~3) and the regressor (36).
+Honest framing for the paper: a same-capacity raw-space VARIANT of our model (controlled
+comparison), not a faithful MDM reproduction (MDM uses larger models/longer training).
+Definitive 3-rep eval of ep299 submitted (job 589986, NAME-collision-proofed).
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval
