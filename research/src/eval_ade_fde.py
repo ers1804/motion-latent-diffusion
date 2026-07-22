@@ -54,6 +54,8 @@ def main():
     ap.add_argument("--k", type=int, default=5, help="samples per condition")
     ap.add_argument("--split", default="val_test", choices=["val_test", "full_val"])
     ap.add_argument("--batch", type=int, default=32)
+    ap.add_argument("--save-roots", action="store_true",
+                    help="also save generated/GT root XZ trajectories (item 9 behavioral probe)")
     args = ap.parse_args()
     spec = MODELS[args.model]
     split_dir = VT if args.split == "val_test" else FV
@@ -94,6 +96,7 @@ def main():
     loader = datamodule.test_dataloader()
 
     ade_all, fde_all = [], []           # per condition, per k
+    roots_gen, roots_gt, lens_all = [], [], []   # optional dumps (--save-roots)
     n_cond = 0
     with torch.no_grad():
         for batch in loader:
@@ -106,15 +109,22 @@ def main():
             gt_root = joints_ref[:, :, 0, [0, 2]].numpy()  # (B, T, 2)
             B = gt_root.shape[0]
             ades = np.zeros((B, args.k)); fdes = np.zeros((B, args.k))
+            batch_gen = []
             for k in range(args.k):
                 rs = model.test_diffusion_forward(batch)
                 gen_root = rs["joints_rst"].detach().cpu()[:, :, 0, [0, 2]].numpy()
+                if args.save_roots:
+                    batch_gen.append(gen_root.astype("float32"))
                 for i in range(B):
                     L = int(lengths[i])
                     d = np.linalg.norm(gen_root[i, :L] - gt_root[i, :L], axis=-1)
                     ades[i, k] = d.mean()
                     fdes[i, k] = d[L - 1]
             ade_all.append(ades); fde_all.append(fdes)
+            if args.save_roots:
+                roots_gen.append(np.stack(batch_gen, axis=1))  # (B, K, T, 2)
+                roots_gt.append(gt_root.astype("float32"))
+                lens_all.extend(int(l) for l in lengths)
             n_cond += B
 
     ades = np.concatenate(ade_all)  # (N, K)
@@ -123,7 +133,12 @@ def main():
     print(f"ADE_mean  = {ades.mean():.4f}   FDE_mean  = {fdes.mean():.4f}")
     print(f"minADE_{args.k} = {ades.min(axis=1).mean():.4f}   minFDE_{args.k} = {fdes.min(axis=1).mean():.4f}")
     out = f"research/data/ade_fde_{args.model}_{args.split}_k{args.k}.npz"
-    np.savez(out, ades=ades, fdes=fdes)
+    if args.save_roots:
+        np.savez(out, ades=ades, fdes=fdes,
+                 roots_gen=np.concatenate(roots_gen), roots_gt=np.concatenate(roots_gt),
+                 lengths=np.array(lens_all))
+    else:
+        np.savez(out, ades=ades, fdes=fdes)
     print("saved", out)
 
 
