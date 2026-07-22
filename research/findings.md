@@ -135,6 +135,22 @@ Definitive 3-rep eval of ep299 submitted (job 589986, NAME-collision-proofed).
   (unified eval): latent diffusion 2.88–3.39 ≪ raw-space diffusion 26.4 < regressor 36.0 ≪
   kinematic floor 48–50.
 
+### Seg-2 finals + H2-seed decision (2026-07-23)
+
+- **H4+pipeline FINAL: FID 2.880 ±0.084 @ ep1299** (seg-2 to ep4399 never re-approached the early
+  peak; best 4.387@2499). New best system, single-seed (must be stated).
+- **H2 seeds STOPPED after 2 segments** (~2,400 epochs each; FID still 10.9–12.1). Reaching H2's
+  horizon (4399) would need 2+ more segments for runs that look pathological. Honest finding:
+  **the pooled baseline is training-unstable — 2 of 3 seeds remained ≥10.9 within 2×24h; all
+  paper comparisons use H2's best (original) seed → the headline is CONSERVATIVE.** H4-family
+  seed spread (3.39/4.72/4.80) remains the quantitative seed-variance statement.
+- **h2_nopipeline**: overall best still 5.763@ep1199 (seg-2 best 5.958@2899). Seg-3 submitted
+  (594965) to cover the full horizon — last 2×2 corner. Current 2×2 (unified eval, definitive
+  where available): H2+pipe 5.620 | H2−pipe ~5.76* | H4−pipe 3.392 | **H4+pipe 2.880**
+  (*training-time val; definitive after seg-3). Qualitative verdict STABLE: conditioning
+  granularity dominates (Δ~2.5 FID); the pipeline adds a large boost for H4 (−0.51) and a
+  marginal one for H2 (−0.14*).
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval
