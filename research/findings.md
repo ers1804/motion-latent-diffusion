@@ -91,6 +91,27 @@ Scored via the same baseline_utils t2m path + ADE/FDE:
   external-baseline table needed.
 - Full-val numbers consistent (FID 35.47, ADE 1.86). Data: research/data/regressor_metrics_*.json.
 
+### DEFINITIVE review-run evals, round 1 (2026-07-22) — pipeline makes H4 BETTER; pretraining essential; seed sensitivity real
+
+3-rep definitive evals (full val, unified no-crop eval, CFG=10) of the settled seg-1 checkpoints:
+
+| Run | FID | R@1 | MM | Verdict |
+|---|---|---|---|---|
+| **H4 + interaction pipeline (ep1299)** | **2.880 ±0.084** | 0.323 | 3.37 | **NEW BEST FID** — beats original H4 (3.392) by 15% at 1/3 the epochs. 2×2 H4-side: pipeline HELPS → the unified ~40% headline is CONSERVATIVE. R@1 low at this early epoch (seg-2 running may improve both). |
+| H4 random-init frozen ego (ep3199) | 4.968 ±0.171 | 0.024 (chance) | 4.44 | **Item 6 CLOSED**: ≈ uncond prior (5.18); contrastive pretraining is what injects ego information. |
+| H4 seed B (ep3099) | 4.719 ±0.164 | 0.441 | 4.00 | seed variance |
+| H4 seed C (ep1799) | 4.803 ±0.158 | 0.650 | 3.69 | seed variance |
+
+- **Seed sensitivity (interim)**: definitive best-checkpoint FID across seeds = 3.392 / 4.719 / 4.803
+  → mean 4.30 ±0.79. CAVEATS before final claim: new seeds trained 1×24h segment (~3,300 epochs) vs
+  the original's 2 segments (5,000; best@3399); seedB was still descending at cutoff and its seg-2
+  resume is running. Final seed verdict after seg-2. Either way: per-seed checkpoint selection and
+  seed error bars MUST appear in the paper; single-seed point estimates overstate precision.
+- **Ops pitfall (recorded)**: eval jobs that don't override NAME write metrics JSONs to the same
+  results dir; two jobs with identical start-timestamps overwrote each other (581913/581915) —
+  recovered from stdout. Future eval scripts: override NAME per job.
+- Remaining for the full 2×2: H2-side (h2_nopipeline seg-2 running; H2+pipe corner = 5.620 known).
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval
