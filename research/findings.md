@@ -123,6 +123,18 @@ Honest framing for the paper: a same-capacity raw-space VARIANT of our model (co
 comparison), not a faithful MDM reproduction (MDM uses larger models/longer training).
 Definitive 3-rep eval of ep299 submitted (job 589986, NAME-collision-proofed).
 
+### Item 2 (seeds) FINAL + item 1b definitive (2026-07-22)
+
+- **h4_seedB seg-2 COMPLETED** (full 5,000 epochs): seg-2 best 4.937@ep3899 — never beat its seg-1
+  best (4.658@ep3099, definitive 4.719 ±0.164). The "still descending" caveat is resolved: no
+  further improvement. **FINAL H4 seed spread (definitive best-checkpoint FID): 3.392 / 4.719 /
+  4.803 → mean 4.30 ± 0.79 (best seed 3.392).** Paper must report the spread; the flagship
+  H4+pipeline number (2.880) is single-seed and must say so.
+- **MDM-style definitive (3-rep, ep299): FID = 26.43 ±0.10, Diversity 3.55 (collapsed; GT 5.45),
+  R@1 = 0.0 (undefined-space skip path ✓).** Item 1b CLOSED. Final external-baseline ladder
+  (unified eval): latent diffusion 2.88–3.39 ≪ raw-space diffusion 26.4 < regressor 36.0 ≪
+  kinematic floor 48–50.
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval
