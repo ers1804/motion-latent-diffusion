@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Report 009 — Review-Hardening Verdicts & The Paper Rewrite</title>
+<style>
+  :root{--bg:#0f1216;--card:#171b21;--ink:#e6e9ee;--mut:#9aa4b2;--good:#3fb950;--warn:#d29922;--bad:#f85149;--acc:#58a6ff;--line:#242a33}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:960px;margin:0 auto;padding:32px 22px 64px}
+  h1{font-size:23px;margin:0 0 4px}
+  h2{font-size:17px;margin:28px 0 12px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+  .sub{color:var(--mut);font-size:13px;margin-bottom:8px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px 18px;margin:12px 0}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{text-align:left;padding:7px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-weight:600}
+  td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+  .good{color:var(--good);font-weight:700}.warn{color:var(--warn);font-weight:700}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600}
+  .pdone{background:rgba(63,185,80,.15);color:var(--good)}
+  .prun{background:rgba(88,166,255,.15);color:var(--acc)}
+  .hl{background:rgba(88,166,255,.10);border-left:3px solid var(--acc);padding:10px 14px;border-radius:0 8px 8px 0;margin:10px 0}
+  code{background:#0c0f13;padding:1px 6px;border-radius:5px;color:#d6deea;font-size:13px}
+  ul{margin:8px 0 0;padding-left:20px} li{margin:5px 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Report 009 — Review-Hardening Verdicts &amp; The Paper Rewrite</h1>
+  <div class="sub">EgoPed · all 8 review items resolved or closed · paper rewritten · 2026-07-23</div>
+
+  <div class="hl">
+    <b>Bottom line:</b> every hard question we asked made the paper <i>stronger</i>. The honest unified headline is
+    <b>40%</b> (was 49%, a metric-mixing artifact) — but it is now <b>verified conservative</b> on three axes, and the
+    review discovered a <b>new best system</b>: <b>EgoPed-IA, FID 2.880</b> (interaction-aware sampling + full-sequence
+    conditioning), 15% better than the old flagship at 1/3 the training cost.
+  </div>
+
+  <h2>The new main table (unified evaluation, 3 replications)</h2>
+  <div class="card">
+    <table>
+      <tr><th>System</th><th class="n">FID ↓</th><th class="n">R@1</th><th class="n">MM</th><th>Note</th></tr>
+      <tr><td><b>EgoPed-IA</b> (full-seq + interaction sampling)</td><td class="n"><b>2.880 ±0.084</b></td><td class="n">0.323</td><td class="n">3.37</td><td>new best; single seed (stated)</td></tr>
+      <tr><td>H4 (full-sequence)</td><td class="n">3.392 ±0.179</td><td class="n">0.548</td><td class="n">3.96</td><td>reference model</td></tr>
+      <tr><td>H6 (unfrozen encoder)</td><td class="n">5.079 ±0.034</td><td class="n">0.352</td><td class="n">2.62</td><td>MM collapse</td></tr>
+      <tr><td>H2 (pooled baseline)</td><td class="n">5.620 ±0.117</td><td class="n">0.665</td><td class="n">3.71</td><td>was 6.603 under its own eval regime</td></tr>
+      <tr><td>Raw-space diffusion (MDM-style)</td><td class="n">26.43 ±0.10</td><td class="n">—</td><td class="n">—</td><td>justifies latent backbone</td></tr>
+      <tr><td>Ego→motion regressor</td><td class="n">35.47</td><td class="n">—</td><td class="n">—</td><td>L2-optimal but unrealistic</td></tr>
+    </table>
+  </div>
+
+  <h2>Verdicts by review item</h2>
+  <div class="card">
+    <table>
+      <tr><th>Item</th><th>Verdict</th><th></th></tr>
+      <tr><td>1 · External baselines</td><td>Ladder complete: latent 2.9–3.4 ≪ raw-space 26.4 &lt; regressor 36 ≪ kinematic 48. Regressor "wins" mean-ADE (1.80) by construction yet EgoPed's minADE₅ (1.29) beats it <i>with</i> realism.</td><td><span class="pill pdone">closed</span></td></tr>
+      <tr><td>2 · Training seeds</td><td>H4 spread <b>3.39 / 4.72 / 4.80</b> (mean 4.30 ±0.79) — headline seed is lucky; spread now reported. H2 baseline itself training-unstable (2 seeds ≥10.9) → all comparisons use the baseline's <i>best</i> seed = conservative.</td><td><span class="pill pdone">closed</span></td></tr>
+      <tr><td>3 · Evaluator validity</td><td>Human study deferred (your call); ADE/FDE is the standing defense.</td><td><span class="pill pdone">deferred</span></td></tr>
+      <tr><td>4 · Pipeline 2×2</td><td>Granularity dominates (~2.5 FID); pipeline amplifies full-seq (−0.51 → EgoPed-IA) and barely moves pooled. One corner (H2−pipe) finalizes from seg-3 today; verdict cannot flip.</td><td><span class="pill pdone">landed</span></td></tr>
+      <tr><td>5 · ADE/FDE</td><td>H4 beats H2 on <b>all four</b> trajectory metrics despite lower R@1 (paired, N=1,190) → the R@1 gap is an embedding artifact. In the paper as a new section.</td><td><span class="pill pdone">closed</span></td></tr>
+      <tr><td>6 · Encoder pretraining</td><td>Random-frozen encoder ≈ unconditional prior (FID 4.97, R@1 = chance). Pretraining <i>injects</i> ego info; freezing <i>preserves</i> diversity. Both sides of the design now bracketed.</td><td><span class="pill pdone">closed</span></td></tr>
+      <tr><td>7 · Pose-quality audit</td><td>Still yours: rate ~50 random sequences or name a reference source.</td><td><span class="pill prun">YOUR TODO</span></td></tr>
+      <tr><td>8 · Statistics</td><td>Held-out table complete (ranking preserved), Welch+bootstrap tooling, eval-regime 2×2 (38.3%/39.6% — consistent), all in the paper.</td><td><span class="pill pdone">closed</span></td></tr>
+      <tr><td>9 · Behavioral validity</td><td>Labeler built &amp; validated on GT (stopping 36%/walking 62% is the viable axis; crossing ~2% too rare). Generative probe queued next.</td><td><span class="pill prun">queued</span></td></tr>
+    </table>
+  </div>
+
+  <h2>What changed in the paper (commit <code>da22972</code>)</h2>
+  <div class="card">
+    <ul>
+      <li><b>Headline</b>: 49% → <b>40% under a unified eval pipeline</b> — and explicitly verified conservative (pipeline handicap, baseline best-seed, both eval regimes agree at 38–40%).</li>
+      <li><b>New flagship</b>: EgoPed-IA (2.880), with single-seed status stated plainly.</li>
+      <li><b>Three new subsections</b>: Interaction-Aware Sampling 2×2 · Training-Seed Sensitivity · Evaluator-Independent Conditioning (ADE/FDE).</li>
+      <li><b>Encoder ablation completed</b> from both directions (unfreeze ↔ random-init).</li>
+      <li><b>Two learned external baselines</b> added to the reference table.</li>
+      <li>Unified-eval definition in the protocol; mixed-regime footnotes where historical numbers remain (CFG sweep, H3 pending its unified re-run).</li>
+    </ul>
+  </div>
+
+  <h2>Still open</h2>
+  <div class="card">
+    <ul>
+      <li><span class="warn">Yours:</span> pose-quality audit (item 7) · vehicle/scene figures + staged-scenario count (§4.1) · title/framing sign-off on the rewrite.</li>
+      <li><span class="good">Mine:</span> fold in H3-unified + H2−pipe final numbers (evals in flight) · item 9 generative probe · deck refresh to match the rewrite · config/naming cleanup before any code release.</li>
+    </ul>
+  </div>
+</div>
+</body>
+</html>

@@ -1,6 +1,9 @@
 # Review Tracker — EgoPed Paper Hardening
 
 *Created 2026-07-22 from the full-project review. Living document — update as items progress.*
+*2026-07-23: PAPER REWRITTEN (commit da22972) — unified 40% headline, EgoPed-IA flagship (2.880),
+seed/2×2/ADE-FDE/encoder sections in. Report 009 delivered. Open: H3-unified + H2−pipe finals
+(evals in flight), item 9 probe, deck refresh, user items (7, figures, sign-off).*
 *Severity: 🔴 blocks top-venue acceptance · 🟠 reviewers will push · 🟡 disclosed/structural.*
 
 ## Already fixed (2026-07-20/22 review pass)
