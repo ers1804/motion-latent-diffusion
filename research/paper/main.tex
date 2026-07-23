@@ -329,7 +329,7 @@ The improvement is significant: the confidence intervals are non-overlapping (H4
 
 \begin{table}[t]
   \centering
-  \caption{Main evaluation results under a \emph{unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}; for Diversity, values closer to the ground-truth reference are better. \method-IA additionally uses interaction-aware training-data sampling (Section~\ref{sec:pipeline2x2}); it is a single training seed, whereas H4's seed sensitivity is quantified in Section~\ref{sec:seeds}. $^\dagger$H3 evaluated under its original (interaction-cropped) eval pipeline; its unified re-evaluation is pending and slightly lower.}
+  \caption{Main evaluation results under a \emph{unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}; for Diversity, values closer to the ground-truth reference are better. \method-IA additionally uses interaction-aware training-data sampling (Section~\ref{sec:pipeline2x2}); it is a single training seed, whereas H4's seed sensitivity is quantified in Section~\ref{sec:seeds}.}
   \label{tab:main}
   \vspace{4pt}
   \small
@@ -339,7 +339,7 @@ The improvement is significant: the confidence intervals are non-overlapping (H4
     Method & Epoch & CFG & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ & Diversity \\
     \midrule
     H2 (Pooled, baseline)            & 4399 & 5  & 5.620 {\scriptsize $\pm$0.117} & \textbf{0.665} {\scriptsize $\pm$0.003} & 3.708 & 5.819 \\
-    H3 (Latent-8 VAE)$^\dagger$      & 4399 & 5  & 7.563 {\scriptsize $\pm$0.078} & 0.676 {\scriptsize $\pm$0.003} & 3.245 {\scriptsize $\pm$0.386} & 5.842 \\
+    H3 (Latent-8 VAE)                & 4399 & 5  & 6.677 {\scriptsize $\pm$0.135} & 0.663 {\scriptsize $\pm$0.002} & 3.374 {\scriptsize $\pm$0.356} & 5.887 \\
     \midrule
     H4 (Ours, full-sequence)         & 3399 & 10 & 3.392 {\scriptsize $\pm$0.179} & 0.548 {\scriptsize $\pm$0.002} & \textbf{3.956} {\scriptsize $\pm$0.406} & 5.794 \\
     \method-IA (Ours, + interaction sampling) & 1299 & 10 & \textbf{2.880} {\scriptsize $\pm$0.084} & 0.323 {\scriptsize $\pm$0.004} & 3.371 {\scriptsize $\pm$0.361} & 5.671 \\
@@ -424,8 +424,8 @@ This indicates that full-sequence conditioning naturally provides a rich, overde
 \subsection{Latent Dimension: 4 vs.\ 8 (H3)}
 
 To test whether a larger VAE latent space improves generation quality, we train a latent-8 VAE and ego-conditioned diffusion model (H3).
-As shown in Table~\ref{tab:main}, H3 achieves FID $= 7.563$ — \textbf{14.5\% worse} than H2's 6.603 at the same epoch and CFG.
-R-Precision is essentially unchanged (H3: 0.676 vs.\ H2: 0.671), confirming that the bottleneck for conditioning quality is the ego encoder, not the latent space.
+As shown in Table~\ref{tab:main}, H3 achieves FID $= 6.677$ — \textbf{19\% worse} than H2's 5.620 at the same epoch and CFG (unified evaluation).
+R-Precision is essentially unchanged (H3: 0.663 vs.\ H2: 0.665), confirming that the bottleneck for conditioning quality is the ego encoder, not the latent space.
 
 The mechanism: the fixed-capacity denoiser must now model an 8D latent distribution instead of 4D, a strictly harder task, without any additional denoiser parameters.
 The marginal diversity improvement (Diversity: 5.842 vs.\ 5.779, +1.1\%) does not compensate.
