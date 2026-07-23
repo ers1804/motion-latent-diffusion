@@ -93,7 +93,7 @@ story semantic teeth. (Full intention *prediction* from prefixes = future work /
   generated samples per condition for H4/H2/H6, compare intention distributions vs GT (per-scene +
   marginal); (iv) latent-organization figure (PCA of VAE latents colored by label) as garnish.
   Predictions to test: H6 concentrates one intention/ego (collapse); H2 shifts less with ego than H4.
-- **Order**: QUEUED BEHIND helma verdicts + paper rewrite. Labeler + GT validation can run now (CPU).
+- **Order**: COMPLETE 2026-07-23 (probe run on the ADE/FDE sample dumps; paper subsection added).
 - **GT validation (2026-07-21)**: val(all) n=2835: crossing 1.7%, stopping 36.5%, walking-only
   62.1%; val_test: crossing 1.8%, stopping 24.0%; train(1.5k): crossing 1.9%, stopping 35.3%.
   **Design consequences**: (i) strict path-intersection crossing is too rare (~2%) to be the

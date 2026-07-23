@@ -151,6 +151,28 @@ Definitive 3-rep eval of ep299 submitted (job 589986, NAME-collision-proofed).
   granularity dominates (Δ~2.5 FID); the pipeline adds a large boost for H4 (−0.51) and a
   marginal one for H2 (−0.14*).
 
+### Item 9 — behavioral-validity probe RESULTS (2026-07-23): all 3 predictions confirmed
+
+Stopping-vs-walking (held-out val_test, K=5 samples/condition, same dumps as ADE/FDE;
+crossing omitted: ~2% base rate + no ego in dumps — documented annex):
+
+| model | GT stop-rate | gen rate | separation↑ | entropy | Brier↓ |
+|---|---|---|---|---|---|
+| H4 | 0.224 | 0.176 | 0.333 | 0.238 | **0.149** |
+| H2 | 0.216 | 0.226 | 0.285 | 0.297 | 0.178 |
+| H6 | 0.224 | 0.222 | **0.364** | 0.178 (lowest) | 0.178 |
+| uncond | 0.224 | 0.194 | 0.021 (≈0 ✓) | 0.533 (max) | 0.199 |
+
+(separation = p(stop|GT-stop conds) − p(stop|GT-walk conds); entropy = per-condition binary entropy.)
+- **Sanity ✓**: unconditional model is behaviorally ego-blind (sep 0.02, max entropy).
+- **Prediction ✓ (H2 < H4)**: full-sequence conditioning couples behavior to ego better than
+  pooled (sep 0.333 vs 0.285; best Brier 0.149) — a THIRD independent axis (FID, ADE/FDE,
+  behavior) where H4 beats H2 despite lower R@1.
+- **Prediction ✓ (H6 collapse)**: highest separation (0.364) at the LOWEST entropy (0.178) —
+  commits to one behavior per condition (overconfident: Brier no better than H2). The MM-collapse
+  finding, now visible in semantic behavior space.
+- Marginal stop-rates all near GT (0.18–0.23 vs 0.22) ✓.
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval

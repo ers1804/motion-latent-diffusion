@@ -383,6 +383,33 @@ To measure conditioning fidelity without any learned evaluator or model-specific
 
 The unconditional reference is worst on mean ADE/FDE, confirming that ego conditioning demonstrably improves trajectory-following (2.88~$\to$~2.32 mean ADE); its deceptively low minADE$_5$ reflects raw sample diversity, not conditioning.
 
+\subsection{Behavioral Validity: Intention Distributions}
+\label{sec:behavior}
+
+Beyond kinematic fidelity, we probe whether generated motion couples to the ego context at the level of \emph{behavioral decisions}.
+We derive an automatic stopping label from root trajectories (speed below $0.2$\,m/s sustained for $\geq 1$\,s; heuristic thresholds, documented and spot-checked) and, for each held-out condition, compare the model's sampled stopping probability $\hat{p}(\text{stop} \mid \mathbf{e}) = \frac{1}{K}\sum_k \mathbb{1}[\text{stop}(x_k)]$ against the ground-truth label ($K{=}5$; the same samples as Section~\ref{sec:adefde}).
+We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditions minus mean $\hat{p}$ on walking conditions), the mean per-condition binary entropy of $\hat{p}$, and the Brier score.
+
+\begin{table}[h]
+  \centering
+  \caption{Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.224). The unconditional model is behaviorally ego-blind (separation $\approx$ 0), validating the probe. H4 couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a third evaluator-independent axis, after FID and ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. H6 shows the MultiModality collapse in behavior space: the highest separation at the \emph{lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than H2's (overconfidence).}
+  \label{tab:behavior}
+  \vspace{4pt}
+  \small
+  \begin{tabular}{lcccc}
+    \toprule
+    Model & Gen.\ stop-rate & Separation $\uparrow$ & Entropy & Brier $\downarrow$ \\
+    \midrule
+    H4 (full-sequence) & 0.176 & 0.333 & 0.238 & \textbf{0.149} \\
+    H2 (pooled)        & 0.226 & 0.285 & 0.297 & 0.178 \\
+    H6 (unfrozen)      & 0.222 & \textbf{0.364} & 0.178 & 0.178 \\
+    Unconditional      & 0.194 & 0.021 & 0.533 & 0.199 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+Path-crossing labels (pedestrian/ego polyline intersection) occur at only a $\sim$2\% base rate in our windows and are omitted from the primary analysis.
+
 \subsection{CFG Scale Analysis}
 
 We sweep CFG $\in \{5, 10, 15\}$ for H4 at epoch 3399 (Table~\ref{tab:cfg}).
