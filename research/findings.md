@@ -173,6 +173,22 @@ crossing omitted: ~2% base rate + no ego in dumps — documented annex):
   finding, now visible in semantic behavior space.
 - Marginal stop-rates all near GT (0.18–0.23 vs 0.22) ✓.
 
+### 2×2 COMPLETE (2026-07-27) — definitive, all four cells
+
+| FID (unified, 3-rep, best ckpt) | −pipeline | +pipeline |
+|---|---|---|
+| H2 (pooled) | 6.214 ±0.105 | 5.620 ±0.117 |
+| H4 (full-seq) | 3.392 ±0.179 | **2.880 ±0.084** |
+
+- Granularity gap ≈2.7–2.8 in BOTH columns (~5× the pipeline effect) → conditioning granularity is
+  the primary driver, now cleanly isolated.
+- Pipeline gains are ~ADDITIVE and similar for both architectures (−0.59 pooled, −0.51 full-seq).
+  CORRECTION: the earlier "barely moves the pooled baseline" (from training-time 5.76) was wrong —
+  the definitive H2−pipe (6.214) shows a comparable absolute gain. Paper + deck corrected.
+- h2_nopipeline full 5,000-epoch horizon: best remained ep1199 throughout (5.96@2899, 6.32@4599).
+- REVIEW-HARDENING ARC: all agent-side items now CLOSED (1,2,4,5,6,8,9; 3 deferred). Open: user
+  items (7, §4.1 assets, sign-off) + config/naming cleanup before code release.
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval

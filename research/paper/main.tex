@@ -466,22 +466,22 @@ We disentangle the two with a full 2$\times$2: each conditioning architecture (p
 
 \begin{table}[h]
   \centering
-  \caption{Training-data pipeline 2$\times$2 (FID $\downarrow$, unified eval, 3 replications; best checkpoint per cell). Conditioning granularity dominates; interaction-aware sampling adds a further large gain for the full-sequence model and a marginal one for the pooled baseline. $^\ast$best training-time validation value; definitive replication in progress.}
+  \caption{Training-data pipeline 2$\times$2 (FID $\downarrow$, unified eval, 3 replications; best checkpoint per cell). The two interventions are approximately additive: conditioning granularity dominates ($\approx$2.7--2.8 FID in both columns), and interaction-aware sampling contributes a similar absolute gain to both architectures ($-$0.59 pooled, $-$0.51 full-sequence).}
   \label{tab:pipeline2x2}
   \vspace{4pt}
   \begin{tabular}{lcc}
     \toprule
     & $-$ interaction sampling & $+$ interaction sampling \\
     \midrule
-    H2 (pooled)        & 5.76$^\ast$ & 5.620 {\scriptsize $\pm$0.117} \\
+    H2 (pooled)        & 6.214 {\scriptsize $\pm$0.105} & 5.620 {\scriptsize $\pm$0.117} \\
     H4 (full-sequence) & 3.392 {\scriptsize $\pm$0.179} & \textbf{2.880} {\scriptsize $\pm$0.084} \\
     \bottomrule
   \end{tabular}
 \end{table}
 
 Two conclusions follow.
-First, the conditioning-granularity gap ($\approx$2.2--2.7 FID) is far larger than the pipeline effect in either row, confirming that full-sequence conditioning — not data curation — is the primary driver.
-Second, the pipeline \emph{amplifies} the full-sequence model (3.392~$\to$~2.880, with the best checkpoint arriving at 1/3 the epochs) while barely moving the pooled baseline, suggesting that temporally-resolved conditioning is required to exploit interaction-dense training data.
+First, the conditioning-granularity gap ($\approx$2.7--2.8 FID in both columns) is roughly five times the pipeline effect, confirming that full-sequence conditioning — not data curation — is the primary driver.
+Second, the two interventions are approximately additive: interaction-aware sampling contributes a similar absolute gain to both architectures ($-$0.59 pooled, $-$0.51 full-sequence), and for the full-sequence model the best checkpoint additionally arrives at $1/3$ the epochs.
 \method-IA, the $+$pipeline full-sequence cell, is our best system.
 
 \subsection{Training-Seed Sensitivity}

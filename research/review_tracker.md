@@ -50,7 +50,7 @@ driving-pedestrian motion.
 experiment isolates their effect.
 - **Plan**: 2 training runs on H4 recipe: (a) uniform sampling (no interaction weighting);
   (b) random crop (no closest-approach centering). Compare FID/R@1 vs H4.
-- **Status**: queued for helma (decision 2026-07-22).
+- **Status**: ✅ CLOSED 2026-07-27 — definitive 2×2 complete (see findings).
 
 ### 5. 🟠 No evaluator-independent conditioning metric — IN PROGRESS
 R@1 uses each model's own encoder → H2-vs-H4 R@1 not apples-to-apples. Open TODO since April.
