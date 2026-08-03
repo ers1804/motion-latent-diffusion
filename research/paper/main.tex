@@ -249,7 +249,7 @@ Let $\mathbf{r}_t, \mathbf{g}_t \in \mathbb{R}^2$ denote the ground-plane (XZ) p
 \begin{equation}
   s = \underbrace{\sum_{t} \lVert \mathbf{r}_{t+1} - \mathbf{r}_t \rVert_2}_{\text{pedestrian travel}} \;\cdot\; \underbrace{\frac{1}{T}\sum_t \mathbb{1}\!\left[\lVert \mathbf{g}_t - \mathbf{r}_t \rVert_2 < 5\,\text{m}\right]}_{\text{proximity fraction}} \;\cdot\; \left(1 + \frac{1}{180^\circ}\sum_t \lvert \Delta\phi_t \rvert\right),
 \end{equation}
-where $\phi_t = \operatorname{atan2}(\mathbf{r}_t - \mathbf{g}_t)$ is the pedestrian's bearing relative to the ego vehicle and $\Delta\phi_t$ is the (wrap-corrected) inter-frame change in bearing.
+where $\mathbb{1}[\cdot]$ denotes the indicator function, $\phi_t = \operatorname{atan2}(\mathbf{r}_t - \mathbf{g}_t)$ is the pedestrian's bearing relative to the ego vehicle, and $\Delta\phi_t$ is the (wrap-corrected) inter-frame change in bearing.
 Intuitively, a scenario scores highly when the pedestrian moves substantially, spends many frames within 5\,m of the vehicle, and sweeps a large relative bearing (\eg crossing in front of the vehicle).
 
 \paragraph{Interaction-weighted sampling.}
