@@ -150,3 +150,11 @@ quantify how much of FID=3.39 is seed luck; must be reported honestly (mean±std
 pipeline, H4 WITHOUT (silent config default; ~40% of sequences >196 frames → material). The two
 runs above complete the 2×2 (existing corners: H2+pipe=6.603, H4−pipe=3.392). Also needed:
 unified-eval re-run of H2 ep4399 under the no-crop eval config (local, eval-only).
+
+## Weights backup (2026-08-03) — every paper-reported model on NAS
+All review-run artifacts synced to `/home/erik/NAS/methods/diffusion_gen/models/helma_models/models/mld/`
+(best checkpoint + ALL dumped `config_*_train.yaml` + training logs per run):
+h4_pipeline ep1299 (EgoPed-IA) · h2_nopipeline ep1199 · h4_seedB ep3099 · h4_seedC ep1799 ·
+h4_randinit_ego ep3199 · mdm_style ep299 · h4_real_trans_dec(+_bs128) ep2499 (from local) ·
+h2_seedB/C configs+logs only (instability evidence). Verified 2026-08-03; original H4/H2/H3/H6
+mirrors were already present. Paper numbers → weights+configs+logs now in two locations.
