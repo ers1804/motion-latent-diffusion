@@ -104,6 +104,36 @@ story semantic teeth. (Full intention *prediction* from prefixes = future work /
   base rates in the analysis. (iii) labeler stem-matching can collide across sources (n=1199 vs
   1190) — use source-prefix mapping in the final analysis.
 
+### 10. 🟢 Unconditional + text-conditioned MLD baselines (added 2026-09-02, user request)
+
+**(a) Properly-trained unconditional MLD** — closes the gap the repo's own config flagged
+("approximate" ego-zeroed prior). ⚠️ `configs/config_ego_motion_train_uncond.yaml` is STALE
+(latent-[1,256], VAE `vae_ava_nuscenes_waymo` ep6999, batch 32) — would NOT be comparable to
+H4 (latent-[4,256], interaction-crop VAE ep5999). Same drift class as findings #1/#2.
+`slurm/review/rv_uncond_trained.sh` therefore drives the **H4 config** with everything pinned via
+CLI overrides + `guidance_uncondp=1.0`, CFG=1.0 at test, no interaction pipeline (matches H4).
+Auto-submits when helma maintenance ends (18:00 2026-09-02).
+
+**(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
+- ⚠️ PREREQUISITE: the official checkpoint `1222_mld_humanml3d_FID041.ckpt` is NOT on this machine
+  or the NAS — `configs/config_mld_humanml3d.yaml:55` points at `/home/mohan/Documents/erik/...`
+  (a colleague's machine). Must be obtained (Mohan / official MLD release) before this can run.
+  CLIP (`deps/clip-vit-large-patch14`) is present; our JSONs have NO text field, so prompts are synthesized.
+- DESIGN: a single fixed prompt = a CONSTANT condition → cannot adapt per scene, R@1 at chance.
+  Proposed prompt ladder (inference-only, cheap) instead of one prompt:
+  P1 naive (user's): "a pedestrian tries to cross the street and reacts to the ego vehicle"
+     — out-of-distribution for HumanML3D captions; tests the practitioner's first instinct.
+  P2 idiomatic: "a person walks forward and then stops" — in-distribution phrasing matching our
+     dominant behavior (36% stopping / 62% walking); gives the baseline its BEST shot (fair version).
+  P3 oracle-text (optional): per-sample prompt chosen by our GT stopping label — fairest per-scene
+     text competitor; must be labeled an ORACLE since it uses GT-derived info.
+- FRAMING CAVEAT: pretrained MLD is HumanML3D-trained (mocap, dance/exercise) evaluated on
+  driving-scene pedestrians with estimated poses → a poor FID conflates DOMAIN GAP with the
+  conditioning question. Honest claim = "off-the-shelf text-to-motion does not transfer; in-domain
+  ego-conditioned training is required" — NOT "text conditioning is inherently worse".
+  Controlled alternative (costs 1 training run): train OUR architecture with text conditioning on
+  OUR data using synthesized prompts — removes the domain gap, isolates text-vs-ego conditioning.
+
 ## Structural / disclosed (no action beyond awareness)
 - ✅ AVA = 34 samples framing — SIGNED OFF by user 2026-07-22; applied to abstract, §4.1 opening, and deck (staged high-interaction complement to nuScenes/Waymo scale).
 - "First system" claim — qualified to full-body 3D + ego odometry; defend boundary vs WoSAD-style 2D work.
