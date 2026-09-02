@@ -64,10 +64,22 @@ class EgoMotionDataset(Dataset):
         split_list_root: Optional[str] = None,
         interaction_crop: bool = False,
         interaction_weighted_sampling: bool = False,
+        captions_path: Optional[str] = None,
+        caption_vocab: str = "ego",
         **kwargs
     ):
         self.interaction_crop = interaction_crop
         self.interaction_weighted_sampling = interaction_weighted_sampling
+        # Optional synthesized captions (text-conditioned baselines, item 10b).
+        # Default None => the historical "Placeholder" text, so existing
+        # ego-conditioned runs are unaffected.
+        self.caption_vocab = caption_vocab
+        self.captions = None
+        if captions_path and os.path.exists(captions_path):
+            with open(captions_path, "r") as f:
+                self.captions = json.load(f)
+            print(f"[EgoMotionDataset] Loaded {len(self.captions)} captions "
+                  f"({caption_vocab} vocabulary) from {captions_path}")
 
         # Support both single path and list of paths
         if isinstance(data_root, str):
@@ -322,6 +334,17 @@ class EgoMotionDataset(Dataset):
         print(f"[EgoMotionDataset] Interaction weights: {n_high}/{len(weights)} samples above average weight")
         return weights
 
+    def _caption_for(self, json_path: str) -> str:
+        """Look up a synthesized caption by '<source>/<split>/<stem>' key."""
+        if not self.captions:
+            return "Placeholder"
+        p = Path(json_path)
+        key = f"{p.parent.parent.name}/{p.parent.name}/{p.stem}"
+        entry = self.captions.get(key)
+        if entry is None:
+            return "a person walks forward."   # neutral fallback
+        return entry.get(self.caption_vocab, "a person walks forward.")
+
     def _load_sample(self, json_path: str) -> Dict:
         """
         Load a single sample from JSON file.
@@ -559,7 +582,7 @@ class EgoMotionDataset(Dataset):
             "motion": motion,              # (max_motion_length, 263)
             "length": motion_length,       # int
             "ego_length": ego_length,      # int
-            "text": "Placeholder",
+            "text": self._caption_for(self.sample_paths[idx]),
         }
 
 
@@ -629,6 +652,8 @@ class EgoMotionDataModule(pl.LightningDataModule):
             overfit=self.overfit,
             interaction_crop=interaction_crop,
             interaction_weighted_sampling=interaction_weighted,
+            captions_path=getattr(self.cfg.DATASET.EGOMOTION, 'CAPTIONS_PATH', None),
+            caption_vocab=getattr(self.cfg.DATASET.EGOMOTION, 'CAPTION_VOCAB', 'ego'),
         )
 
         def _split_exists(split_name: str) -> bool:
