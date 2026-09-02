@@ -115,7 +115,21 @@ CLI overrides + `guidance_uncondp=1.0`, CFG=1.0 at test, no interaction pipeline
 Auto-submits when helma maintenance ends (18:00 2026-09-02).
 
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
-- ⚠️ PREREQUISITE: the official checkpoint `1222_mld_humanml3d_FID041.ckpt` is NOT on this machine
+- ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →
+  `checkpoints/mld_humanml3d_checkpoint/1222_mld_humanml3d_FID041.ckpt` (258 MB). CLIP present
+  locally and on helma. Official MLD VAE also on helma (`1222_PELearn_VAE_MEncDec49_...`).
+- 🚫 **BLOCKED on 2 small files: HumanML3D dataset `Mean.npy` / `Std.npy` (263-dim).**
+  Why it matters: pretrained MLD emits motion in *HumanML3D dataset* normalization; our eval path
+  (`EgoMotion` has NO `renorm4t2m`) feeds *our* normalization straight to the t2m encoders. To
+  compare we must do MLD-output → denorm(HumanML3D stats) → renorm(our stats). Without the
+  HumanML3D stats any FID we compute is a normalization mismatch — i.e. the June-2026 collapse bug
+  with a plausible-looking number. NOT guessing/approximating them.
+  Searched and NOT found: `deps/`, `datasets/`, the checkpoint's `hyper_parameters` (empty), helma.
+  What IS available: t2m *evaluator* stats `deps/t2m/t2m/Comp_v6_KLD005/meta/{mean,std}.npy` —
+  these are `mean_eval/std_eval`, NOT the dataset `ori_mean/ori_std` we need.
+  Sources: Mohan's box (`/home/mohan/nas_drive/publicdatasets/HumanML3D/Processed_HL/humanml3d/`,
+  the path in `configs/config_mld_humanml3d.yaml`), or the HumanML3D repo's processing output.
+- (historical note) the official checkpoint was NOT on this machine
   or the NAS — `configs/config_mld_humanml3d.yaml:55` points at `/home/mohan/Documents/erik/...`
   (a colleague's machine). Must be obtained (Mohan / official MLD release) before this can run.
   CLIP (`deps/clip-vit-large-patch14`) is present; our JSONs have NO text field, so prompts are synthesized.
