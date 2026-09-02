@@ -56,7 +56,8 @@ python -m train \
     "TRAIN.BATCH_SIZE=128" \
     "TRAIN.END_EPOCH=5000" \
     "TRAIN.PRETRAINED_VAE=/hnvme/workspace/v103fe12-ped_gen/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt" \
-    "TRAIN.PRETRAINED_EGO=/hnvme/workspace/v103fe12-ped_gen/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt" \
+    "TRAIN.PRETRAINED_EGO=" \
+    "TRAIN.FREEZE_EGO=False" \
     "LOGGER.WANDB.RESUME_ID=ego_motion_diffusion_text_ego" \
     "DATASET.EGOMOTION.ROOT=[$TMPDIR/data/diffusion/ava, $TMPDIR/data/diffusion/nuscenes, $TMPDIR/data/diffusion/waymo]" \
     "DATASET.EGOMOTION.MEAN_STD_PATH=$TMPDIR/data/vae/mean_std_txt/ava_nuscenes_waymo" \

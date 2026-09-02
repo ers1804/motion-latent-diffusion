@@ -1038,6 +1038,13 @@ class MLD(BaseModel):
         """
         rs_set = self.test_diffusion_forward(batch)
         lengths = batch["length"]
+        if "ego_emb" not in rs_set:
+            # Text-conditioned model evaluated on ego data: no ego embedding
+            # exists. Insert a deliberately dim-1 placeholder so the shape guard
+            # in EgoMotionMetrics reports R-Precision as UNDEFINED (0.0) rather
+            # than silently producing a plausible-looking fake number.
+            rs_set["ego_emb"] = torch.zeros(
+                len(lengths), 1, device=rs_set["m_rst"].device)
 
         # t2m motion encoder expects lengths divided by 4
         # (two stride-2 convolutions in MovementConvEncoder).
@@ -1313,7 +1320,12 @@ class MLD(BaseModel):
 
         # Compute the metrics - currently evaluate results from text to motion
         if split in ["val", "test"]:
-            if self.condition in ['text', 'text_uncond']:
+            # EgoMotionMetrics implies our EgoMotion batches, which carry no
+            # HumanML3D fields (word_embs/pos_ohot); route to ego_eval even for
+            # text-conditioned models trained on our data (item 10b rung 3).
+            if "EgoMotionMetrics" in self.metrics_dict:
+                rs_set = self.ego_eval(batch)
+            elif self.condition in ['text', 'text_uncond']:
                 # use t2m evaluators
                 rs_set = self.t2m_eval(batch)
             elif self.condition == 'action':

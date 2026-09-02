@@ -228,12 +228,17 @@ def main():
     # Load pretrained ego encoder (from pretrain_ego_encoder.py)
     pretrained_ego = getattr(cfg.TRAIN, "PRETRAINED_EGO", "")
     freeze_ego = getattr(cfg.TRAIN, "FREEZE_EGO", False)
-    if pretrained_ego and os.path.exists(pretrained_ego):
+    # Text-conditioned runs have no ego_encoder at all (mld.py only builds it for
+    # condition='ego'), so guard both the load and the freeze.
+    has_ego_enc = hasattr(model, "ego_encoder")
+    if pretrained_ego and os.path.exists(pretrained_ego) and has_ego_enc:
         logger.info(f"Loading pretrained ego encoder from {pretrained_ego}")
         ego_state = torch.load(pretrained_ego, map_location="cpu")
         model.ego_encoder.load_state_dict(ego_state["ego_encoder"], strict=True)
         logger.info("Ego encoder weights loaded successfully")
-    if freeze_ego:
+    elif pretrained_ego and not has_ego_enc:
+        logger.info("No ego_encoder on this model (text-conditioned); skipping PRETRAINED_EGO")
+    if freeze_ego and has_ego_enc:
         logger.info("Freezing ego encoder weights")
         for param in model.ego_encoder.parameters():
             param.requires_grad = False
