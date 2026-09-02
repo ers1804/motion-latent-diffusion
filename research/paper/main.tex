@@ -292,6 +292,7 @@ We additionally report four non-learned or reference baselines (Table~\ref{tab:t
 We further add two \emph{learned} baselines trained on the identical data recipe with the same frozen ego encoder.
 \textbf{Ego$\to$motion regressor}: a deterministic sequence-to-sequence transformer regressing the 263-D features with masked MSE — the conditional-mean predictor.
 \textbf{Raw-space diffusion (MDM-style)}: our diffusion model operated directly in the 263-D feature space without the latent VAE (a same-capacity raw-space variant in the spirit of MDM~\cite{tevet2023mdm}, not a faithful reproduction); its best checkpoint plateaus early and never approaches latent-space quality, justifying the latent backbone.
+\textbf{Pretrained text-to-motion MLD}: the released HumanML3D MLD checkpoint~\cite{chen2023mld} generating from a text prompt instead of ego trajectory, evaluated on our held-out conditions. Because it is trained on a different corpus (mocap-quality everyday motion) its gap to our in-domain models conflates domain shift with the conditioning question; we therefore read it as evidence that off-the-shelf text-to-motion does not transfer to driving-scene pedestrians, rather than as a statement about text versus ego conditioning per se.
 
 \begin{table}[t]
   \centering
@@ -307,6 +308,7 @@ We further add two \emph{learned} baselines trained on the identical data recipe
     Retrieval (NN ego)$^\ast$        & 0.062 {\scriptsize $\pm$0.004} & 5.34 & -- \\
     Trajectory+kinematic (mean)      & 49.60 {\scriptsize $\pm$0.087} & 0.46 & -- \\
     Trajectory+kinematic (oracle)    & 47.67 {\scriptsize $\pm$0.085} & 0.72 & -- \\
+    Pretrained text-to-motion MLD~\cite{chen2023mld}$^\S$ & 14.07 & 3.12 & --$^\ddagger$ \\
     Ego$\to$motion regressor (learned, deterministic) & 35.47 & 3.47 & -- \\
     Raw-space diffusion (learned, MDM-style)          & 26.43 {\scriptsize $\pm$0.098} & 3.55 & --$^\ddagger$ \\
     VAE latent interpolation         & 7.91 {\scriptsize $\pm$0.033}  & 5.82 & -- \\
@@ -318,7 +320,7 @@ We further add two \emph{learned} baselines trained on the identical data recipe
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\ast$Non-generative upper bound: copies real training motions, so low FID reflects memorization rather than conditioned synthesis. $^\dagger$Exactly chance level ($1/32 = 0.031$), confirming the R-Precision protocol: without ego information, retrieval is random. $^\ddagger$R-Precision is undefined for the raw-space model (no shared embedding space with the ego encoder).}
+  {\footnotesize $^\ast$Non-generative upper bound: copies real training motions, so low FID reflects memorization rather than conditioned synthesis. $^\dagger$Exactly chance level ($1/32 = 0.031$), confirming the R-Precision protocol: without ego information, retrieval is random. $^\ddagger$R-Precision is undefined for these models (no shared embedding space with the ego encoder). $^\S$Official HumanML3D checkpoint driven by a fixed text prompt; we report the \emph{best} of three prompts (a naive scene description, a HumanML3D-idiomatic phrase, and per-sample oracle captions derived from ground-truth motion), which spanned FID 14.07--24.84. Its output is converted from HumanML3D to our normalization before scoring with the shared evaluator.}
 \end{table}
 
 \subsection{Main Results}
