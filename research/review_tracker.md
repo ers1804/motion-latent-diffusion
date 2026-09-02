@@ -106,6 +106,19 @@ story semantic teeth. (Full intention *prediction* from prefixes = future work /
 
 ### 10. 🟢 Unconditional + text-conditioned MLD baselines (added 2026-09-02, user request)
 
+**Local smoke test caught 3 crashes before they could waste 24h cluster slots (2026-09-02).**
+Running the queued text config locally for one epoch surfaced, in sequence:
+ 1. `train.py` unconditionally loads/freezes `model.ego_encoder`, which does not exist when
+    `condition=text` → AttributeError. Fixed with `hasattr` guards (benefits any future text run).
+ 2. `allsplit_step` routed text models to `t2m_eval`, which needs HumanML3D batch fields
+    (`word_embs`/`pos_ohot`) our EgoMotion batches lack → KeyError. Now routes on
+    `EgoMotionMetrics` membership instead of on `condition`.
+ 3. `ego_eval` requires `rs_set['ego_emb']`, absent for text models → KeyError. Now inserts a
+    deliberately **dim-1** placeholder so the EgoMotionMetrics shape guard reports R-Precision as
+    UNDEFINED (0.0) instead of silently emitting a plausible-looking fake number.
+Result: full epoch runs clean (loss 1.13, sanity-check val passes). Job resubmitted as **810990**
+(stale 810594 cancelled).
+
 **(a) Properly-trained unconditional MLD** — closes the gap the repo's own config flagged
 ("approximate" ego-zeroed prior). ⚠️ `configs/config_ego_motion_train_uncond.yaml` is STALE
 (latent-[1,256], VAE `vae_ava_nuscenes_waymo` ep6999, batch 32) — would NOT be comparable to
