@@ -134,6 +134,28 @@ Auto-submits when helma maintenance ends (18:00 2026-09-02).
   Controlled alternative (costs 1 training run): train OUR architecture with text conditioning on
   OUR data using synthesized prompts — removes the domain gap, isolates text-vs-ego conditioning.
 
+**(c) Caption pseudo-GT BUILT + measured (2026-09-02)** — `research/src/synth_captions.py`,
+14,172 captions in `research/data/synth_captions.json` (deterministic, CPU-only, no LLM):
+
+| vocabulary | unique templates | entropy | top-1 share |
+|---|---|---|---|
+| `body` (no vehicle) | 22 | **2.99 bits** | 42.4% ("walks forward") |
+| `ego` (verbalizes vehicle) | 357 | **6.09 bits** | 12.3% |
+
+→ **INFORMATION LADDER framing** (this is the payoff): each rung adds conditioning information,
+so FID vs. bits becomes a quantitative argument for temporal conditioning rather than a
+qualitative one:
+  1. unconditional — 0 bits (job 810580, queued)
+  2. body-text — 2.99 bits, NO ego information (optional middle rung; expect ≈ unconditional)
+  3. ego-text — 6.09 bits, COARSE ego information (the real competitor; 1 training run)
+  4. ego-trajectory — full continuous 196×2 signal (H4 / EgoPed-IA)
+If (4) ≫ (3), we can state numerically that ~6 bits of linguistic description does not substitute
+for the continuous trajectory — direct support for the paper's temporal-granularity claim.
+- `body` is degenerate by design (data is mostly plain walking) — that is an honest reflection of
+  the behavioral distribution, not a bug; it also makes rung 2 nearly redundant with rung 1.
+- P3 of the pretrained-MLD ladder is now concrete: feed the per-sample **`body` caption** as the
+  oracle text (uses this generator; label as ORACLE since captions derive from GT motion).
+
 ## Structural / disclosed (no action beyond awareness)
 - ✅ AVA = 34 samples framing — SIGNED OFF by user 2026-07-22; applied to abstract, §4.1 opening, and deck (staged high-interaction complement to nuScenes/Waymo scale).
 - "First system" claim — qualified to full-body 3D + ego odometry; defend boundary vs WoSAD-style 2D work.
