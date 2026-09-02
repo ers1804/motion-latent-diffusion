@@ -189,6 +189,37 @@ crossing omitted: ~2% base rate + no ego in dumps — documented annex):
 - REVIEW-HARDENING ARC: all agent-side items now CLOSED (1,2,4,5,6,8,9; 3 deferred). Open: user
   items (7, §4.1 assets, sign-off) + config/naming cleanup before code release.
 
+### Pretrained text-to-motion MLD, prompt ladder P1-P3 (2026-09-02, item 10b) — MY PREDICTION WAS WRONG
+
+Official MLD HumanML3D ckpt (1222_..._FID041) on our held-out val_test (N=1,190 each), converted
+HumanML3D-norm -> raw -> our-norm, scored through the SAME t2m evaluator as every other baseline.
+Guards: 126/126 denoiser tensors matched the ckpt (not random init); gt_Diversity gate PASSED on
+all three (5.37 / 5.45 / 5.45).
+
+| prompt | text | FID ↓ | Diversity |
+|---|---|---|---|
+| **P1 naive** | "a pedestrian tries to cross the street and reacts to the ego vehicle" | **14.07** | 3.12 |
+| P2 idiomatic | "a person walks forward and then stops" | 24.84 | 2.75 |
+| P3 oracle | per-sample synthesized `body` caption | 19.77 | 3.62 |
+
+**I predicted P2 (in-distribution HumanML3D phrasing) would be the baseline's best shot and P1 (OOD
+phrasing) would be degenerate. The opposite happened — P1 is best by 10 FID.** Plausible mechanism:
+P2 literally instructs the model to stop, producing the LOWEST diversity (2.75) and a distribution
+badly mismatched to our mostly-walking data; the OOD P1 embedding yields more generic/varied motion
+that lands closer to our distribution. All three remain far below GT diversity (5.45) — mode-collapsed.
+Recorded because it falsifies a stated prediction: prompt-quality intuitions did not transfer.
+
+**Paper reporting rule**: use the BEST prompt (P1, 14.07) as the text-baseline row — maximally
+generous to the baseline. Quoting P2 (24.84) would flatter us by 10 FID.
+
+**Verdict**: off-the-shelf text-to-motion does NOT transfer to this domain (14-25 vs EgoPed-IA 2.88,
+5-9x worse) regardless of prompt — but this conflates DOMAIN GAP with the conditioning question.
+The in-domain text run (rung 3, job 810594) is what isolates text-vs-ego conditioning.
+
+**Capability ladder (unified eval, all our numbers):**
+EgoPed-IA 2.88 < H4 3.39 < uncond-prior 5.18 < H2 pooled 5.62 << **pretrained MLD text 14.07 (best
+prompt) / 24.84 (worst)** < raw-space diffusion 26.43 < regressor 35.47 << kinematic floor 48-50.
+
 **Resolution plan (submitted to helma as part of review items 2/4/6):**
 2×2 completion — (a) H4 + interaction pipeline; (b) H2 − interaction pipeline. Existing corners:
 H2+pipe (6.603), H4−pipe (3.392). Plus unified-eval re-run of H2 ep4399 under the no-crop eval
