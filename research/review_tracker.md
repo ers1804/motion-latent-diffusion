@@ -130,7 +130,7 @@ Auto-submits when helma maintenance ends (18:00 2026-09-02).
 **Cluster returned 2026-09-04 22:00 (after ~2.5 days). Status 2026-09-05:**
 - **810580 `rv_uncond_trained`: RUNNING** (h14-24), epoch ~2980 at 21h — will hit the 24h wall
   ≈ epoch 3350. Checkpoints every 100 epochs (latest 2899). `rv_uncond_trained_seg2.sh`
-  (TRAIN.RESUME) chained with `--dependency=afterany` to carry it to 5000.
+  (TRAIN.RESUME) chained as **814432** (`--dependency=afterany:810580`) to carry it to 5000.
   ⚠️ **Training-time val is INVALID for this model**: R@1 = 0.745 (impossible for a prior —
   higher than any conditioned model) because `uncondp=1.0` zeroes ego only in TRAINING while
   `ego_eval` feeds the REAL ego through the frozen contrastive encoder at validation; the
@@ -143,7 +143,7 @@ Auto-submits when helma maintenance ends (18:00 2026-09-02).
   helma's newer `transformers` returns a model-output object from `get_text_features` where
   local 4.31.0 returns a tensor. Fixed with a version-agnostic `_pooled_tensor` unwrap
   (text_embeds → pooler_output; clear TypeError otherwise — no silent pooling), unit-checked
-  against a simulated model-output locally. Resubmitted (ID below).
+  against a simulated model-output locally. Resubmitted as **814433** (2026-09-05).
   Caveat: if helma yields pre-projection `pooler_output`, the in-domain text model trains on
   768-d pooled CLIP features rather than projected ones (same dim for ViT-L/14); consistent
   within the run, and the rung-3 comparison is about information content (6.09 bits), not the
