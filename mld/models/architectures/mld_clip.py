@@ -10,6 +10,23 @@ from mld.models.operator import PositionalEncoding
 from mld.utils.temos_utils import lengths_to_mask
 
 
+def _pooled_tensor(emb):
+    """transformers-version-agnostic unwrap of CLIP text features.
+
+    Older versions return a (B, D) tensor from ``get_text_features``; newer
+    ones return a model-output object (seen on helma: BaseModelOutputWithPooling
+    has no ``unsqueeze``). Take the projected embeds if present, else the
+    pooled output (for ViT-L/14 hidden_size == projection_dim == 768).
+    """
+    if torch.is_tensor(emb):
+        return emb
+    for attr in ("text_embeds", "pooler_output"):
+        v = getattr(emb, attr, None)
+        if v is not None and torch.is_tensor(v) and v.dim() == 2:
+            return v
+    raise TypeError(f"Cannot extract pooled text features from {type(emb).__name__}")
+
+
 class MldTextEncoder(nn.Module):
 
     def __init__(
@@ -72,8 +89,8 @@ class MldTextEncoder(nn.Module):
         # text encoder forward, clip must use get_text_features
         if self.name == "clip":
             # (batch_Size, text_encoded_dim)
-            text_embeddings = self.text_model.get_text_features(
-                text_input_ids.to(self.text_model.device))
+            text_embeddings = _pooled_tensor(self.text_model.get_text_features(
+                text_input_ids.to(self.text_model.device)))
             # (batch_Size, 1, text_encoded_dim)
             text_embeddings = text_embeddings.unsqueeze(1)
         elif self.name == "clip_hidden":

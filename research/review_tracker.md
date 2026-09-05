@@ -127,6 +127,28 @@ H4 (latent-[4,256], interaction-crop VAE ep5999). Same drift class as findings #
 CLI overrides + `guidance_uncondp=1.0`, CFG=1.0 at test, no interaction pipeline (matches H4).
 Auto-submits when helma maintenance ends (18:00 2026-09-02).
 
+**Cluster returned 2026-09-04 22:00 (after ~2.5 days). Status 2026-09-05:**
+- **810580 `rv_uncond_trained`: RUNNING** (h14-24), epoch ~2980 at 21h — will hit the 24h wall
+  ≈ epoch 3350. Checkpoints every 100 epochs (latest 2899). `rv_uncond_trained_seg2.sh`
+  (TRAIN.RESUME) chained with `--dependency=afterany` to carry it to 5000.
+  ⚠️ **Training-time val is INVALID for this model**: R@1 = 0.745 (impossible for a prior —
+  higher than any conditioned model) because `uncondp=1.0` zeroes ego only in TRAINING while
+  `ego_eval` feeds the REAL ego through the frozen contrastive encoder at validation; the
+  logged FID (11.5 → 10.1 → 8.4) is likewise perturbed by out-of-distribution ego tokens.
+  → Do NOT select the checkpoint by the log. Definitive eval ONLY via `baselines/eval_uncond.py`
+  (`_patch_zero_ego`, same path as the paper's 5.18) with `guidance_scale=1.0`, comparing
+  several late checkpoints. (Memory: project_uncondp1_eval_leak.)
+- **810990 `rv_text_ego`: FAILED after 3m25s** on helma despite the clean local epoch —
+  `mld_clip.py:78` `'BaseModelOutputWithPooling' object has no attribute 'unsqueeze'`:
+  helma's newer `transformers` returns a model-output object from `get_text_features` where
+  local 4.31.0 returns a tensor. Fixed with a version-agnostic `_pooled_tensor` unwrap
+  (text_embeds → pooler_output; clear TypeError otherwise — no silent pooling), unit-checked
+  against a simulated model-output locally. Resubmitted (ID below).
+  Caveat: if helma yields pre-projection `pooler_output`, the in-domain text model trains on
+  768-d pooled CLIP features rather than projected ones (same dim for ViT-L/14); consistent
+  within the run, and the rung-3 comparison is about information content (6.09 bits), not the
+  projection.
+
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
 - ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →
   `checkpoints/mld_humanml3d_checkpoint/1222_mld_humanml3d_FID041.ckpt` (258 MB). CLIP present
