@@ -189,6 +189,18 @@ crossing omitted: ~2% base rate + no ego in dumps — documented annex):
 - REVIEW-HARDENING ARC: all agent-side items now CLOSED (1,2,4,5,6,8,9; 3 deferred). Open: user
   items (7, §4.1 assets, sign-off) + config/naming cleanup before code release.
 
+### In-domain text baselines: the `ego` vocabulary is an oracle (2026-09-06) — MY DESIGN ERROR
+
+Training-time val of the in-domain ego-text model (job 814433) reached FID 3.44 @ ep1199 — on par
+with H4 (3.39). Before believing "6 bits of language ≈ the full trajectory", check what the bits
+describe: the `ego` captions include a body clause derived from the GT pedestrian motion (walks
+slowly / starts / turns left / then stops). The ego-trajectory model sees none of that (fixed
+t=0 pedestrian frame → vehicle only). So this run is an ORACLE upper bound (in-domain P3), and
+its strong FID is partly the answer leaking through the condition. Fair rung 3 = a vehicle-only
+`egoonly` vocabulary at matched bits — being built and submitted. Both rungs stay in the ladder,
+labelled. Lesson (same family as the uncondp eval leak): audit what a conditioning channel
+actually encodes, not what it is named.
+
 ### Pretrained text-to-motion MLD, prompt ladder P1-P3 (2026-09-02, item 10b) — MY PREDICTION WAS WRONG
 
 Official MLD HumanML3D ckpt (1222_..._FID041) on our held-out val_test (N=1,190 each), converted

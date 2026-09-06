@@ -149,6 +149,23 @@ Auto-submits when helma maintenance ends (18:00 2026-09-02).
   within the run, and the rung-3 comparison is about information content (6.09 bits), not the
   projection.
 
+**⚠️ DESIGN CORRECTION 2026-09-06 — the `ego` vocabulary is an ORACLE, not the fair rung 3.**
+`caption(a, "ego")` = body clause + vehicle clause, and the body clause (gait / starts / turns /
+stops) is derived from the GROUND-TRUTH pedestrian motion. The ego-trajectory model never sees
+that: `ego_in_ped_frame` is a fixed t=0 pedestrian frame, so it carries the vehicle only. Hence
+job 814433 (`text_ego`, 6.09 bits) is the in-domain analogue of P3 — an **oracle-text upper
+bound** — and its training-time FID ≈ 3.44 @ ep1199 (≈ H4's 3.39) must be read that way, not as
+"language matches the trajectory". I labeled P3 an oracle for exactly this reason and failed to
+apply it here.
+Fix: new **`egoonly` vocabulary** (vehicle-only: approach/away/pass/wait × side × near × ego
+speed × ego turning × closest-approach timing; no pedestrian clause) at a comparable bit budget →
+`rv_text_egoonly.sh`, the FAIR rung 3. Ladder becomes:
+  0 bits uncond → egoonly text (vehicle-only) → ego text (ORACLE: + GT pedestrian behaviour) →
+  continuous trajectory. The oracle rung is still informative as an upper bound.
+Status: 814433 (`text_ego`, oracle) running, ep1665 @ 12h, val OK (R@1 reads 0.000 = undefined
+placeholder, gt_Div 5.25–5.42 PASS) — needs `rv_text_ego_seg2.sh` (139 ep/h → wall at ~3340).
+Uncond: 810580 TIMEOUT @ 24h as planned; seg2 814432 resumed, ep4551 @ 9h, finishes ~5000 soon.
+
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
 - ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →
   `checkpoints/mld_humanml3d_checkpoint/1222_mld_humanml3d_FID041.ckpt` (258 MB). CLIP present
