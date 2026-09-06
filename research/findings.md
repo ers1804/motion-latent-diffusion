@@ -197,7 +197,8 @@ describe: the `ego` captions include a body clause derived from the GT pedestria
 slowly / starts / turns left / then stops). The ego-trajectory model sees none of that (fixed
 t=0 pedestrian frame → vehicle only). So this run is an ORACLE upper bound (in-domain P3), and
 its strong FID is partly the answer leaking through the condition. Fair rung 3 = a vehicle-only
-`egoonly` vocabulary at matched bits — being built and submitted. Both rungs stay in the ladder,
+`egoonly` vocabulary at matched bits: 225 templates / **5.17 bits** / top-1 15.9% (vs 6.09 for the
+oracle vocab; the 0.9-bit gap ≈ the pedestrian body clause). Submitted as `rv_text_egoonly`. Both rungs stay in the ladder,
 labelled. Lesson (same family as the uncondp eval leak): audit what a conditioning channel
 actually encodes, not what it is named.
 

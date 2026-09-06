@@ -95,8 +95,24 @@ def _attrs(ped_xz, ego_xz):
     rel = ego_xz - ped_xz
     bearing = math.degrees(math.atan2(rel[:, 1].mean(), rel[:, 0].mean()))
     ego_side = "left" if bearing > 30 else ("right" if bearing < -30 else "front")
+
+    # --- vehicle-ONLY attributes for the fair "egoonly" vocabulary (item 10b):
+    # everything below derives from ego_xz alone (ped_xz appears only via the
+    # relative range/bearing above, which the ego-trajectory model also sees).
+    ev = np.linalg.norm(np.diff(ego_xz, axis=0), axis=1) * FPS
+    ego_mean_speed = float(ev.mean()) if len(ev) else 0.0
+    ego_speed = "slow" if ego_mean_speed < 3.0 else ("fast" if ego_mean_speed > 10.0 else "mid")
+    ed = np.diff(ego_xz, axis=0); ed = ed[np.linalg.norm(ed, axis=1) > 1e-3]
+    ego_turn = "straight"
+    if len(ed) > 4:
+        b0 = math.atan2(*ed[:max(1, len(ed)//5)].mean(0)[::-1])
+        b1 = math.atan2(*ed[-max(1, len(ed)//5):].mean(0)[::-1])
+        dphi = math.degrees((b1 - b0 + math.pi) % (2 * math.pi) - math.pi)
+        ego_turn = "turns left" if dphi > TURN_DEG else ("turns right" if dphi < -TURN_DEG else "straight")
+    timing = "early" if int(np.argmin(rng)) < len(rng) // 2 else "late"
     return dict(gait=gait, stop=stop, starts_moving=starts_moving, turn=turn,
                 ego_rel=ego_rel, ego_side=ego_side, near=bool(lo < NEAR_M),
+                ego_speed=ego_speed, ego_turn=ego_turn, timing=timing,
                 mean_speed=round(mean_speed, 2), min_range=round(float(lo), 2))
 
 
@@ -126,6 +142,18 @@ def caption(a, vocab="body", rng=None, subj=None):
     return f"{body} as {verb}{where}{close}."
 
 
+def caption_egoonly(a):
+    """Vehicle-only description: what the ego-trajectory model sees, nothing more."""
+    noun = {"approaches": "approaches", "moves away": "drives away",
+            "passes": "passes by", "stays near": "waits nearby"}[a["ego_rel"]]
+    spd = {"slow": "slowly ", "fast": "quickly ", "mid": ""}[a["ego_speed"]]
+    where = "" if a["ego_side"] == "front" else f" from the {a['ego_side']}"
+    when = " early on" if a["timing"] == "early" else " later on"
+    turn = "" if a["ego_turn"] == "straight" else f", {a['ego_turn']}"
+    close = " and comes close" if a["near"] else ""
+    return f"a vehicle {spd}{noun}{where}{when}{turn}{close}."
+
+
 def load(fp):
     d = json.load(open(fp))
     ped = np.asarray(d["ped_in_ped_frame"], dtype=np.float32)[:, 0, :][:, [0, 2]]
@@ -151,6 +179,7 @@ def main():
             print(f"{Path(fp).stem:>12s} | speed={a['mean_speed']:.2f} minrange={a['min_range']:>5.1f}")
             print(f"             body: {caption(a, 'body', subj=subj)}")
             print(f"             ego : {caption(a, 'ego', subj=subj)}")
+            print(f"             egoonly: {caption_egoonly(a)}")
         return
 
     if args.write_all:
@@ -166,6 +195,7 @@ def main():
                     out[f"{src}/{split}/{Path(fp).stem}"] = {
                         "body": caption(a, "body", subj=subj),
                         "ego": caption(a, "ego", subj=subj),
+                        "egoonly": caption_egoonly(a),
                         "attrs": a,
                     }
         dst = Path("research/data/synth_captions.json")

@@ -160,11 +160,17 @@ apply it here.
 Fix: new **`egoonly` vocabulary** (vehicle-only: approach/away/pass/wait × side × near × ego
 speed × ego turning × closest-approach timing; no pedestrian clause) at a comparable bit budget →
 `rv_text_egoonly.sh`, the FAIR rung 3. Ladder becomes:
-  0 bits uncond → egoonly text (vehicle-only) → ego text (ORACLE: + GT pedestrian behaviour) →
-  continuous trajectory. The oracle rung is still informative as an upper bound.
+  0 bits uncond → egoonly text (vehicle-only, 5.17 bits) → ego text (ORACLE: + GT pedestrian
+  behaviour, 6.09 bits) → continuous trajectory. Captions regenerated with byte-identity check on
+  `ego`/`body` (PASS) so the running oracle job is unaffected. The oracle rung is still informative as an upper bound.
 Status: 814433 (`text_ego`, oracle) running, ep1665 @ 12h, val OK (R@1 reads 0.000 = undefined
 placeholder, gt_Div 5.25–5.42 PASS) — needs `rv_text_ego_seg2.sh` (139 ep/h → wall at ~3340).
 Uncond: 810580 TIMEOUT @ 24h as planned; seg2 814432 resumed, ep4551 @ 9h, finishes ~5000 soon.
+Chained 2026-09-06: text seg2 **815013** (afterany:814433); uncond ego-zeroed evals **815014/815015/
+815016** (ep4999/4499/3999, afterok:814432). Eval consistency verified in code: training dropout
+(`mld.py:933`, `rand<uncodp` mask on `ego`), the CFG null branch (`zeros_like(ego)`, :280/:972) and
+`eval_uncond._patch_zero_ego` (`batch["ego"]`) all zero the SAME normalized ego tensor → the
+ego-zeroed eval sees exactly the training-time null condition.
 
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
 - ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →
@@ -207,6 +213,7 @@ Uncond: 810580 TIMEOUT @ 24h as planned; seg2 814432 resumed, ep4551 @ 9h, finis
 |---|---|---|---|
 | `body` (no vehicle) | 22 | **2.99 bits** | 42.4% ("walks forward") |
 | `ego` (verbalizes vehicle) | 357 | **6.09 bits** | 12.3% |
+| `egoonly` (vehicle ONLY — fair rung 3, added 2026-09-06) | 225 | **5.17 bits** | 15.9% |
 
 → **INFORMATION LADDER framing** (this is the payoff): each rung adds conditioning information,
 so FID vs. bits becomes a quantitative argument for temporal conditioning rather than a
