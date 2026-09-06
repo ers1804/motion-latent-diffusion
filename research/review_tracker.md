@@ -171,6 +171,9 @@ Chained 2026-09-06: text seg2 **815013** (afterany:814433); uncond ego-zeroed ev
 (`mld.py:933`, `rand<uncodp` mask on `ego`), the CFG null branch (`zeros_like(ego)`, :280/:972) and
 `eval_uncond._patch_zero_ego` (`batch["ego"]`) all zero the SAME normalized ego tensor → the
 ego-zeroed eval sees exactly the training-time null condition.
+Fair rung submitted 2026-09-06: **815017** `rv_text_egoonly` (egoonly vocab, 5.17 bits; local hit
+rate 2414/2414, helma JSON verified). 815017 cleared the crash window (7m39s, training; job log shows the egoonly vocabulary loaded).
+seg2 chained as **815018** (`afterany:815017`).
 
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
 - ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →
