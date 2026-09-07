@@ -1,0 +1,653 @@
+### Starting TaskPrologue of job 818449 on h14-14 at Mon Sep  7 07:14:12 PM CEST 2026
+Running on cores 0-31 with governor performance
+Mon Sep  7 19:14:12 2026       
++-----------------------------------------------------------------------------------------+
+| NVIDIA-SMI 595.91.07              Driver Version: 595.91.07      CUDA Version: 13.2     |
++-----------------------------------------+------------------------+----------------------+
+| GPU  Name                 Persistence-M | Bus-Id          Disp.A | Volatile Uncorr. ECC |
+| Fan  Temp   Perf          Pwr:Usage/Cap |           Memory-Usage | GPU-Util  Compute M. |
+|                                         |                        |               MIG M. |
+|=========================================+========================+======================|
+|   0  NVIDIA H100                    On  |   00000000:06:00.0 Off |                    0 |
+| N/A   34C    P0             66W /  500W |       0MiB /  95830MiB |      0%      Default |
+|                                         |                        |             Disabled |
++-----------------------------------------+------------------------+----------------------+
+
++-----------------------------------------------------------------------------------------+
+| Processes:                                                                              |
+|  GPU   GI   CI              PID   Type   Process name                        GPU Memory |
+|        ID   ID                                                               Usage      |
+|=========================================================================================|
+|  No running processes found                                                             |
++-----------------------------------------------------------------------------------------+
+### Finished TaskPrologue
+
+Starting extraction pass for /hnvme/workspace/v103fe12-ped_gen/data
+Extraction successful for /hnvme/workspace/v103fe12-ped_gen/data
+2026-09-07 19:16:54,317 SEED_VALUE: 1234
+DEBUG: false
+TRAIN:
+  SPLIT: train
+  NUM_WORKERS: 8
+  BATCH_SIZE: 128
+  START_EPOCH: 0
+  END_EPOCH: 5000
+  RESUME: ''
+  PRETRAINED_VAE: /home/erik/NAS/methods/diffusion_gen/models/helma_models/models/vae/ego_motion_vae_latent_4_wo_traj_interaction_crop_weighted_sampling/checkpoints/epoch=5999.ckpt
+  PRETRAINED: ''
+  OPTIM:
+    OPTIM.TYPE: AdamW
+    OPTIM.LR: 0.0001
+    LR_SCHEDULER:
+      TYPE: ''
+      WARMUP_EPOCHS: 0
+      MIN_LR: 0.0
+    TYPE: AdamW
+    LR: 0.0001
+  ABLATION:
+    VAE_TYPE: mld
+    VAE_ARCH: encoder_decoder
+    PE_TYPE: mld
+    DIFF_PE_TYPE: mld
+    SKIP_CONNECT: true
+    MLP_DIST: false
+    IS_DIST: false
+    PREDICT_EPSILON: true
+  STAGE: diffusion
+  DATASETS:
+  - egomotion
+  PRETRAINED_EGO: /home/erik/NAS/methods/diffusion_gen/models/helma_models/models/ego_encoder/ego_encoder_h4_trans_dec/checkpoints/best.pt
+  FREEZE_EGO: true
+  DETERMINISTIC_Z: false
+EVAL:
+  SPLIT: test
+  BATCH_SIZE: 32
+  NUM_WORKERS: 12
+  DATASETS:
+  - egomotion
+TEST:
+  TEST_DIR: ''
+  CHECKPOINTS: /hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_text_egoonly/checkpoints/epoch=99.ckpt
+  SPLIT: val
+  BATCH_SIZE: 1
+  NUM_WORKERS: 12
+  SAVE_PREDICTIONS: false
+  COUNT_TIME: false
+  REPLICATION_TIMES: 3
+  MM_NUM_SAMPLES: 100
+  MM_NUM_REPEATS: 30
+  MM_NUM_TIMES: 10
+  DIVERSITY_TIMES: 300
+  REP_I: 0
+  DATASETS:
+  - egomotion
+  MEAN: false
+  NUM_SAMPLES: 1
+  FACT: 1
+  FOLDER: ./results
+model:
+  target: modules
+  t2m_textencoder:
+    dim_word: 300
+    dim_pos_ohot: 15
+    dim_text_hidden: 512
+    dim_coemb_hidden: 512
+    target: mld.models.architectures.t2m_textenc.TextEncoderBiGRUCo
+    params:
+      word_size: 300
+      pos_size: 15
+      hidden_size: 512
+      output_size: 512
+  t2m_motionencoder:
+    dim_move_hidden: 512
+    dim_move_latent: 512
+    dim_motion_hidden: 1024
+    dim_motion_latent: 512
+    target: mld.models.architectures.t2m_motionenc.MotionEncoder
+    params:
+      input_size: ${model.t2m_moveencoder.output_size}
+      hidden_size: 1024
+      output_size: 512
+  vae: true
+  model_type: mld
+  condition: text
+  latent_dim:
+  - 4
+  - 256
+  ff_size: 1024
+  num_layers: 9
+  num_heads: 4
+  dropout: 0.1
+  activation: gelu
+  guidance_scale: 2.5
+  guidance_uncondp: 0.1
+  ego_encoder:
+    target: mld.models.architectures.ego_encoder.EgoEncoder
+    params:
+      input_dim: 2
+      latent_dim: 256
+      num_layers: 4
+      num_heads: 4
+      ff_size: 1024
+      dropout: 0.1
+      activation: gelu
+  motion_vae:
+    target: mld.models.architectures.mld_vae.MldVae
+    params:
+      nfeats: ${DATASET.NFEATS}
+      latent_dim: ${model.latent_dim}
+      ff_size: 1024
+      num_layers: 9
+      num_heads: 4
+      dropout: 0.1
+      activation: gelu
+      ablation: ${TRAIN.ABLATION}
+      arch: encoder_decoder
+      normalize_before: false
+      position_embedding: learned
+  denoiser:
+    target: mld.models.architectures.mld_denoiser.MldDenoiser
+    params:
+      latent_dim: ${model.latent_dim}
+      text_encoded_dim: 768
+      ff_size: 1024
+      num_layers: 9
+      num_heads: 4
+      dropout: 0.1
+      activation: gelu
+      guidance_scale: ${model.guidance_scale}
+      guidance_uncondp: ${model.guidance_uncondp}
+      ablation: ${TRAIN.ABLATION}
+      condition: ${model.condition}
+      nfeats: ${DATASET.NFEATS}
+      arch: trans_enc
+      normalize_before: false
+      flip_sin_to_cos: true
+      return_intermediate_dec: false
+      position_embedding: learned
+      freq_shift: 0
+      nclasses: ${DATASET.NCLASSES}
+  scheduler:
+    target: diffusers.DDIMScheduler
+    params:
+      num_train_timesteps: 1000
+      beta_start: 0.00085
+      beta_end: 0.012
+      beta_schedule: scaled_linear
+      clip_sample: false
+      set_alpha_to_one: false
+      steps_offset: 1
+      prediction_type: epsilon
+    num_inference_timesteps: 50
+    eta: 0.0
+  noise_scheduler:
+    target: diffusers.DDPMScheduler
+    params:
+      num_train_timesteps: 1000
+      beta_start: 0.00085
+      beta_end: 0.012
+      beta_schedule: scaled_linear
+      variance_type: fixed_small
+      clip_sample: false
+      prediction_type: epsilon
+  t2m_moveencoder:
+    target: mld.models.architectures.t2m_textenc.MovementConvEncoder
+    params:
+      hidden_size: 512
+      output_size: 512
+  text_encoder:
+    target: mld.models.architectures.mld_clip.MldTextEncoder
+    params:
+      finetune: false
+      last_hidden_state: false
+      latent_dim: ${model.latent_dim}
+      modelpath: ${model.clip_path}
+  bert_path: ./deps/distilbert-base-uncased
+  clip_path: ./deps/clip-vit-large-patch14
+  t2m_path: ./deps/t2m/
+  humanact12_rec_path: ./deps/actionrecognition
+  uestc_rec_path: ./deps/actionrecognition
+LOSS:
+  LAMBDA_LATENT: 1.0e-05
+  LAMBDA_KL: 0.0001
+  LAMBDA_REC: 1.0
+  LAMBDA_JOINT: 1.0
+  LAMBDA_GEN: 1.0
+  LAMBDA_CROSS: 1.0
+  LAMBDA_CYCLE: 0.0
+  LAMBDA_PRIOR: 0.0
+  LAMBDA_TRAJ: 0.0
+  DIST_SYNC_ON_STEP: false
+  KL_ANNEAL:
+    ENABLED: false
+    START_EPOCH: 0
+    END_EPOCH: 500
+    START_WEIGHT: 0.0
+    END_WEIGHT: 0.0001
+  TYPE: mld
+METRIC:
+  FORCE_IN_METER: true
+  DIST_SYNC_ON_STEP: false
+  TYPE:
+  - EgoMotionMetrics
+DATASET:
+  NCLASSES: 10
+  SAMPLER:
+    MAX_SQE: -1
+    MAX_LEN: 196
+    MIN_LEN: 40
+    MAX_TEXT_LEN: 20
+  KIT:
+    PICK_ONE_TEXT: true
+    FRAME_RATE: 12.5
+    UNIT_LEN: 4
+    ROOT: ./datasets/kit-ml
+    SPLIT_ROOT: ./datasets/kit-ml
+  HUMANML3D:
+    PICK_ONE_TEXT: true
+    FRAME_RATE: 20.0
+    UNIT_LEN: 4
+    ROOT: /home/mohan/nas_drive/publicdatasets/HumanML3D/Processed_HL/humanml3d
+    SPLIT_ROOT: /home/mohan/nas_drive/publicdatasets/HumanML3D/Processed_HL/humanml3d
+  HUMANACT12:
+    NUM_FRAMES: 60
+    POSE_REP: rot6d
+    GLOB: true
+    TRANSLATION: true
+    ROOT: ./datasets/HumanAct12Poses
+    SPLIT_ROOT: ./datasets/HumanAct12Poses
+  UESTC:
+    NUM_FRAMES: 60
+    POSE_REP: rot6d
+    GLOB: true
+    TRANSLATION: true
+    ROOT: ./datasets/uestc
+    SPLIT_ROOT: ./datasets/uestc
+  JOINT_TYPE: humanml3d
+  NFEATS: 263
+  NJOINTS: 22
+  EGOMOTION:
+    ROOT:
+    - /tmp/818449.helma/data/diffusion/ava
+    - /tmp/818449.helma/data/diffusion/nuscenes
+    - /tmp/818449.helma/data/diffusion/waymo
+    MAX_EGO_LEN: 196
+    FPS: 20
+    EGO_SCALE: 50.0
+    MEAN_STD_PATH: /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo
+    EGO_MEAN_STD_PATH: /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo
+    CAPTIONS_PATH: /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion/research/data/synth_captions.json
+    CAPTION_VOCAB: egoonly
+    INTERACTION_CROP: false
+    INTERACTION_WEIGHTED_SAMPLING: false
+  SMPL_PATH: ./deps/smpl
+  TRANSFORM_PATH: ./deps/transforms/
+  WORD_VERTILIZER_PATH: ./deps/glove/
+  AMASS:
+    DB_ROOT: /apdcephfs/share_1227775/shingxchen/uicap/data/vibe_db
+LOGGER:
+  SACE_CHECKPOINT_EPOCH: 100
+  LOG_EVERY_STEPS: 1
+  VAL_EVERY_STEPS: 100
+  TENSORBOARD: true
+  WANDB:
+    OFFLINE: false
+    PROJECT: diffusion_gen
+    RESUME_ID: ego_motion_diffusion_h4_trans_dec
+    ENTITY: erik_hm
+RENDER:
+  JOINT_TYPE: mmm
+  INPUT_MODE: npy
+  DIR: ''
+  NPY: ''
+  DENOISING: true
+  OLDRENDER: true
+  RES: high
+  DOWNSAMPLE: true
+  FPS: 12.5
+  CANONICALIZE: true
+  EXACT_FRAME: 0.5
+  NUM: 7
+  MODE: sequence
+  VID_EXT: mp4
+  ALWAYS_ON_FLOOR: false
+  GT: false
+  BLENDER_PATH: /apdcephfs/share_1227775/mingzhenzhu/jiangbiao/libs/blender-2.93.2-linux-x64/blender
+  FACES_PATH: /apdcephfs/share_1227775/shingxchen/AIMotion/TMOSTData/deps/smplh/smplh.faces
+  FOLDER: ./animations
+DEMO:
+  MOTION_TRANSFER: false
+  RENDER: false
+  FRAME_RATE: 12.5
+  EXAMPLE: null
+NAME: rv_eval_text_egoonly_ep99_cfg2p5
+OVERFIT: false
+ACCELERATOR: gpu
+DEVICE:
+- 0
+target: modules
+t2m_textencoder:
+  dim_word: 300
+  dim_pos_ohot: 15
+  dim_text_hidden: 512
+  dim_coemb_hidden: 512
+  target: mld.models.architectures.t2m_textenc.TextEncoderBiGRUCo
+  params:
+    word_size: 300
+    pos_size: 15
+    hidden_size: 512
+    output_size: 512
+t2m_motionencoder:
+  dim_move_hidden: 512
+  dim_move_latent: 512
+  dim_motion_hidden: 1024
+  dim_motion_latent: 512
+  target: mld.models.architectures.t2m_motionenc.MotionEncoder
+  params:
+    input_size: ${model.t2m_moveencoder.output_size}
+    hidden_size: 1024
+    output_size: 512
+vae: true
+model_type: mld
+condition: ego
+latent_dim:
+- 4
+- 256
+ff_size: 1024
+num_layers: 9
+num_heads: 4
+dropout: 0.1
+activation: gelu
+guidance_scale: 10
+guidance_uncondp: 0.1
+ego_encoder:
+  target: mld.models.architectures.ego_encoder.EgoEncoder
+  params:
+    input_dim: 2
+    latent_dim: 256
+    num_layers: 4
+    num_heads: 4
+    ff_size: 1024
+    dropout: 0.1
+    activation: gelu
+motion_vae:
+  target: mld.models.architectures.mld_vae.MldVae
+  params:
+    nfeats: ${DATASET.NFEATS}
+    latent_dim: ${model.latent_dim}
+    ff_size: 1024
+    num_layers: 9
+    num_heads: 4
+    dropout: 0.1
+    activation: gelu
+    ablation: ${TRAIN.ABLATION}
+    arch: encoder_decoder
+    normalize_before: false
+    position_embedding: learned
+denoiser:
+  target: mld.models.architectures.mld_denoiser.MldDenoiser
+  params:
+    latent_dim: ${model.latent_dim}
+    text_encoded_dim: 256
+    ff_size: 1024
+    num_layers: 9
+    num_heads: 4
+    dropout: 0.1
+    activation: gelu
+    guidance_scale: ${model.guidance_scale}
+    guidance_uncondp: ${model.guidance_uncondp}
+    ablation: ${TRAIN.ABLATION}
+    condition: ${model.condition}
+    nfeats: ${DATASET.NFEATS}
+    arch: trans_enc
+    normalize_before: false
+    flip_sin_to_cos: true
+    return_intermediate_dec: false
+    position_embedding: learned
+    freq_shift: 0
+    nclasses: ${DATASET.NCLASSES}
+scheduler:
+  target: diffusers.DDIMScheduler
+  params:
+    num_train_timesteps: 1000
+    beta_start: 0.00085
+    beta_end: 0.012
+    beta_schedule: scaled_linear
+    clip_sample: false
+    set_alpha_to_one: false
+    steps_offset: 1
+    prediction_type: epsilon
+  num_inference_timesteps: 50
+  eta: 0.0
+noise_scheduler:
+  target: diffusers.DDPMScheduler
+  params:
+    num_train_timesteps: 1000
+    beta_start: 0.00085
+    beta_end: 0.012
+    beta_schedule: scaled_linear
+    variance_type: fixed_small
+    clip_sample: false
+    prediction_type: epsilon
+t2m_moveencoder:
+  target: mld.models.architectures.t2m_textenc.MovementConvEncoder
+  params:
+    hidden_size: 512
+    output_size: 512
+text_encoder:
+  target: mld.models.architectures.mld_clip.MldTextEncoder
+  params:
+    finetune: false
+    last_hidden_state: false
+    latent_dim: ${model.latent_dim}
+    modelpath: ${model.clip_path}
+FOLDER: ./results
+CLI_OVERRIDES:
+- DATASET.EGOMOTION.ROOT=[/tmp/818449.helma/data/diffusion/ava, /tmp/818449.helma/data/diffusion/nuscenes,
+  /tmp/818449.helma/data/diffusion/waymo]
+- DATASET.EGOMOTION.MEAN_STD_PATH=/tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo
+- DATASET.EGOMOTION.EGO_MEAN_STD_PATH=/tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo
+- TEST.CHECKPOINTS=/hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_text_egoonly/checkpoints/epoch=99.ckpt
+- METRIC.TYPE=['EgoMotionMetrics']
+- model.latent_dim=[4, 256]
+- model.condition=text
+- model.denoiser.params.text_encoded_dim=768
+- DATASET.EGOMOTION.CAPTIONS_PATH=/hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion/research/data/synth_captions.json
+- DATASET.EGOMOTION.CAPTION_VOCAB=egoonly
+- TEST.REPLICATION_TIMES=3
+- TEST.SPLIT=val
+- model.guidance_scale=2.5
+- NAME=rv_eval_text_egoonly_ep99_cfg2p5
+- DATASET.EGOMOTION.INTERACTION_CROP=False
+- DATASET.EGOMOTION.INTERACTION_WEIGHTED_SAMPLING=False
+FOLDER_EXP: results/mld/rv_eval_text_egoonly_ep99_cfg2p5
+TIME: 2026-09-07-19-16-54
+
+[rank: 0] Global seed set to 1234
+2026-09-07 19:16:54,514 datasets module egomotion initialized
+Force no debugging and one gpu when testing
+[EgoMotion] Loaded mean/std from /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo
+[EgoMotion] Loaded ego mean/std from /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo
+Loading weights:   0%|          | 0/590 [00:00<?, ?it/s]Loading weights:  76%|███████▋  | 451/590 [00:00<00:00, 4504.27it/s]Loading weights: 100%|██████████| 590/590 [00:00<00:00, 4359.15it/s]
+[1mCLIPModel LOAD REPORT[0m from: ./deps/clip-vit-large-patch14
+Key                                  | Status     |  | 
+-------------------------------------+------------+--+-
+vision_model.embeddings.position_ids | UNEXPECTED |  | 
+text_model.embeddings.position_ids   | UNEXPECTED |  | 
+
+[3mNotes:
+- UNEXPECTED[3m	:can be ignored when loading from different task/architecture; not ok if you expect identical arch.[0m
+2026-09-07 19:17:01,157 model mld loaded
+2026-09-07 19:17:01,157 Callbacks initialized
+/home/hpc/v103fe/v103fe12/software/private/conda/envs/mld/lib/python3.10/site-packages/lightning_fabric/plugins/environments/slurm.py:165: PossibleUserWarning: The `srun` command is available on your system but is not used. HINT: If your intention is to run Lightning on SLURM, prepend your python command with `srun` like so: srun python /hnvme/workspace/v103fe12-ped_gen/motion-latent-diff ...
+  rank_zero_warn(
+GPU available: True (cuda), used: True
+TPU available: False, using: 0 TPU cores
+IPU available: False, using: 0 IPUs
+HPU available: False, using: 0 HPUs
+2026-09-07 19:17:01,179 Loading checkpoints from /hnvme/workspace/v103fe12-ped_gen/models/mld/ego_motion_diffusion_text_egoonly/checkpoints/epoch=99.ckpt
+2026-09-07 19:17:01,529 Evaluating EgoMotionMetrics - Replication 0
+You are using a CUDA device ('NVIDIA H100') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+[EgoMotionDataset] Loaded 14172 captions (egoonly vocabulary) from /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion/research/data/synth_captions.json
+[EgoMotionDataset] WARNING: 9372 entries from /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo/val.txt were not found.
+  - missing: A0001_33
+  - missing: A0003_36
+  - missing: A0004_20
+  - missing: A0006_21
+  - missing: A0007_31
+  - missing: A0010_35
+  - missing: A0011_34
+  - missing: A0012_22
+  - missing: A0013_21
+  - missing: A0014_18
+  - ...
+[EgoMotionDataset] Using split list: /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo/val.txt
+[EgoMotionDataset] Loaded 2414 samples for val from 3 sources
+  - /tmp/818449.helma/data/diffusion/ava: 7 samples
+  - /tmp/818449.helma/data/diffusion/nuscenes: 943 samples
+  - /tmp/818449.helma/data/diffusion/waymo: 1464 samples
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│     Metrics/Diversity     │     5.476229667663574     │
+│        Metrics/FID        │     5.506044387817383     │
+│ Metrics/R_precision_top_1 │            0.0            │
+│ Metrics/R_precision_top_2 │            0.0            │
+│ Metrics/R_precision_top_3 │            0.0            │
+│   Metrics/gt_Diversity    │     5.69830322265625      │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19/19 0:00:11 • 0:00:00 1.99it/s 
+2026-09-07 19:17:21,075 Evaluating MultiModality - Replication 0
+You are using a CUDA device ('NVIDIA H100') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   Metrics/MultiModality   │     4.961738109588623     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100/100 0:00:20 • 0:00:00 4.91it/s 
+2026-09-07 19:17:43,221 Evaluating EgoMotionMetrics - Replication 1
+You are using a CUDA device ('NVIDIA H100') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+[EgoMotionDataset] Loaded 14172 captions (egoonly vocabulary) from /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion/research/data/synth_captions.json
+[EgoMotionDataset] WARNING: 9372 entries from /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo/val.txt were not found.
+  - missing: A0001_33
+  - missing: A0003_36
+  - missing: A0004_20
+  - missing: A0006_21
+  - missing: A0007_31
+  - missing: A0010_35
+  - missing: A0011_34
+  - missing: A0012_22
+  - missing: A0013_21
+  - missing: A0014_18
+  - ...
+[EgoMotionDataset] Using split list: /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo/val.txt
+[EgoMotionDataset] Loaded 2414 samples for val from 3 sources
+  - /tmp/818449.helma/data/diffusion/ava: 7 samples
+  - /tmp/818449.helma/data/diffusion/nuscenes: 943 samples
+  - /tmp/818449.helma/data/diffusion/waymo: 1464 samples
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│     Metrics/Diversity     │     5.680082321166992     │
+│        Metrics/FID        │     5.355714321136475     │
+│ Metrics/R_precision_top_1 │            0.0            │
+│ Metrics/R_precision_top_2 │            0.0            │
+│ Metrics/R_precision_top_3 │            0.0            │
+│   Metrics/gt_Diversity    │     5.53824520111084      │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19/19 0:00:09 • 0:00:00 1.99it/s 
+2026-09-07 19:17:58,681 Evaluating MultiModality - Replication 1
+You are using a CUDA device ('NVIDIA H100') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   Metrics/MultiModality   │     4.432587146759033     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100/100 0:00:20 • 0:00:00 4.89it/s 
+2026-09-07 19:18:21,054 Evaluating EgoMotionMetrics - Replication 2
+You are using a CUDA device ('NVIDIA H100') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+[EgoMotionDataset] Loaded 14172 captions (egoonly vocabulary) from /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion/research/data/synth_captions.json
+[EgoMotionDataset] WARNING: 9372 entries from /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo/val.txt were not found.
+  - missing: A0001_33
+  - missing: A0003_36
+  - missing: A0004_20
+  - missing: A0006_21
+  - missing: A0007_31
+  - missing: A0010_35
+  - missing: A0011_34
+  - missing: A0012_22
+  - missing: A0013_21
+  - missing: A0014_18
+  - ...
+[EgoMotionDataset] Using split list: /tmp/818449.helma/data/vae/mean_std_txt/ava_nuscenes_waymo/val.txt
+[EgoMotionDataset] Loaded 2414 samples for val from 3 sources
+  - /tmp/818449.helma/data/diffusion/ava: 7 samples
+  - /tmp/818449.helma/data/diffusion/nuscenes: 943 samples
+  - /tmp/818449.helma/data/diffusion/waymo: 1464 samples
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│     Metrics/Diversity     │    5.4609832763671875     │
+│        Metrics/FID        │     5.685689926147461     │
+│ Metrics/R_precision_top_1 │            0.0            │
+│ Metrics/R_precision_top_2 │            0.0            │
+│ Metrics/R_precision_top_3 │            0.0            │
+│   Metrics/gt_Diversity    │     5.518033981323242     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19/19 0:00:09 • 0:00:00 1.99it/s 
+2026-09-07 19:18:36,718 Evaluating MultiModality - Replication 2
+You are using a CUDA device ('NVIDIA H100') that has Tensor Cores. To properly utilize them, you should set `torch.set_float32_matmul_precision('medium' | 'high')` which will trade-off precision for performance. For more details, read https://pytorch.org/docs/stable/generated/torch.set_float32_matmul_precision.html#torch.set_float32_matmul_precision
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+┏━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃        Test metric        ┃       DataLoader 0        ┃
+┡━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│   Metrics/MultiModality   │     5.487990379333496     │
+└───────────────────────────┴───────────────────────────┘
+Testing ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 100/100 0:00:20 • 0:00:00 4.87it/s 
+                                 Mean Metrics                                   
+       ┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┓        
+       ┃ Metrics                                 ┃ Value               ┃        
+       ┡━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━┩        
+       │ Metrics/FID/mean                        │ 5.5158162117004395  │        
+       │ Metrics/FID/conf_interval               │ 0.15264135092391315 │        
+       │ Metrics/Diversity/mean                  │ 5.539098421732585   │        
+       │ Metrics/Diversity/conf_interval         │ 0.11303028462785679 │        
+       │ Metrics/gt_Diversity/mean               │ 5.584860801696777   │        
+       │ Metrics/gt_Diversity/conf_interval      │ 0.09125179664661884 │        
+       │ Metrics/R_precision_top_1/mean          │ 0.0                 │        
+       │ Metrics/R_precision_top_1/conf_interval │ 0.0                 │        
+       │ Metrics/R_precision_top_2/mean          │ 0.0                 │        
+       │ Metrics/R_precision_top_2/conf_interval │ 0.0                 │        
+       │ Metrics/R_precision_top_3/mean          │ 0.0                 │        
+       │ Metrics/R_precision_top_3/conf_interval │ 0.0                 │        
+       │ Metrics/MultiModality/mean              │ 4.960771878560384   │        
+       │ Metrics/MultiModality/conf_interval     │ 0.4875720309825563  │        
+       └─────────────────────────────────────────┴─────────────────────┘        
+2026-09-07 19:18:59,335 Testing done, the metrics are saved to results/mld/rv_eval_text_egoonly_ep99_cfg2p5/metrics_2026-09-07-19-16-54.json
+=== JOB_STATISTICS ===
+=== current date     : Mon Sep  7 19:19:00 CEST 2026
+= Job-ID             : 818449 on helma
+= Job-Name           : rv_eval_text_egoonly_ep99_cfg2p5
+= Job-Command        : /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion/slurm/review/rv_eval_text_egoonly_ep99_cfg2p5.sh
+= Initial workdir    : /hnvme/workspace/v103fe12-ped_gen/motion-latent-diffusion
+= Queue/Partition    : h100
+= Slurm account      : v103fe with QOS=normal
+= Requested resources: cpu=32,mem=175G,node=1,billing=32,gres/gpu=1,gres/gpu:h100=1 for 04:00:00
+= Elapsed runtime    : 00:04:54
+= Total RAM usage    : 83.4 GiB of assigned 175 GiB (47.7%)
+= Node list          : h14-14
+= Subm/Elig/Start/End: 2026-09-07T19:14:05 / 2026-09-07T19:14:05 / 2026-09-07T19:14:06 / 2026-09-07T19:19:00
+======================
+=== Quota infos ======
+    Path                 Used     SoftQ    HardQ    Gracetime  Filec    FileQ    FiHaQ    FileGrace    
+    /home/hpc              98.7G   104.9G   209.7G        N/A     482K     500K   1,000K        N/A    
+    /hnvme                  7.2T     0.0K     0.0K        N/A  45,784       61K      81K        N/A    
+======================
+=== GPU utilization ==
+gpu_name, gpu_bus_id, pid, gpu_utilization [%], mem_utilization [%], max_memory_usage [MiB], time [ms]
+NVIDIA H100, 00000000:06:00.0, 17767, 32 %, 3 %, 4520 MiB, 132386 ms
