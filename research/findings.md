@@ -189,6 +189,26 @@ crossing omitted: ~2% base rate + no ego in dumps — documented annex):
 - REVIEW-HARDENING ARC: all agent-side items now CLOSED (1,2,4,5,6,8,9; 3 deferred). Open: user
   items (7, §4.1 assets, sign-off) + config/naming cleanup before code release.
 
+### FID does not credit conditioning: trained unconditional = 3.24 ≈ H4 (2026-09-07) — MAJOR
+
+Properly-trained unconditional MLD (H4 recipe, `guidance_uncondp=1.0`, 5000 ep, ego-zeroed eval at
+CFG 1, 3 reps, full val, gt_Diversity 5.496 PASS): **FID 3.241 ± 0.130** (ep4999; 4.07 @4499,
+4.90 @3999 — monotone to the end). Versus H4 3.392 ± 0.179: indistinguishable. Versus the paper's
+ego-zeroed prior 5.18: that prior was the under-trained 10%-dropout null branch, not p(motion).
+So the H4-vs-unconditional FID gap was never evidence of conditioning; FID compares MARGINALS. What
+conditioning buys is visible only in per-condition metrics: ADE/FDE (H4 2.32 vs ego-zeroed 2.88)
+and the behavioral probe (separation 0.333 vs 0.021). EgoPed-IA (2.880 ± 0.084) still beats the
+trained prior with non-overlapping CIs, but by 11%, not 44% — and the trained prior had no
+interaction pipeline while EgoPed-IA did (2×2: pipeline ≈ 0.5 FID), so even that margin is not yet
+a clean conditioning effect. Paper corrected (row + paragraph). Lesson: never quote an
+"unconditional" baseline obtained by zeroing the condition of a conditionally-trained model
+without also training a real prior.
+
+Text runs, training-val (single rep): oracle text (GT-leaking vocab) best 2.70 @ep3099 — as an
+oracle should. Fair vehicle-only text: 5.48 @ep99 then flat 5.6–5.8 — worse than unconditional at
+CFG 10; a weak condition + strong CFG pushes samples off-distribution. Definitive evals of both
+text models = CFG sweeps.
+
 ### In-domain text baselines: the `ego` vocabulary is an oracle (2026-09-06) — MY DESIGN ERROR
 
 Training-time val of the in-domain ego-text model (job 814433) reached FID 3.44 @ ep1199 — on par

@@ -285,7 +285,7 @@ R-Precision, in contrast, retrieves with each model's \emph{own} ego encoder emb
 \end{itemize}
 
 We additionally report four non-learned or reference baselines (Table~\ref{tab:trivial}) that bound the metric space.
-\textbf{Unconditional MLD} runs our H4 model (epoch 3399) with every ego trajectory zeroed; because CFG training dropout uses the same zeroed-trajectory construction, both guidance branches receive identical embeddings and guidance cancels exactly, yielding the model's pure unconditional prior and isolating the contribution of ego conditioning.
+\textbf{Unconditional MLD} runs our H4 model (epoch 3399) with every ego trajectory zeroed; because CFG training dropout uses the same zeroed-trajectory construction, both guidance branches receive identical embeddings and guidance cancels exactly, yielding the model's pure unconditional prior and isolating the contribution of ego conditioning. A \emph{separately trained} unconditional model (identical recipe, ego dropped at every training step, 5,000 epochs, evaluated through the same ego-zeroing at guidance scale 1) reaches FID 3.24 $\pm$ 0.13 --- statistically indistinguishable from the full-sequence model (3.39 $\pm$ 0.18). FID therefore does not by itself credit ego conditioning: the ego-zeroed branch of a conditional model is merely a weak unconditional generator, and a well-trained prior matches the conditional model's \emph{marginal}. Evidence that the conditioning is used comes from the evaluator-independent trajectory metrics (Sec.~\ref{sec:adefde}) and the behavioral probe (Sec.~\ref{sec:behavior}), which a model without ego access cannot match.
 \textbf{Retrieval} returns, for each test ego trajectory, the training motion whose ego trajectory is the nearest neighbour (32-point resampled L2).
 \textbf{VAE interpolation} decodes a random latent interpolation of two training motions.
 \textbf{Trajectory$+$kinematic} replaces all body features with the training mean, keeping either the ground-truth root velocity (\emph{oracle}) or nothing (\emph{mean}), simulating a trajectory-prediction-then-fitting pipeline with no learned body model.
@@ -313,6 +313,7 @@ We further add two \emph{learned} baselines trained on the identical data recipe
     Raw-space diffusion (learned, MDM-style)          & 26.43 {\scriptsize $\pm$0.098} & 3.55 & --$^\ddagger$ \\
     VAE latent interpolation         & 7.91 {\scriptsize $\pm$0.033}  & 5.82 & -- \\
     Unconditional \method (ego zeroed) & 5.18 {\scriptsize $\pm$0.209} & 5.96 & 0.031$^\dagger$ \\
+    Unconditional \method (trained, $p_\mathrm{drop}{=}1$)$^\P$ & 3.24 {\scriptsize $\pm$0.130} & 5.91 & 0.031$^\dagger$ \\
     \midrule
     H2 (Pooled)                      & 5.620  & 5.82 & 0.665 \\
     H4 (\method)                     & 3.392 & 5.79 & 0.548 \\
@@ -320,7 +321,7 @@ We further add two \emph{learned} baselines trained on the identical data recipe
     \bottomrule
   \end{tabular}
   \\[2pt]
-  {\footnotesize $^\ast$Non-generative upper bound: copies real training motions, so low FID reflects memorization rather than conditioned synthesis. $^\dagger$Exactly chance level ($1/32 = 0.031$), confirming the R-Precision protocol: without ego information, retrieval is random. $^\ddagger$R-Precision is undefined for these models (no shared embedding space with the ego encoder). $^\S$Official HumanML3D checkpoint driven by a fixed text prompt; we report the \emph{best} of three prompts (a naive scene description, a HumanML3D-idiomatic phrase, and per-sample oracle captions derived from ground-truth motion), which spanned FID 14.07--24.84. Its output is converted from HumanML3D to our normalization before scoring with the shared evaluator.}
+  {\footnotesize $^\ast$Non-generative upper bound: copies real training motions, so low FID reflects memorization rather than conditioned synthesis. $^\dagger$Exactly chance level ($1/32 = 0.031$), confirming the R-Precision protocol: without ego information, retrieval is random. $^\ddagger$R-Precision is undefined for these models (no shared embedding space with the ego encoder). $^\P$Trained with $p_\mathrm{drop}=1$ (never sees the ego) and evaluated through the same ego-zeroing path as the row above; reported at the final epoch because training-time validation feeds real ego to this model and is not a valid selector. $^\S$Official HumanML3D checkpoint driven by a fixed text prompt; we report the \emph{best} of three prompts (a naive scene description, a HumanML3D-idiomatic phrase, and per-sample oracle captions derived from ground-truth motion), which spanned FID 14.07--24.84. Its output is converted from HumanML3D to our normalization before scoring with the shared evaluator.}
 \end{table}
 
 \subsection{Main Results}

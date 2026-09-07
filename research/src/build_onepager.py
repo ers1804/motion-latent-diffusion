@@ -149,7 +149,8 @@ sec(RX, Inches(3.05), RW, "External baselines  ·  capability ladder")
 table(RX, Inches(3.38), RW,
       ["Approach", "FID ↓", "Reading"],
       [["EgoPed-IA (ours)", "2.88", "in-domain, ego-conditioned"],
-       ["Unconditional prior", "5.18", "conditioning worth 34%"],
+       ["Unconditional, properly trained", "3.24", "≈ H4 — FID is blind to conditioning"],
+       ["Unconditional prior (ego zeroed)", "5.18", "a weak null branch, not a prior"],
        ["Pretrained text-to-motion MLD", "14.07", "T2M does not transfer"],
        ["Raw-space diffusion (MDM-style)", "26.43", "latent backbone justified"],
        ["Ego→motion regressor", "35.47", "L2-optimal, unrealistic"],
@@ -159,7 +160,7 @@ table(RX, Inches(3.38), RW,
 # ══ right: validation axes ═════════════════════════════════════════════════
 sec(RX, Inches(5.15), RW, "Validated on four independent axes")
 bul(RX, Inches(5.48), RW, Inches(1.3), [
-    "FID — 40% over pooled, non-overlapping CIs, unified eval pipeline.",
+    "FID — 40% over pooled (non-overlapping CIs); but a trained prior also reaches 3.24, so FID alone does not credit conditioning.",
     "Held-out split — scene-disjoint, never used for selection: ranking preserved.",
     "Trajectory ADE/FDE — no learned evaluator: beats pooled on all 4 metrics "
     "despite lower R@1 → the R@1 gap is an embedding artifact.",
@@ -173,8 +174,8 @@ rect(0, Inches(6.85), SW, Pt(1.5), ACC)
 t = tb(Inches(0.35), Inches(6.88), Inches(12.6), Inches(0.6), MSO_ANCHOR.MIDDLE)
 p = t.paragraphs[0]
 run(p, "IN FLIGHT: ", 9.5, BLUE, bold=True)
-run(p, "information ladder — how much conditioning information is actually needed? "
-       "0 bits (unconditional) → 2.99 bits (body text) → 6.09 bits (ego text) → continuous 196×2 trajectory (ours). ",
+run(p, "information ladder — 0 bits (trained unconditional: FID 3.24) → 5.17 bits vehicle-only text (training) → "
+       "6.09 bits oracle text incl. GT behaviour (eval pending) → continuous trajectory (2.88). FID compares marginals; conditioning shows in ADE/FDE + behaviour. ",
     9.5, INK)
 run(p, "Open: ", 9.5, BLUE, bold=True)
 run(p, "pose-label quality audit · EgoPed-IA is single-seed · no physics constraints · no perceptual study yet.",

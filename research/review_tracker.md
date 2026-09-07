@@ -175,6 +175,30 @@ Fair rung submitted 2026-09-06: **815017** `rv_text_egoonly` (egoonly vocab, 5.1
 rate 2414/2414, helma JSON verified). 815017 cleared the crash window (7m39s, training; job log shows the egoonly vocabulary loaded).
 seg2 chained as **815018** (`afterany:815017`).
 
+**RESULT 2026-09-07 — rung 1 (properly-trained unconditional) DEFINITIVE, gate PASS (gt_Div 5.496):**
+| ckpt | FID (3 rep) | Diversity |
+|---|---|---|
+| **ep4999 (final)** | **3.241 ± 0.130** | 5.908 |
+| ep4499 | 4.068 ± 0.096 | 5.909 |
+| ep3999 | 4.904 ± 0.063 | 5.829 |
+Still improving at the wall → final checkpoint is the honest choice (training-val is not a valid
+selector for this model — see the leak note). **Consequence (major):** 3.24 ≈ H4 3.392 ± 0.179 (CIs
+overlap) and far better than the ego-zeroed prior (5.18). The paper's "conditioning is worth 34% FID"
+was an artifact of a weak null branch. FID does NOT credit conditioning; the conditional-fidelity
+evidence is ADE/FDE + behavioral probe (which a no-ego model cannot match). Paper: new tab:trivial
+row + paragraph added; one-pager updated. ⚠️ USER REVIEW: this is a framing change in §baselines.
+Open (needs a decision — extra compute): (i) ADE/FDE + behavioral probe on the trained-uncond
+checkpoint (synced to NAS; local run) — the cleanest control; (ii) an uncond model trained WITH the
+interaction pipeline, to bound EgoPed-IA's 2.880 the same way (2×2: pipeline alone ≈ 0.5 FID).
+Text runs (training-val, single rep, best over all segments): oracle `text_ego` COMPLETE — best
+**2.70 @ep3099** (an oracle should beat everything; definitive CFG sweep {1,2.5,5,10} at ep3099
+submitted); fair `text_egoonly` seg2 815018 running — best so far 5.48 @ep99 then FLAT 5.6–5.8 to
+ep3399, i.e. WORSE than the trained unconditional (3.24): most likely CFG=10 amplifying a
+weakly-informative condition off-distribution (uncond was evaluated at CFG 1) → its definitive eval
+must also be a CFG sweep, not a single CFG=10 number.
+Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
+csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
+
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
 - ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →
   `checkpoints/mld_humanml3d_checkpoint/1222_mld_humanml3d_FID041.ckpt` (258 MB). CLIP present
