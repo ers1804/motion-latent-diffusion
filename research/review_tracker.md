@@ -204,6 +204,8 @@ MM 4.07 (held-out val_test, 1 rep, gt_Div 5.49). Resubmitted as **817221/817222/
 ep3399, i.e. WORSE than the trained unconditional (3.24): most likely CFG=10 amplifying a
 weakly-informative condition off-distribution (uncond was evaluated at CFG 1) → its definitive eval
 must also be a CFG sweep, not a single CFG=10 number.
+  → generator: `python slurm/review/make_text_eval_sweep.py egoonly <best_epoch>` writes the 4 scripts
+  (reproduces the oracle set byte-for-byte); then git push, then sbatch.
 Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
 csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
 
