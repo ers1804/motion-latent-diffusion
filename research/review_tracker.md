@@ -232,8 +232,16 @@ expected order for a GT-behaviour oracle. Paper: new `tab:ladder` + paragraph in
 ep3399, i.e. WORSE than the trained unconditional (3.24): most likely CFG=10 amplifying a
 weakly-informative condition off-distribution (uncond was evaluated at CFG 1) → its definitive eval
 must also be a CFG sweep, not a single CFG=10 number.
-  → generator: `python slurm/review/make_text_eval_sweep.py egoonly <best_epoch>` writes the 4 scripts
+  → generator: `python slurm/review/make_text_eval_sweep.py egoonly <epoch>` writes the 4 CFG scripts
   (reproduces the oracle set byte-for-byte); then git push, then sbatch.
+  ⚠️ PROTOCOL FOR THE FAIR RUNG (2026-09-07, seg2 at ep3654): its train-val FID at CFG 10 is
+  DETERIORATING (5.48 @ep99 → 5.68 @3399 → 7.56 @3599), so "best train-val epoch" would select an
+  almost untrained checkpoint. Instead evaluate a small grid once 815018 completes: epochs
+  {99 (val-best), 3399 (epoch-matched to H4), 4999 (final)} × CFG {1, 2.5, 5, 10} = 12 jobs (~5 min
+  each), i.e. run the generator three times. Report the best cell AND the epoch-matched cell, both
+  with the sanity gate. Then sync the chosen checkpoint to NAS, add a `text_fair` entry to
+  `research/src/eval_ade_fde.py` (guidance = best CFG, extra overrides with CAPTION_VOCAB=egoonly),
+  run `--save-roots` + `behavioral_probe.py` — the per-condition numbers are the actual result.
 Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
 csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
 
