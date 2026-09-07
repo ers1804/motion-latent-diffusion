@@ -198,9 +198,13 @@ ego, but the interaction pipeline bought FID (2.88 vs 3.39) at the cost of per-c
 behavioural calibration (it stops too rarely — the weighted sampler over-represents interaction
 segments). Two readings are possible and must be separated: (a) the pipeline itself trades
 conditioning for marginal realism; (b) IA's ep1299 checkpoint is simply under-trained (H4's is
-ep3399). Diagnostic: IA @ep3399 through the same controls. Until then the paper reports both models
-with their per-condition numbers and calls H4 the best-conditioned model; the flagship naming is the
-user's call. Lesson (third time this cycle): every headline needs a per-condition metric next to it.
+ep3399). Diagnostic DONE — IA @ep3399: ADE 2.578 / FDE 5.339 / minADE₅ 1.526 / minFDE₅ 3.112, separation
+0.228, Brier 0.176, stop-rate 0.129. Part of the gap was under-training (ADE 2.64→2.58, sep
+0.15→0.23) but the rest is the pipeline: still behind H4 everywhere, and the stopping calibration
+gets WORSE with more training (0.14→0.13 vs GT 0.22) — the weighted sampler over-represents
+interaction segments, so the model learns a shifted behaviour prior. Reading (a) holds. The paper
+reports both models with per-condition numbers and names H4 the best-conditioned model; which one
+is called "the system" is the user's framing call. Lesson (third time this cycle): every headline needs a per-condition metric next to it.
 
 ### Per-condition controls settle it: the trained prior is ego-blind, the oracle is told the answer (2026-09-07)
 

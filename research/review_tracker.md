@@ -205,7 +205,11 @@ conditioning; it also under-predicts stopping (weighted training distribution �
 model. The paper now states this plainly (rows in tab:adefde/tab:behavior, ladder columns, two
 paragraphs) without changing the abstract's system choice. Confound to close first: IA's checkpoint
 is ep1299 (1/3 of H4's training) — evaluating IA at ep3399 (epoch-matched) through the same controls
-separates under-training from the pipeline effect (checkpoint being synced; local run). Next: the fair vehicle-only rung through the SAME controls
+separates under-training from the pipeline effect → **DONE: IA@3399 ADE 2.578 / FDE 5.339 /
+minADE₅ 1.526 / minFDE₅ 3.112, separation 0.228, Brier 0.176, gen stop-rate 0.129.** Longer
+training recovers part of the gap but IA still trails H4 on every metric and its stopping
+calibration worsens → the pipeline itself trades conditioning fidelity for marginal realism.
+Confound closed; the flagship-naming decision is now purely a framing choice for the user. Next: the fair vehicle-only rung through the SAME controls
 after its definitive eval — add a `text_fair` MODELS entry (ckpt = best epoch) in
 `research/src/eval_ade_fde.py`, run `--save-roots`, then `behavioral_probe.py`.
 Open (needs a decision — extra compute): (i) ~~ADE/FDE + behavioral probe on the trained-uncond

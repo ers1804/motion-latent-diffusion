@@ -164,7 +164,7 @@ bul(RX, Inches(5.48), RW, Inches(1.3), [
     "Held-out split — scene-disjoint, never used for selection: ranking preserved.",
     "Trajectory ADE/FDE — no learned evaluator: H4 beats pooled on all 4 metrics; a trained prior with "
     "the SAME FID is 29% worse (ego-blind) — and EgoPed-IA, best by FID, is worse than H4 per-condition "
-    "(ADE 2.64 vs 2.32; separation 0.15 vs 0.33): H4 is the best-conditioned model.",
+    "(ADE 2.64 vs 2.32; separation 0.15 vs 0.33; still behind at matched epochs): H4 is the best-conditioned model.",
     "Behavioral probe — best coupling of stop/walk decisions to the ego; "
     "unconditional model is ego-blind (sanity ✓).",
 ], 9.5)

@@ -399,6 +399,7 @@ To measure conditioning fidelity without any learned evaluator or model-specific
     H6 (unfrozen)        & \textbf{2.227} & \textbf{4.578} & 1.528 & 3.090 \\
     Regressor (deterministic, $K{=}1$) & 1.800 & 3.671 & --- & --- \\
     \method-IA (+ interaction sampling) & 2.635 & 5.479 & 1.707 & 3.505 \\
+    \method-IA, epoch-matched to H4 (3399) & 2.578 & 5.339 & 1.526 & 3.112 \\
     Unconditional (ego zeroed) & 2.880 & 5.876 & 1.228 & 2.454 \\
     Unconditional (trained, $p_\mathrm{drop}{=}1$) & 2.990 & 6.093 & 1.202 & 2.380 \\
     Oracle text (told the pedestrian's behaviour) & 1.899 & 3.868 & 1.298 & 2.580 \\
@@ -406,7 +407,7 @@ To measure conditioning fidelity without any learned evaluator or model-specific
   \end{tabular}
 \end{table}
 
-Three controls sharpen this reading. A \emph{separately trained} unconditional model, whose FID (3.24) is indistinguishable from H4's, is 29\% worse in ADE and 26\% worse in FDE: identical marginals, no per-condition fidelity --- the trajectory metrics see what FID cannot. An \emph{oracle} text model that is told the pedestrian's own behaviour (Sec.~\ref{tab:ladder}) reaches ADE 1.90, approaching the $L_2$-optimal regressor while remaining generative; it bounds what a perfect description of the outcome would buy. Finally, \method-IA --- the best model by FID --- is \emph{worse} than H4 on every per-condition metric (ADE 2.64 vs.\ 2.32; minADE$_5$ 1.71 vs.\ 1.29). Interaction-aware sampling improves the marginal but not the conditioning; its checkpoint is also trained for a third as long (epoch 1299 vs.\ 3399), which we cannot yet separate from the sampling effect.
+Three controls sharpen this reading. A \emph{separately trained} unconditional model, whose FID (3.24) is indistinguishable from H4's, is 29\% worse in ADE and 26\% worse in FDE: identical marginals, no per-condition fidelity --- the trajectory metrics see what FID cannot. An \emph{oracle} text model that is told the pedestrian's own behaviour (Sec.~\ref{tab:ladder}) reaches ADE 1.90, approaching the $L_2$-optimal regressor while remaining generative; it bounds what a perfect description of the outcome would buy. Finally, \method-IA --- the best model by FID --- is \emph{worse} than H4 on every per-condition metric (ADE 2.64 vs.\ 2.32; minADE$_5$ 1.71 vs.\ 1.29). Interaction-aware sampling improves the marginal but not the conditioning. Its FID-selected checkpoint is trained for a third as long (epoch 1299 vs.\ 3399); an epoch-matched checkpoint recovers part of the gap (ADE 2.58, minADE$_5$ 1.53) but still trails H4 on every metric, so the effect is attributable to the sampling itself rather than to under-training.
 
 The unconditional reference is worst on mean ADE/FDE, confirming that ego conditioning demonstrably improves trajectory-following (2.88~$\to$~2.32 mean ADE); its deceptively low minADE$_5$ reflects raw sample diversity, not conditioning.
 
@@ -431,6 +432,7 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
     H2 (pooled)        & 0.226 & 0.285 & 0.297 & 0.178 \\
     H6 (unfrozen)      & 0.222 & \textbf{0.364} & 0.178 & 0.178 \\
     \method-IA (+ interaction sampling) & 0.142 & 0.152 & 0.238 & 0.193 \\
+    \method-IA, epoch-matched to H4 (3399) & 0.129 & 0.228 & 0.168 & 0.176 \\
     Unconditional      & 0.194 & 0.021 & 0.533 & 0.199 \\
     Unconditional (trained, $p_\mathrm{drop}{=}1$) & 0.232 & 0.041 & 0.590 & 0.199 \\
     Oracle text (told the pedestrian's behaviour) & 0.243 & 0.933 & 0.023 & 0.033 \\
@@ -438,7 +440,7 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
   \end{tabular}
 \end{table}
 
-\method-IA couples behaviour to the ego less than half as strongly as H4 (separation 0.15 vs.\ 0.33) and under-predicts stopping (0.14 vs.\ a base rate of 0.22), consistent with the interaction-weighted training distribution shifting its behavioural calibration. Across Tables~\ref{tab:adefde} and \ref{tab:behavior}, H4 --- not the FID-best \method-IA --- is the best-\emph{conditioned} model.
+\method-IA couples behaviour to the ego less than half as strongly as H4 (separation 0.15 vs.\ 0.33) and under-predicts stopping (0.14 vs.\ a base rate of 0.22); at a matched epoch the coupling improves (0.23) while the stopping calibration worsens further (0.13), consistent with the interaction-weighted training distribution shifting behavioural calibration rather than with under-training. Across Tables~\ref{tab:adefde} and \ref{tab:behavior}, H4 --- not the FID-best \method-IA --- is the best-\emph{conditioned} model.
 
 Path-crossing labels (pedestrian/ego polyline intersection) occur at only a $\sim$2\% base rate in our windows and are omitted from the primary analysis.
 
