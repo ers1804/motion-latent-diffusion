@@ -174,9 +174,10 @@ rect(0, Inches(6.85), SW, Inches(0.65), LIGHT)
 rect(0, Inches(6.85), SW, Pt(1.5), ACC)
 t = tb(Inches(0.35), Inches(6.88), Inches(12.6), Inches(0.6), MSO_ANCHOR.MIDDLE)
 p = t.paragraphs[0]
-run(p, "IN FLIGHT: ", 9.5, BLUE, bold=True)
-run(p, "information ladder — 0 bits (trained unconditional: FID 3.24) → 5.17 bits vehicle-only text (training) → "
-       "6.09 bits oracle text incl. GT behaviour (FID 2.82, ADE 1.90) → trajectory (H4: FID 3.39, ADE 2.32, sep 0.33). FID ranks marginals; ADE + behaviour rank conditioning. ",
+run(p, "RESULT: ", 9.5, BLUE, bold=True)
+run(p, "information ladder (FID / ADE / behaviour-separation) — 0 bits: 3.24 / 2.99 / 0.04 → 5-bit vehicle text: 5.91 / 2.52 / 0.21 → "
+       "oracle text (told the behaviour): 2.82 / 1.90 / 0.93 → trajectory (H4): 3.39 / 2.32 / 0.33. The trajectory recovers 61% of the know-nothing→know-the-outcome ADE gap, "
+       "vehicle text 43%; FID ranks marginals, not conditioning. ",
     9.5, INK)
 run(p, "Open: ", 9.5, BLUE, bold=True)
 run(p, "pose-label quality audit · EgoPed-IA is single-seed · no physics constraints · no perceptual study yet.",

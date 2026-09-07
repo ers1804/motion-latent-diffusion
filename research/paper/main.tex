@@ -295,7 +295,7 @@ We further add two \emph{learned} baselines trained on the identical data recipe
 \textbf{Pretrained text-to-motion MLD}: the released HumanML3D MLD checkpoint~\cite{chen2023mld} generating from a text prompt instead of ego trajectory, evaluated on our held-out conditions. Because it is trained on a different corpus (mocap-quality everyday motion) its gap to our in-domain models conflates domain shift with the conditioning question; we therefore read it as evidence that off-the-shelf text-to-motion does not transfer to driving-scene pedestrians, rather than as a statement about text versus ego conditioning per se.
 
 \paragraph{Information ladder: how much conditioning information is needed?}
-To separate \emph{that} a condition helps from \emph{how much} information it must carry, we train the same architecture with conditioning signals of increasing information content (Table~\ref{tab:ladder}) and evaluate all of them with the unified pipeline. Captions are synthesized deterministically from kinematics for all 14,172 sequences, and the information content is the entropy of the resulting template distribution. The \emph{vehicle-only} vocabulary describes only what the ego-trajectory model sees (approach/pass/wait, side, proximity, ego speed and turning, timing of closest approach). The \emph{oracle} vocabulary additionally verbalizes the pedestrian's own ground-truth behaviour (gait, turning, stopping); it is therefore an upper bound, not a competitor. Text models use 10\% caption dropout and CLIP text features, and are evaluated at the same CFG scale as the trajectory models (a sweep over \{1, 2.5, 5, 10\} is monotone for the oracle model: 6.43, 5.71, 4.14, 2.82).
+To separate \emph{that} a condition helps from \emph{how much} information it must carry, we train the same architecture with conditioning signals of increasing information content (Table~\ref{tab:ladder}) and evaluate all of them with the unified pipeline. Captions are synthesized deterministically from kinematics for all 14,172 sequences, and the information content is the entropy of the resulting template distribution. The \emph{vehicle-only} vocabulary describes only what the ego-trajectory model sees (approach/pass/wait, side, proximity, ego speed and turning, timing of closest approach). The \emph{oracle} vocabulary additionally verbalizes the pedestrian's own ground-truth behaviour (gait, turning, stopping); it is therefore an upper bound, not a competitor. Text models use 10\% caption dropout and CLIP text features, and are evaluated at the same CFG scale as the trajectory models (a sweep over \{1, 2.5, 5, 10\} is monotone for the oracle model: 6.43, 5.71, 4.14, 2.82). The vehicle-only model is evaluated on a $3$-epoch$\times$$4$-CFG grid (epochs 99, 3399, 4999; FID ranges from 5.12 at epoch 99 with CFG 5 to 6.67); its epoch-matched checkpoint reaches FID 5.91, ADE 2.52 and behavioural separation 0.21 --- roughly two thirds of the trajectory model's per-condition gains over the unconditional prior (ADE $2.99\to2.32$, separation $0.04\to0.33$) at a much worse marginal, so a coarse verbal description of the vehicle carries real but incomplete ego information, and the continuous trajectory supplies the rest on both axes. Its FID-best checkpoint (epoch 99, FID 5.12) is behaviourally ego-blind (separation 0.05), reproducing within a single model the dissociation between FID and conditioning.
 \begin{table}[t]
   \centering\small
   \begin{tabular}{lccccc}
@@ -303,13 +303,13 @@ To separate \emph{that} a condition helps from \emph{how much} information it mu
     Conditioning signal & Information & FID $\downarrow$ & ADE $\downarrow$ & Separation $\uparrow$ & Diversity \\
     \midrule
     None (trained unconditional, $p_\mathrm{drop}{=}1$) & 0 bits & 3.24 {\scriptsize $\pm$0.130} & 2.99 & 0.04 & 5.91 \\
-    Vehicle-only text & 5.17 bits & \emph{in progress} & -- & -- & -- \\
+    Vehicle-only text (epoch-matched, 3399) & 5.17 bits & 5.91 {\scriptsize $\pm$0.055} & 2.52 & 0.21 & 5.67 \\
     Oracle text (+ ground-truth pedestrian behaviour) & 6.09 bits & 2.82 {\scriptsize $\pm$0.027} & 1.90 & 0.93 & 6.20 \\
     Ego trajectory (H4) & continuous, $196\times2$ & 3.39 {\scriptsize $\pm$0.179} & \textbf{2.32} & \textbf{0.33} & 5.79 \\
     Ego trajectory + interaction sampling (\method-IA) & continuous, $196\times2$ & \textbf{2.88} {\scriptsize $\pm$0.084} & 2.64 & 0.15 & 5.67 \\
     \bottomrule
   \end{tabular}
-  \caption{Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph{marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches \method-IA. Whether a condition is actually \emph{used} is measured in Secs.~\ref{sec:adefde} and \ref{sec:behavior}. ADE (m) and behavioural separation (held-out split, $K{=}5$) show which signals are actually \emph{used}: the trained prior is ego-blind despite matching H4's FID, the oracle is told the answer, and interaction sampling improves the marginal but not the per-condition fidelity (bold: best non-oracle model).}
+  \caption{Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph{marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches \method-IA. Whether a condition is actually \emph{used} is measured in Secs.~\ref{sec:adefde} and \ref{sec:behavior}. ADE (m) and behavioural separation (held-out split, $K{=}5$) show which signals are actually \emph{used}: the trained prior is ego-blind despite matching H4's FID, the oracle is told the answer, and interaction sampling improves the marginal but not the per-condition fidelity (bold: best non-oracle model). The vehicle-only row is the epoch-matched checkpoint; its FID-best checkpoint (5.12) does not use the condition.}
   \label{tab:ladder}
 \end{table}
 
@@ -402,6 +402,8 @@ To measure conditioning fidelity without any learned evaluator or model-specific
     \method-IA, epoch-matched to H4 (3399) & 2.578 & 5.339 & 1.526 & 3.112 \\
     Unconditional (ego zeroed) & 2.880 & 5.876 & 1.228 & 2.454 \\
     Unconditional (trained, $p_\mathrm{drop}{=}1$) & 2.990 & 6.093 & 1.202 & 2.380 \\
+    Vehicle-only text (epoch 3399) & 2.516 & 5.094 & 1.375 & 2.753 \\
+    Vehicle-only text, FID-best checkpoint (epoch 99) & 2.709 & 5.527 & 1.312 & 2.568 \\
     Oracle text (told the pedestrian's behaviour) & 1.899 & 3.868 & 1.298 & 2.580 \\
     \bottomrule
   \end{tabular}
@@ -435,6 +437,8 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
     \method-IA, epoch-matched to H4 (3399) & 0.129 & 0.228 & 0.168 & 0.176 \\
     Unconditional      & 0.194 & 0.021 & 0.533 & 0.199 \\
     Unconditional (trained, $p_\mathrm{drop}{=}1$) & 0.232 & 0.041 & 0.590 & 0.199 \\
+    Vehicle-only text (epoch 3399) & 0.230 & 0.214 & 0.387 & 0.183 \\
+    Vehicle-only text, FID-best checkpoint (epoch 99) & 0.101 & 0.051 & 0.301 & 0.187 \\
     Oracle text (told the pedestrian's behaviour) & 0.243 & 0.933 & 0.023 & 0.033 \\
     \bottomrule
   \end{tabular}

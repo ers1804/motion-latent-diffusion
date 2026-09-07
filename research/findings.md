@@ -201,7 +201,20 @@ at ep4999 CFG 1 → 6.67, CFG 10 → 5.49). Contrast the oracle (same architectu
 name the behaviour): 2.82. So the information content of the caption is what matters, and what the
 vehicle-only text lacks is precisely what the continuous 196×2 trajectory supplies (H4: 3.39 FID,
 ADE 2.32, separation 0.33). Whether the fair text carries ANY usable ego information is decided by
-its ADE/behaviour (controls running).
+its ADE/behaviour — DONE: it does, partially. Epoch-matched (3399/CFG10): ADE 2.516, FDE 5.094,
+separation 0.214, Brier 0.183, stop-rate 0.230 (well calibrated). Versus prior 2.99 / 0.04 and H4
+2.32 / 0.33: the text recovers ~70% of H4's ADE gain and ~59% of its separation gain, with a much
+worse marginal (FID 5.9). The FID-best checkpoint (ep99/CFG5, FID 5.12) is ego-blind (sep 0.051,
+ADE 2.71, stop-rate 0.10) — inside one model, the checkpoint that wins on FID is the one that
+ignores the condition.
+
+**INFORMATION LADDER — FINAL (2026-09-08).** FID / ADE / separation, held-out per-condition:
+0 bits 3.24 / 2.99 / 0.04 → vehicle text 5.17 bits 5.91 / 2.52 / 0.21 → oracle text 6.09 bits
+2.82 / 1.90 / 0.93 → trajectory H4 3.39 / 2.32 / 0.33 → trajectory + interaction sampling (IA)
+2.88 / 2.64 / 0.15. The paper's claim, stated without FID: between knowing nothing (ADE 2.99) and
+knowing the outcome (1.90) the continuous trajectory recovers 61% of the gap; a 5-bit verbal
+description of the vehicle recovers 43%; and the FID-best models (IA, text@ep99) are not the
+best-conditioned ones.
 
 ### EgoPed-IA is the best marginal, NOT the best-conditioned model (2026-09-07)
 

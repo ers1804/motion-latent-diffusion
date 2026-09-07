@@ -253,7 +253,16 @@ must also be a CFG sweep, not a single CFG=10 number.
   Best cell ep99/CFG 5 = **5.12**; epoch-matched best ep3399/CFG 10 = 5.91. Every cell is WORSE than
   the trained unconditional (3.24) and quality degrades with training: ~5 bits of vehicle text splits
   the data into 225 caption classes (~60 samples each) that the model fits worse than one marginal.
-  Per-condition controls (`text_fair` = ep99/CFG5, `text_fair_ep3399` = ep3399/CFG10) running locally.
+  **Per-condition controls DONE (held-out, K=5, N=1,190):** ep3399/CFG10: ADE 2.516 / FDE 5.094 /
+  minADE₅ 1.375 / minFDE₅ 2.753, separation 0.214, entropy 0.387, Brier 0.183, stop-rate 0.230.
+  ep99/CFG5 (FID-best): ADE 2.709 / FDE 5.527, separation 0.051, stop-rate 0.101 — ego-blind.
+  **Reading:** ~5 bits of vehicle text recovers ≈2/3 of the trajectory's per-condition gain over the
+  prior (ADE 0.47 of 0.67 m; separation 0.17 of 0.29) at a far worse marginal (FID 5.9 vs 3.4); H4
+  is ahead on every metric. The FID-best checkpoint does not use the condition — the FID/conditioning
+  dissociation reproduced inside one model. Ladder row = epoch-matched cell.
+**ITEM 10 CLOSED 2026-09-08** — all rungs measured on FID + ADE/FDE + behaviour; paper tab:ladder,
+tab:adefde, tab:behavior complete. Only optional follow-up: an unconditional model trained WITH the
+interaction pipeline (user decision; bounds IA's FID).
 Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
 csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
 
