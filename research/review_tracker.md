@@ -192,7 +192,7 @@ checkpoint (synced to NAS; local run) — the cleanest control; (ii) an uncond m
 interaction pipeline, to bound EgoPed-IA's 2.880 the same way (2×2: pipeline alone ≈ 0.5 FID).
 Text runs (training-val, single rep, best over all segments): oracle `text_ego` COMPLETE — best
 **2.70 @ep3099** (an oracle should beat everything; definitive CFG sweep {1,2.5,5,10} at ep3099
-submitted); fair `text_egoonly` seg2 815018 running — best so far 5.48 @ep99 then FLAT 5.6–5.8 to
+submitted as **817212/817213/817214/817215**); fair `text_egoonly` seg2 815018 running — best so far 5.48 @ep99 then FLAT 5.6–5.8 to
 ep3399, i.e. WORSE than the trained unconditional (3.24): most likely CFG=10 amplifying a
 weakly-informative condition off-distribution (uncond was evaluated at CFG 1) → its definitive eval
 must also be a CFG sweep, not a single CFG=10 number.
