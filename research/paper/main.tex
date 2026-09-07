@@ -298,18 +298,18 @@ We further add two \emph{learned} baselines trained on the identical data recipe
 To separate \emph{that} a condition helps from \emph{how much} information it must carry, we train the same architecture with conditioning signals of increasing information content (Table~\ref{tab:ladder}) and evaluate all of them with the unified pipeline. Captions are synthesized deterministically from kinematics for all 14,172 sequences, and the information content is the entropy of the resulting template distribution. The \emph{vehicle-only} vocabulary describes only what the ego-trajectory model sees (approach/pass/wait, side, proximity, ego speed and turning, timing of closest approach). The \emph{oracle} vocabulary additionally verbalizes the pedestrian's own ground-truth behaviour (gait, turning, stopping); it is therefore an upper bound, not a competitor. Text models use 10\% caption dropout and CLIP text features, and are evaluated at the same CFG scale as the trajectory models (a sweep over \{1, 2.5, 5, 10\} is monotone for the oracle model: 6.43, 5.71, 4.14, 2.82).
 \begin{table}[t]
   \centering\small
-  \begin{tabular}{lccc}
+  \begin{tabular}{lccccc}
     \toprule
-    Conditioning signal & Information & FID $\downarrow$ & Diversity \\
+    Conditioning signal & Information & FID $\downarrow$ & ADE $\downarrow$ & Separation $\uparrow$ & Diversity \\
     \midrule
-    None (trained unconditional, $p_\mathrm{drop}{=}1$) & 0 bits & 3.24 {\scriptsize $\pm$0.130} & 5.91 \\
-    Vehicle-only text & 5.17 bits & \emph{in progress} & -- \\
-    Oracle text (+ ground-truth pedestrian behaviour) & 6.09 bits & 2.82 {\scriptsize $\pm$0.027} & 6.20 \\
-    Ego trajectory (H4) & continuous, $196\times2$ & 3.39 {\scriptsize $\pm$0.179} & 5.79 \\
-    Ego trajectory + interaction sampling (\method-IA) & continuous, $196\times2$ & \textbf{2.88} {\scriptsize $\pm$0.084} & 5.67 \\
+    None (trained unconditional, $p_\mathrm{drop}{=}1$) & 0 bits & 3.24 {\scriptsize $\pm$0.130} & 2.99 & 0.04 & 5.91 \\
+    Vehicle-only text & 5.17 bits & \emph{in progress} & -- & -- & -- \\
+    Oracle text (+ ground-truth pedestrian behaviour) & 6.09 bits & 2.82 {\scriptsize $\pm$0.027} & 1.90 & 0.93 & 6.20 \\
+    Ego trajectory (H4) & continuous, $196\times2$ & 3.39 {\scriptsize $\pm$0.179} & \textbf{2.32} & \textbf{0.33} & 5.79 \\
+    Ego trajectory + interaction sampling (\method-IA) & continuous, $196\times2$ & \textbf{2.88} {\scriptsize $\pm$0.084} & 2.64 & 0.15 & 5.67 \\
     \bottomrule
   \end{tabular}
-  \caption{Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph{marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches \method-IA. Whether a condition is actually \emph{used} is measured in Secs.~\ref{sec:adefde} and \ref{sec:behavior}.}
+  \caption{Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph{marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches \method-IA. Whether a condition is actually \emph{used} is measured in Secs.~\ref{sec:adefde} and \ref{sec:behavior}. ADE (m) and behavioural separation (held-out split, $K{=}5$) show which signals are actually \emph{used}: the trained prior is ego-blind despite matching H4's FID, the oracle is told the answer, and interaction sampling improves the marginal but not the per-condition fidelity (bold: best non-oracle model).}
   \label{tab:ladder}
 \end{table}
 
@@ -386,7 +386,7 @@ To measure conditioning fidelity without any learned evaluator or model-specific
 
 \begin{table}[h]
   \centering
-  \caption{Root-trajectory displacement errors (meters, held-out test split, $K{=}5$ samples per condition, $N{=}1{,}190$). H4 beats the pooled baseline on \emph{all four} metrics (paired bootstrap over conditions: ADE, minADE, and minFDE significant) despite its lower R@1 — direct evidence that the cross-model R@1 gap is an embedding-space artifact. The deterministic regressor minimizes expected L2 by construction yet is unrealistic (FID 35.5, Table~\ref{tab:trivial}); with only 5 samples H4's minADE beats even this L2-optimal predictor. Mean ADE rewards mode concentration (collapsed H6 scores best) while min-of-$K$ rewards coverage — the two must be read together.}
+  \caption{Root-trajectory displacement errors (meters, held-out test split, $K{=}5$ samples per condition, $N{=}1{,}190$). H4 beats the pooled baseline on \emph{all four} metrics (paired bootstrap over conditions: ADE, minADE, and minFDE significant) despite its lower R@1 — direct evidence that the cross-model R@1 gap is an embedding-space artifact. The deterministic regressor minimizes expected L2 by construction yet is unrealistic (FID 35.5, Table~\ref{tab:trivial}); with only 5 samples H4's minADE beats even this L2-optimal predictor. Mean ADE rewards mode concentration (collapsed H6 scores best) while min-of-$K$ rewards coverage — the two must be read together. Bold marks the best ego-trajectory-conditioned model per column; the unconditional and oracle rows are reference bounds (min-of-$K$ rewards the diversity of an unconditional sampler and is not a conditioning test).}
   \label{tab:adefde}
   \vspace{4pt}
   \small
@@ -398,10 +398,15 @@ To measure conditioning fidelity without any learned evaluator or model-specific
     H2 (pooled)          & 2.434 & 4.990 & 1.482 & 2.979 \\
     H6 (unfrozen)        & \textbf{2.227} & \textbf{4.578} & 1.528 & 3.090 \\
     Regressor (deterministic, $K{=}1$) & 1.800 & 3.671 & --- & --- \\
+    \method-IA (+ interaction sampling) & 2.635 & 5.479 & 1.707 & 3.505 \\
     Unconditional (ego zeroed) & 2.880 & 5.876 & 1.228 & 2.454 \\
+    Unconditional (trained, $p_\mathrm{drop}{=}1$) & 2.990 & 6.093 & 1.202 & 2.380 \\
+    Oracle text (told the pedestrian's behaviour) & 1.899 & 3.868 & 1.298 & 2.580 \\
     \bottomrule
   \end{tabular}
 \end{table}
+
+Three controls sharpen this reading. A \emph{separately trained} unconditional model, whose FID (3.24) is indistinguishable from H4's, is 29\% worse in ADE and 26\% worse in FDE: identical marginals, no per-condition fidelity --- the trajectory metrics see what FID cannot. An \emph{oracle} text model that is told the pedestrian's own behaviour (Sec.~\ref{tab:ladder}) reaches ADE 1.90, approaching the $L_2$-optimal regressor while remaining generative; it bounds what a perfect description of the outcome would buy. Finally, \method-IA --- the best model by FID --- is \emph{worse} than H4 on every per-condition metric (ADE 2.64 vs.\ 2.32; minADE$_5$ 1.71 vs.\ 1.29). Interaction-aware sampling improves the marginal but not the conditioning; its checkpoint is also trained for a third as long (epoch 1299 vs.\ 3399), which we cannot yet separate from the sampling effect.
 
 The unconditional reference is worst on mean ADE/FDE, confirming that ego conditioning demonstrably improves trajectory-following (2.88~$\to$~2.32 mean ADE); its deceptively low minADE$_5$ reflects raw sample diversity, not conditioning.
 
@@ -414,7 +419,7 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
 
 \begin{table}[h]
   \centering
-  \caption{Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.224). The unconditional model is behaviorally ego-blind (separation $\approx$ 0), validating the probe. H4 couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a third evaluator-independent axis, after FID and ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. H6 shows the MultiModality collapse in behavior space: the highest separation at the \emph{lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than H2's (overconfidence).}
+  \caption{Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.224). The unconditional model is behaviorally ego-blind (separation $\approx$ 0), validating the probe. H4 couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a third evaluator-independent axis, after FID and ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. H6 shows the MultiModality collapse in behavior space: the highest separation at the \emph{lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than H2's (overconfidence). Bold marks the best ego-trajectory-conditioned model per column. The trained unconditional model is as ego-blind as the zeroed one (separation 0.04, Brier at chance); the oracle's 0.93 is the probe reading its own label back from the caption (``\ldots and then stops''), which validates the probe rather than a conditioning claim.}
   \label{tab:behavior}
   \vspace{4pt}
   \small
@@ -425,10 +430,15 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
     H4 (full-sequence) & 0.176 & 0.333 & 0.238 & \textbf{0.149} \\
     H2 (pooled)        & 0.226 & 0.285 & 0.297 & 0.178 \\
     H6 (unfrozen)      & 0.222 & \textbf{0.364} & 0.178 & 0.178 \\
+    \method-IA (+ interaction sampling) & 0.142 & 0.152 & 0.238 & 0.193 \\
     Unconditional      & 0.194 & 0.021 & 0.533 & 0.199 \\
+    Unconditional (trained, $p_\mathrm{drop}{=}1$) & 0.232 & 0.041 & 0.590 & 0.199 \\
+    Oracle text (told the pedestrian's behaviour) & 0.243 & 0.933 & 0.023 & 0.033 \\
     \bottomrule
   \end{tabular}
 \end{table}
+
+\method-IA couples behaviour to the ego less than half as strongly as H4 (separation 0.15 vs.\ 0.33) and under-predicts stopping (0.14 vs.\ a base rate of 0.22), consistent with the interaction-weighted training distribution shifting its behavioural calibration. Across Tables~\ref{tab:adefde} and \ref{tab:behavior}, H4 --- not the FID-best \method-IA --- is the best-\emph{conditioned} model.
 
 Path-crossing labels (pedestrian/ego polyline intersection) occur at only a $\sim$2\% base rate in our windows and are omitted from the primary analysis.
 

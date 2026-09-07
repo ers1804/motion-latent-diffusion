@@ -45,6 +45,23 @@ MODELS = {
     "h4_uncond": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
                       ckpt=f"{HM}/ego_motion_diffusion_h4_trans_dec/checkpoints/epoch=3399.ckpt",
                       guidance=10, zero_ego=True),
+    # --- information-ladder controls (2026-09-07): FID ranks marginals, so these
+    # per-condition metrics are what decides the ladder.
+    "ia": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
+               ckpt=f"{HM}/ego_motion_diffusion_h4_pipeline/checkpoints/epoch=1299.ckpt",
+               guidance=10),          # EgoPed-IA flagship (trained with interaction sampling)
+    "ia_ep3399": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
+                      ckpt=f"{HM}/ego_motion_diffusion_h4_pipeline/checkpoints/epoch=3399.ckpt",
+                      guidance=10),   # epoch-matched to H4: separates under-training from the pipeline effect
+    "uncond_trained": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
+                           ckpt=f"{HM}/ego_motion_diffusion_uncond_trained/checkpoints/epoch=4999.ckpt",
+                           guidance=1, zero_ego=True),
+    "text_oracle": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
+                        ckpt=f"{HM}/ego_motion_diffusion_text_ego/checkpoints/epoch=3099.ckpt",
+                        guidance=10,
+                        extra=["model.condition=text", "model.denoiser.params.text_encoded_dim=768",
+                               "DATASET.EGOMOTION.CAPTIONS_PATH=research/data/synth_captions.json",
+                               "DATASET.EGOMOTION.CAPTION_VOCAB=ego"]),
 }
 
 
@@ -73,6 +90,7 @@ def main():
         f"model.guidance_scale={spec['guidance']}",
         f"TEST.BATCH_SIZE={args.batch}",
     ]
+    overrides += spec.get("extra", [])
     sys.argv = ["eval_ade_fde", "--cfg", spec["cfg"], "--nodebug", "--overrides"] + overrides
 
     from mld.config import parse_args

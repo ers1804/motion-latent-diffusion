@@ -162,8 +162,9 @@ sec(RX, Inches(5.15), RW, "Validated on four independent axes")
 bul(RX, Inches(5.48), RW, Inches(1.3), [
     "FID — 40% over pooled (non-overlapping CIs); but a trained prior also reaches 3.24, so FID alone does not credit conditioning.",
     "Held-out split — scene-disjoint, never used for selection: ranking preserved.",
-    "Trajectory ADE/FDE — no learned evaluator: beats pooled on all 4 metrics "
-    "despite lower R@1 → the R@1 gap is an embedding artifact.",
+    "Trajectory ADE/FDE — no learned evaluator: H4 beats pooled on all 4 metrics; a trained prior with "
+    "the SAME FID is 29% worse (ego-blind) — and EgoPed-IA, best by FID, is worse than H4 per-condition "
+    "(ADE 2.64 vs 2.32; separation 0.15 vs 0.33): H4 is the best-conditioned model.",
     "Behavioral probe — best coupling of stop/walk decisions to the ego; "
     "unconditional model is ego-blind (sanity ✓).",
 ], 9.5)
@@ -175,7 +176,7 @@ t = tb(Inches(0.35), Inches(6.88), Inches(12.6), Inches(0.6), MSO_ANCHOR.MIDDLE)
 p = t.paragraphs[0]
 run(p, "IN FLIGHT: ", 9.5, BLUE, bold=True)
 run(p, "information ladder — 0 bits (trained unconditional: FID 3.24) → 5.17 bits vehicle-only text (training) → "
-       "6.09 bits oracle text incl. GT behaviour (2.82) → continuous trajectory (H4 3.39 / IA 2.88). FID ranks marginals, not conditioning — see ADE/FDE + behaviour. ",
+       "6.09 bits oracle text incl. GT behaviour (FID 2.82, ADE 1.90) → trajectory (H4: FID 3.39, ADE 2.32, sep 0.33). FID ranks marginals; ADE + behaviour rank conditioning. ",
     9.5, INK)
 run(p, "Open: ", 9.5, BLUE, bold=True)
 run(p, "pose-label quality audit · EgoPed-IA is single-seed · no physics constraints · no perceptual study yet.",

@@ -23,11 +23,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from intention_labels import is_stopping  # noqa: E402
 
 DATA = Path(__file__).resolve().parent.parent / "data"
-MODELS = ["h4", "h2", "h6", "h4_uncond"]
+MODELS = ["h4", "ia", "ia_ep3399", "h2", "h6", "h4_uncond", "uncond_trained", "text_oracle", "text_fair"]
 
 
 def probe(model):
-    d = np.load(DATA / f"ade_fde_{model}_val_test_k5.npz")
+    f = DATA / f"ade_fde_{model}_val_test_k5.npz"
+    if not f.exists():          # ladder rungs whose dump is not produced yet
+        return None
+    d = np.load(f)
     gen, gt, lens = d["roots_gen"], d["roots_gt"], d["lengths"]  # (N,K,T,2),(N,T,2),(N,)
     N, K = gen.shape[:2]
     gt_stop = np.array([is_stopping(gt[i, :lens[i]]) for i in range(N)], dtype=float)
@@ -47,5 +50,7 @@ if __name__ == "__main__":
     print(f"{'model':10s} {'GT-rate':>8s} {'gen-rate':>9s} {'separation':>11s} {'entropy':>8s} {'brier':>7s}")
     for m in MODELS:
         r = probe(m)
+        if r is None:           # dump not produced yet (ladder rung still training)
+            continue
         print(f"{m:10s} {r['gt_rate']:8.3f} {r['gen_rate']:9.3f} {r['separation']:11.3f} "
               f"{r['mean_entropy']:8.3f} {r['brier']:7.3f}")

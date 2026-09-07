@@ -189,6 +189,35 @@ crossing omitted: ~2% base rate + no ego in dumps — documented annex):
 - REVIEW-HARDENING ARC: all agent-side items now CLOSED (1,2,4,5,6,8,9; 3 deferred). Open: user
   items (7, §4.1 assets, sign-off) + config/naming cleanup before code release.
 
+### EgoPed-IA is the best marginal, NOT the best-conditioned model (2026-09-07)
+
+Same controls (held-out, K=5, N=1,190): IA ADE 2.635 / FDE 5.479 / minADE₅ 1.707 / minFDE₅ 3.505 vs
+H4 2.320 / 4.826 / 1.291 / 2.591; separation 0.152 vs 0.333; Brier 0.193 vs 0.149; gen stop-rate
+0.142 vs GT 0.224 (H4 0.176). IA clears the unconditional floor (ADE 2.99, sep 0.04) so it uses the
+ego, but the interaction pipeline bought FID (2.88 vs 3.39) at the cost of per-condition fidelity and
+behavioural calibration (it stops too rarely — the weighted sampler over-represents interaction
+segments). Two readings are possible and must be separated: (a) the pipeline itself trades
+conditioning for marginal realism; (b) IA's ep1299 checkpoint is simply under-trained (H4's is
+ep3399). Diagnostic: IA @ep3399 through the same controls. Until then the paper reports both models
+with their per-condition numbers and calls H4 the best-conditioned model; the flagship naming is the
+user's call. Lesson (third time this cycle): every headline needs a per-condition metric next to it.
+
+### Per-condition controls settle it: the trained prior is ego-blind, the oracle is told the answer (2026-09-07)
+
+Held-out val_test, K=5, N=1,190 (same protocol as tab:adefde / tab:behavior):
+- **Trained unconditional** (FID 3.24 ≈ H4 3.39): ADE 2.990 / FDE 6.093 vs H4 2.320 / 4.826
+  (+29% / +26%); behavioral separation 0.041 (H4 0.333), entropy 0.590, Brier 0.199 (= chance).
+  Same marginal, no ego coupling. This is the cleanest statement of the paper's conditioning claim
+  and it does not rely on FID at all.
+- **Oracle text** (FID 2.82): ADE 1.899 / FDE 3.868 — approaching the L2-optimal regressor (1.800)
+  while remaining generative; separation 0.933, Brier 0.033. The caption contains "and then stops",
+  so the probe simply reads the leak back — it validates that the probe detects behaviour carried by
+  the condition, and it bounds what a *perfect* description of the outcome would buy.
+- min-of-K: the prior "wins" minADE (1.20) because five diverse samples straddle the GT — the known
+  artifact; mean ADE/FDE are the conditioning test.
+Ladder, per-condition: what remains unknown is the FAIR rung (vehicle-only text) — whether ~5 bits
+of vehicle description yields ANY ADE/behaviour coupling. That is the language-vs-trajectory result.
+
 ### FID does not credit conditioning: trained unconditional = 3.24 ≈ H4 (2026-09-07) — MAJOR
 
 Properly-trained unconditional MLD (H4 recipe, `guidance_uncondp=1.0`, 5000 ep, ego-zeroed eval at

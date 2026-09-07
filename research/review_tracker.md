@@ -187,8 +187,29 @@ overlap) and far better than the ego-zeroed prior (5.18). The paper's "condition
 was an artifact of a weak null branch. FID does NOT credit conditioning; the conditional-fidelity
 evidence is ADE/FDE + behavioral probe (which a no-ego model cannot match). Paper: new tab:trivial
 row + paragraph added; one-pager updated. ⚠️ USER REVIEW: this is a framing change in §baselines.
-Open (needs a decision — extra compute): (i) ADE/FDE + behavioral probe on the trained-uncond
-checkpoint (synced to NAS; local run) — the cleanest control; (ii) an uncond model trained WITH the
+**Per-condition controls DONE 2026-09-07 (local, held-out val_test, K=5, N=1,190) — the decisive evidence:**
+| model | FID | ADE | FDE | minADE₅ | minFDE₅ | sep. | entropy | Brier |
+|---|---|---|---|---|---|---|---|---|
+| H4 (trajectory) | 3.39 | 2.320 | 4.826 | 1.291 | 2.591 | 0.333 | 0.238 | 0.149 |
+| trained unconditional | 3.24 | **2.990** | **6.093** | 1.202 | 2.380 | **0.041** | 0.590 | 0.199 |
+| oracle text | 2.82 | **1.899** | **3.868** | 1.298 | 2.580 | **0.933** | 0.023 | 0.033 |
+Trained prior: same FID as H4 but 29% worse ADE and ego-blind (sep. 0.04, Brier at chance) → H4
+uses the ego; FID cannot see it. Oracle: 0.93 separation = the caption leak made visible (it is told
+whether the pedestrian stops) — a probe sanity check, not a conditioning result. min-of-K favours
+the high-diversity prior (known artifact; mean metrics are the test). **EgoPed-IA through the same controls (2026-09-07): FID 2.88 but ADE 2.635 / FDE 5.479 /
+minADE₅ 1.707 / minFDE₅ 3.505, separation 0.152, entropy 0.238, Brier 0.193, gen stop-rate 0.142
+(GT 0.224) — WORSE than H4 on every per-condition metric (ADE +14%, minADE +32%, separation < half),
+though above the unconditional floor. Interaction sampling improved the marginal (FID) but not the
+conditioning; it also under-predicts stopping (weighted training distribution → calibration shift).
+⚠️ **USER DECISION: which system is the flagship?** H4 is the best-CONDITIONED model; IA the best-FID
+model. The paper now states this plainly (rows in tab:adefde/tab:behavior, ladder columns, two
+paragraphs) without changing the abstract's system choice. Confound to close first: IA's checkpoint
+is ep1299 (1/3 of H4's training) — evaluating IA at ep3399 (epoch-matched) through the same controls
+separates under-training from the pipeline effect (checkpoint being synced; local run). Next: the fair vehicle-only rung through the SAME controls
+after its definitive eval — add a `text_fair` MODELS entry (ckpt = best epoch) in
+`research/src/eval_ade_fde.py`, run `--save-roots`, then `behavioral_probe.py`.
+Open (needs a decision — extra compute): (i) ~~ADE/FDE + behavioral probe on the trained-uncond
+checkpoint~~ DONE above; (ii) an uncond model trained WITH the
 interaction pipeline, to bound EgoPed-IA's 2.880 the same way (2×2: pipeline alone ≈ 0.5 FID).
 Text runs (training-val, single rep, best over all segments): oracle `text_ego` COMPLETE — best
 **2.70 @ep3099** (an oracle should beat everything; definitive CFG sweep {1,2.5,5,10} at ep3099
