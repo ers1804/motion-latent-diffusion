@@ -242,6 +242,8 @@ must also be a CFG sweep, not a single CFG=10 number.
   with the sanity gate. Then sync the chosen checkpoint to NAS, add a `text_fair` entry to
   `research/src/eval_ade_fde.py` (guidance = best CFG, extra overrides with CAPTION_VOCAB=egoonly),
   run `--save-roots` + `behavioral_probe.py` — the per-condition numbers are the actual result.
+  → SUBMITTED 2026-09-08 (815018 at ep4955): ep99 → 818448–818451, ep3399 → 818452–818455 (running),
+  ep4999 → 818456–818459 (chained afterany:815018). Order within each set: CFG 1, 2.5, 5, 10.
 Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
 csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
 
