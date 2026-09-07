@@ -948,11 +948,12 @@ class MLD(BaseModel):
         lengths = batch["length"]
 
         if self.condition in ["text", "text_uncond"]:
-            # get text embeddings
+            # get text embeddings (define `texts` up front: with CFG disabled,
+            # guidance_scale=1, the block below is skipped and `texts` was unbound)
+            texts = batch["text"] if self.condition == 'text' else [""] * len(lengths)
             if self.do_classifier_free_guidance:
                 uncond_tokens = [""] * len(lengths)
                 if self.condition == 'text':
-                    texts = batch["text"]
                     uncond_tokens.extend(texts)
                 elif self.condition == 'text_uncond':
                     uncond_tokens.extend(uncond_tokens)
@@ -1386,8 +1387,12 @@ class MLD(BaseModel):
                         lengths=batch["length"],
                     )
                 elif metric == "MMMetrics":
-                    # For ego condition use t2m embeddings; otherwise VAE latents
-                    if self.condition == 'ego' and "t2m_lat_rm" in rs_set:
+                    # Use t2m embeddings whenever ego_eval provided them (any
+                    # condition routed through EgoMotionMetrics, incl. text models
+                    # on ego data); otherwise fall back to VAE latents. Gating on
+                    # condition=='ego' sent text models to the (B,4,256) latent
+                    # path, whose unsqueeze(0) is 4-D and trips the MM assert.
+                    if "t2m_lat_rm" in rs_set:
                         getattr(self, metric).update(
                             rs_set["t2m_lat_rm"].unsqueeze(0), batch["length"]
                         )

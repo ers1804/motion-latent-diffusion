@@ -192,7 +192,15 @@ checkpoint (synced to NAS; local run) — the cleanest control; (ii) an uncond m
 interaction pipeline, to bound EgoPed-IA's 2.880 the same way (2×2: pipeline alone ≈ 0.5 FID).
 Text runs (training-val, single rep, best over all segments): oracle `text_ego` COMPLETE — best
 **2.70 @ep3099** (an oracle should beat everything; definitive CFG sweep {1,2.5,5,10} at ep3099
-submitted as **817212/817213/817214/817215**); fair `text_egoonly` seg2 815018 running — best so far 5.48 @ep99 then FLAT 5.6–5.8 to
+submitted as **817212/817213/817214/817215** — **ALL FAILED** (2026-09-07), two eval-only bugs
+the training-time validation never exercises: (1) CFG=1: `test_diffusion_forward` text branch
+assigned `texts` only inside `if do_classifier_free_guidance` → UnboundLocalError; (2) CFG>1:
+`allsplit_step` gated the MultiModality update on `condition=='ego'`, sending text models to the
+`(B,4,256)` VAE-latent path whose `unsqueeze(0)` is 4-D → `calculate_multimodality_np` assert.
+Both fixed (define `texts` up front; gate MM on `"t2m_lat_rm" in rs_set`, which keeps MM in the
+same 512-d t2m space for every model). Local end-to-end pre-flight of `test.py` at CFG 1 and 10
+with MM on the NAS copy of ep3099: PASS at both — CFG 1: FID 6.27 / MM 5.50; CFG 10: FID 2.85 /
+MM 4.07 (held-out val_test, 1 rep, gt_Div 5.49). Resubmitted on helma); fair `text_egoonly` seg2 815018 running — best so far 5.48 @ep99 then FLAT 5.6–5.8 to
 ep3399, i.e. WORSE than the trained unconditional (3.24): most likely CFG=10 amplifying a
 weakly-informative condition off-distribution (uncond was evaluated at CFG 1) → its definitive eval
 must also be a CFG sweep, not a single CFG=10 number.
