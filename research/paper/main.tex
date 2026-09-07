@@ -294,6 +294,25 @@ We further add two \emph{learned} baselines trained on the identical data recipe
 \textbf{Raw-space diffusion (MDM-style)}: our diffusion model operated directly in the 263-D feature space without the latent VAE (a same-capacity raw-space variant in the spirit of MDM~\cite{tevet2023mdm}, not a faithful reproduction); its best checkpoint plateaus early and never approaches latent-space quality, justifying the latent backbone.
 \textbf{Pretrained text-to-motion MLD}: the released HumanML3D MLD checkpoint~\cite{chen2023mld} generating from a text prompt instead of ego trajectory, evaluated on our held-out conditions. Because it is trained on a different corpus (mocap-quality everyday motion) its gap to our in-domain models conflates domain shift with the conditioning question; we therefore read it as evidence that off-the-shelf text-to-motion does not transfer to driving-scene pedestrians, rather than as a statement about text versus ego conditioning per se.
 
+\paragraph{Information ladder: how much conditioning information is needed?}
+To separate \emph{that} a condition helps from \emph{how much} information it must carry, we train the same architecture with conditioning signals of increasing information content (Table~\ref{tab:ladder}) and evaluate all of them with the unified pipeline. Captions are synthesized deterministically from kinematics for all 14,172 sequences, and the information content is the entropy of the resulting template distribution. The \emph{vehicle-only} vocabulary describes only what the ego-trajectory model sees (approach/pass/wait, side, proximity, ego speed and turning, timing of closest approach). The \emph{oracle} vocabulary additionally verbalizes the pedestrian's own ground-truth behaviour (gait, turning, stopping); it is therefore an upper bound, not a competitor. Text models use 10\% caption dropout and CLIP text features, and are evaluated at the same CFG scale as the trajectory models (a sweep over \{1, 2.5, 5, 10\} is monotone for the oracle model: 6.43, 5.71, 4.14, 2.82).
+\begin{table}[t]
+  \centering\small
+  \begin{tabular}{lccc}
+    \toprule
+    Conditioning signal & Information & FID $\downarrow$ & Diversity \\
+    \midrule
+    None (trained unconditional, $p_\mathrm{drop}{=}1$) & 0 bits & 3.24 {\scriptsize $\pm$0.130} & 5.91 \\
+    Vehicle-only text & 5.17 bits & \emph{in progress} & -- \\
+    Oracle text (+ ground-truth pedestrian behaviour) & 6.09 bits & 2.82 {\scriptsize $\pm$0.027} & 6.20 \\
+    Ego trajectory (H4) & continuous, $196\times2$ & 3.39 {\scriptsize $\pm$0.179} & 5.79 \\
+    Ego trajectory + interaction sampling (\method-IA) & continuous, $196\times2$ & \textbf{2.88} {\scriptsize $\pm$0.084} & 5.67 \\
+    \bottomrule
+  \end{tabular}
+  \caption{Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph{marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches \method-IA. Whether a condition is actually \emph{used} is measured in Secs.~\ref{sec:adefde} and \ref{sec:behavior}.}
+  \label{tab:ladder}
+\end{table}
+
 \begin{table}[t]
   \centering
   \caption{Reference baselines bounding the metric space (val split; same evaluator, normalization, and split lists as Table~\ref{tab:main}). All rows are mean $\pm$ 95\% CI over 3 replications (the unconditional row resamples the diffusion model; the non-learned rows are reseeded end-to-end). Retrieval attains near-zero FID by copying real motions but is non-generative; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. Ego conditioning improves \method's FID by 34\% over its own unconditional prior (5.18~$\to$~3.39) — and even the unconditional H4 prior outperforms conditionally generated H2 motions, underscoring the architectural advantage of full-sequence conditioning.}

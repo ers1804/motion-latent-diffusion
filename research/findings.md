@@ -209,6 +209,16 @@ oracle should. Fair vehicle-only text: 5.48 @ep99 then flat 5.6–5.8 — worse 
 CFG 10; a weak condition + strong CFG pushes samples off-distribution. Definitive evals of both
 text models = CFG sweeps.
 
+**Oracle text DEFINITIVE (2026-09-07, jobs 817221–4, 3 reps, full val, gt_Div 5.585 PASS):** FID by
+CFG {1, 2.5, 5, 10} = 6.43 / 5.71 / 4.14 / **2.82 ± 0.03** — monotone; at the paper's CFG 10 the
+oracle ties EgoPed-IA (2.88 ± 0.08) and beats H4 (3.39). MM falls with CFG (4.43 → 3.22) and
+Diversity is above GT (6.20 vs 5.58): a strong condition + strong guidance sharpens per-condition
+samples while the marginal spreads. Ladder on FID: uncond 3.24 · H4 3.39 · oracle 2.82 · IA 2.88 —
+the ordering itself shows FID ranks marginals. The vehicle-only rung is the one that can actually
+test the language-vs-trajectory question; its train-val (~5.6 at CFG 10) suggests it will land
+WORSE than unconditional, i.e. a coarse description of the vehicle adds nothing FID can see — the
+per-condition metrics (ADE/FDE, behaviour) are the only place the fair comparison can be decided.
+
 ### In-domain text baselines: the `ego` vocabulary is an oracle (2026-09-06) — MY DESIGN ERROR
 
 Training-time val of the in-domain ego-text model (job 814433) reached FID 3.44 @ ep1199 — on par

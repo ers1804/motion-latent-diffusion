@@ -175,7 +175,7 @@ t = tb(Inches(0.35), Inches(6.88), Inches(12.6), Inches(0.6), MSO_ANCHOR.MIDDLE)
 p = t.paragraphs[0]
 run(p, "IN FLIGHT: ", 9.5, BLUE, bold=True)
 run(p, "information ladder — 0 bits (trained unconditional: FID 3.24) → 5.17 bits vehicle-only text (training) → "
-       "6.09 bits oracle text incl. GT behaviour (eval pending) → continuous trajectory (2.88). FID compares marginals; conditioning shows in ADE/FDE + behaviour. ",
+       "6.09 bits oracle text incl. GT behaviour (2.82) → continuous trajectory (H4 3.39 / IA 2.88). FID ranks marginals, not conditioning — see ADE/FDE + behaviour. ",
     9.5, INK)
 run(p, "Open: ", 9.5, BLUE, bold=True)
 run(p, "pose-label quality audit · EgoPed-IA is single-seed · no physics constraints · no perceptual study yet.",

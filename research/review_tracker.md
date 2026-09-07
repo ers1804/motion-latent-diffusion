@@ -200,7 +200,10 @@ assigned `texts` only inside `if do_classifier_free_guidance` → UnboundLocalEr
 Both fixed (define `texts` up front; gate MM on `"t2m_lat_rm" in rs_set`, which keeps MM in the
 same 512-d t2m space for every model). Local end-to-end pre-flight of `test.py` at CFG 1 and 10
 with MM on the NAS copy of ep3099: PASS at both — CFG 1: FID 6.27 / MM 5.50; CFG 10: FID 2.85 /
-MM 4.07 (held-out val_test, 1 rep, gt_Div 5.49). Resubmitted as **817221/817222/817223/817224**); fair `text_egoonly` seg2 815018 running — best so far 5.48 @ep99 then FLAT 5.6–5.8 to
+MM 4.07 (held-out val_test, 1 rep, gt_Div 5.49). Resubmitted as **817221/817222/817223/817224** — **DEFINITIVE (3 reps, full val, gt_Div 5.585
+PASS)**: CFG 1 → 6.427 ± 0.116 · CFG 2.5 → 5.707 ± 0.087 · CFG 5 → 4.137 ± 0.042 · **CFG 10 →
+2.823 ± 0.027** (Div 6.20, MM 3.22). Oracle ≈ EgoPed-IA (2.880 ± 0.084), above H4 (3.392): the
+expected order for a GT-behaviour oracle. Paper: new `tab:ladder` + paragraph in §baselines.); fair `text_egoonly` seg2 815018 running — best so far 5.48 @ep99 then FLAT 5.6–5.8 to
 ep3399, i.e. WORSE than the trained unconditional (3.24): most likely CFG=10 amplifying a
 weakly-informative condition off-distribution (uncond was evaluated at CFG 1) → its definitive eval
 must also be a CFG sweep, not a single CFG=10 number.
