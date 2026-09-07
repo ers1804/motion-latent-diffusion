@@ -244,6 +244,16 @@ must also be a CFG sweep, not a single CFG=10 number.
   run `--save-roots` + `behavioral_probe.py` — the per-condition numbers are the actual result.
   → SUBMITTED 2026-09-08 (815018 at ep4955): ep99 → 818448–818451, ep3399 → 818452–818455 (running),
   ep4999 → 818456–818459 (chained afterany:815018). Order within each set: CFG 1, 2.5, 5, 10.
+  **GRID DONE 2026-09-08 (3 reps, full val, gt_Div 5.585 PASS on all 12, no tracebacks):**
+  | epoch | CFG 1 | CFG 2.5 | CFG 5 | CFG 10 |
+  |---|---|---|---|---|
+  | 99 (val-best) | 5.80 ± 0.18 | 5.52 ± 0.15 | **5.12 ± 0.13** | 5.41 ± 0.10 |
+  | 3399 (epoch-matched) | 6.40 ± 0.21 | 6.30 ± 0.10 | 6.23 ± 0.15 | 5.91 ± 0.05 |
+  | 4999 (final) | 6.67 ± 0.12 | 6.33 ± 0.08 | 5.89 ± 0.14 | 5.49 ± 0.07 |
+  Best cell ep99/CFG 5 = **5.12**; epoch-matched best ep3399/CFG 10 = 5.91. Every cell is WORSE than
+  the trained unconditional (3.24) and quality degrades with training: ~5 bits of vehicle text splits
+  the data into 225 caption classes (~60 samples each) that the model fits worse than one marginal.
+  Per-condition controls (`text_fair` = ep99/CFG5, `text_fair_ep3399` = ep3399/CFG10) running locally.
 Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
 csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
 

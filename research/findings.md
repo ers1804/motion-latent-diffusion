@@ -189,6 +189,20 @@ crossing omitted: ~2% base rate + no ego in dumps — documented annex):
 - REVIEW-HARDENING ARC: all agent-side items now CLOSED (1,2,4,5,6,8,9; 3 deferred). Open: user
   items (7, §4.1 assets, sign-off) + config/naming cleanup before code release.
 
+### Fair rung (vehicle-only text, 5.17 bits): worse than no conditioning on FID (2026-09-08)
+
+12-cell grid, 3 reps, full val, gate PASS everywhere. Best = ep99 @ CFG 5: **5.12 ± 0.13**; epoch-
+matched ep3399 @ CFG 10: 5.91 ± 0.05; final ep4999 @ CFG 10: 5.49 ± 0.07. All cells worse than the
+trained unconditional prior (3.24) and the model gets WORSE with training. Reading: a coarse verbal
+description of the vehicle carries too little motion-relevant information to help, but enough to
+fragment training — 225 caption classes (~60 sequences each) are each fit worse than the single
+unconditional marginal, and CFG then amplifies the mismatch (at ep99, CFG 1 → 5.80 vs CFG 5 → 5.12;
+at ep4999 CFG 1 → 6.67, CFG 10 → 5.49). Contrast the oracle (same architecture, captions that also
+name the behaviour): 2.82. So the information content of the caption is what matters, and what the
+vehicle-only text lacks is precisely what the continuous 196×2 trajectory supplies (H4: 3.39 FID,
+ADE 2.32, separation 0.33). Whether the fair text carries ANY usable ego information is decided by
+its ADE/behaviour (controls running).
+
 ### EgoPed-IA is the best marginal, NOT the best-conditioned model (2026-09-07)
 
 Same controls (held-out, K=5, N=1,190): IA ADE 2.635 / FDE 5.479 / minADE₅ 1.707 / minFDE₅ 3.505 vs
