@@ -261,8 +261,14 @@ must also be a CFG sweep, not a single CFG=10 number.
   is ahead on every metric. The FID-best checkpoint does not use the condition — the FID/conditioning
   dissociation reproduced inside one model. Ladder row = epoch-matched cell.
 **ITEM 10 CLOSED 2026-09-08** — all rungs measured on FID + ADE/FDE + behaviour; paper tab:ladder,
-tab:adefde, tab:behavior complete. Only optional follow-up: an unconditional model trained WITH the
-interaction pipeline (user decision; bounds IA's FID).
+tab:adefde, tab:behavior complete.
+**Follow-up APPROVED by user 2026-09-08 — `uncond_pipeline`:** unconditional model trained WITH the
+interaction pipeline (IA recipe: same VAE/config, INTERACTION_CROP + WEIGHTED_SAMPLING on,
+`guidance_uncondp=1.0`, 5000 ep). Bounds EgoPed-IA's 2.880 the way the trained prior (3.241) bounds
+H4 (3.392). Chain: seg1 **820602** → seg2 **820603** (afterany) → ego-zeroed evals
+**820604/820605/820606** (ep4999/4499/3999, afterok:seg2; eval_uncond.py, CFG 1, unified no-crop
+eval). Training-time val is a LEAK for this model (do not quote). Then ADE/probe locally
+(`uncond_pipeline` MODELS entry) — expect ego-blind. Cron `5d739a6e` collects.
 Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
 csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
 
