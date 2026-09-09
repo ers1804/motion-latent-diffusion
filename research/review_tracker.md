@@ -273,7 +273,7 @@ at ep 4467), so seg2 TIMEOUTs near ep ~4650 and a TIMEOUT never satisfies `after
 evals 820604/5/6 would have sat as DependencyNeverSatisfied; cancelled 2026-09-09 08:25. Expected:
 seg2 ends 2026-09-10 ~10:15, seg3 ~4-7 h, evals ~1 h each → results 2026-09-10 evening.
 Training-time val is a LEAK for this model (do not quote). Then ADE/probe locally
-(`uncond_pipeline` MODELS entry) — expect ego-blind. Cron `5d739a6e` collects.
+(`uncond_pipeline` MODELS entry) — expect ego-blind. Cron `85e223fc` (43 6,18 daily, session-only, expires 2026-09-16) collects; the earlier `5d739a6e` was replaced 2026-09-09 so its prompt names the seg3 chain.
 Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
 csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
 
