@@ -265,9 +265,14 @@ tab:adefde, tab:behavior complete.
 **Follow-up APPROVED by user 2026-09-08 — `uncond_pipeline`:** unconditional model trained WITH the
 interaction pipeline (IA recipe: same VAE/config, INTERACTION_CROP + WEIGHTED_SAMPLING on,
 `guidance_uncondp=1.0`, 5000 ep). Bounds EgoPed-IA's 2.880 the way the trained prior (3.241) bounds
-H4 (3.392). Chain: seg1 **820602** → seg2 **820603** (afterany) → ego-zeroed evals
-**820604/820605/820606** (ep4999/4499/3999, afterok:seg2; eval_uncond.py, CFG 1, unified no-crop
-eval). Training-time val is a LEAK for this model (do not quote). Then ADE/probe locally
+H4 (3.392). Chain (re-chained 2026-09-09): seg1 **820602** → seg2 **820603** (afterany) → seg3
+**824551** (afterany, 10 h wall, `rv_uncond_pipeline_seg3.sh`) → ego-zeroed evals
+**824552/824553/824554** (ep4999/4499/3999, afterany:seg3; eval_uncond.py, CFG 1, unified no-crop
+eval). Why seg3: pipeline runs pace ~98 ep/h (seg1 at ep 2141 after 22 h; IA's two segments ended
+at ep 4467), so seg2 TIMEOUTs near ep ~4650 and a TIMEOUT never satisfies `afterok` — the original
+evals 820604/5/6 would have sat as DependencyNeverSatisfied; cancelled 2026-09-09 08:25. Expected:
+seg2 ends 2026-09-10 ~10:15, seg3 ~4-7 h, evals ~1 h each → results 2026-09-10 evening.
+Training-time val is a LEAK for this model (do not quote). Then ADE/probe locally
 (`uncond_pipeline` MODELS entry) — expect ego-blind. Cron `5d739a6e` collects.
 Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
 csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
