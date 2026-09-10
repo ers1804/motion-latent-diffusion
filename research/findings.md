@@ -215,6 +215,51 @@ ignores the condition.
 knowing the outcome (1.90) the continuous trajectory recovers 61% of the gap; a 5-bit verbal
 description of the vehicle recovers 43%; and the FID-best models (IA, text@ep99) are not the
 best-conditioned ones.
+**Extended 2026-09-10:** the ladder's 0-bit rung, retrained on IA's interaction-sampling recipe,
+reaches FID **1.43** at ADE 3.00 / separation 0.02 — a know-nothing model with the best marginal in
+the paper. FID does not merely fail to credit conditioning; on this data recipe it actively prefers
+the model that discards it.
+
+### The interaction pipeline's own prior beats every conditional model (2026-09-10) — DEFINITIVE
+
+Control approved by the user 2026-09-08 and completed 2026-09-10 (helma chain 820602 → 820603 →
+seg3 824551 → evals 824552/3/4). An unconditional model (`guidance_uncondp=1.0`, never sees the ego)
+trained on **EgoPed-IA's own recipe** — same H4 config, `INTERACTION_CROP=True`,
+`INTERACTION_WEIGHTED_SAMPLING=True`, 5,000 epochs — evaluated through `eval_uncond.py`
+(`_patch_zero_ego`, CFG 1, 3 reps, full val, unified no-crop eval, gt_Diversity **5.4958 PASS**,
+identical to the reference run's GT):
+
+| checkpoint | FID | Diversity |
+|---|---|---|
+| epoch 3999 | 1.720 ± 0.133 | 5.76 |
+| **epoch 4499** | **1.432 ± 0.183** | 5.76 |
+| epoch 4999 (final) | 2.665 ± 0.195 | 5.42 |
+
+**This is the best FID in the entire project** — better than EgoPed-IA (2.880 ± 0.084) with
+non-overlapping CIs, better than H4 (3.392), better than the no-pipeline prior (3.241 ± 0.130).
+Non-monotonic in epoch, so all three are reported; even the *worst* of them (2.665) matches IA.
+And the model is provably ego-blind: R@1 = 0.0312 = exactly chance (1/32), ADE **3.005** / FDE 6.233
+(prior level: no-pipeline prior 2.990 / 6.093; H4 2.320 / 4.826), behavioral separation **0.016** —
+the lowest of any model measured — entropy 0.338, Brier 0.203 (chance), gen stop-rate 0.112 vs GT
+0.224.
+
+**What it means.** The interaction pipeline is mostly a *marginal-quality* (data-curation)
+intervention, and it helps the prior far more than it helps the conditional model: 3.241 → 1.432
+(−1.81 FID) unconditional versus 3.392 → 2.880 (−0.51 FID) conditional. So EgoPed-IA's FID headline
+cannot be read as evidence of good conditioning — its own prior, trained on the same data recipe and
+unable to see the ego at all, beats it by 1.4 FID. Combined with the per-condition result below
+(IA is worse than H4 on ADE and separation, at matched epochs too), the "IA is the flagship because
+it has the best FID" framing is dead. **H4 remains the best-conditioned model**; IA is a
+data-curation result about the marginal.
+
+This is the third and strongest instance of the FID/conditioning dissociation, and the cleanest:
+previously the prior *matched* the conditional model (3.24 vs 3.39); here the prior *beats every
+conditional model in the paper* while sitting at chance on every conditioning metric.
+
+Artifacts: `research/data/helma_eval_logs/rv_eval_uncond_pipe_ep{3999,4499,4999}_82455*.txt`;
+`research/data/ade_fde_uncond_pipeline_val_test_k5.npz`; NAS
+`.../models/mld/ego_motion_diffusion_uncond_pipeline/` (ep4499 + ep4999 + 3 configs/logs).
+Training-time val is a LEAK for this model (uncondp=1.0) and is not quoted anywhere.
 
 ### EgoPed-IA is the best marginal, NOT the best-conditioned model (2026-09-07)
 

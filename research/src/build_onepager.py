@@ -148,19 +148,20 @@ table(RX, Inches(1.45), RW,
 sec(RX, Inches(3.05), RW, "External baselines  ·  capability ladder")
 table(RX, Inches(3.38), RW,
       ["Approach", "FID ↓", "Reading"],
-      [["EgoPed-IA (ours)", "2.88", "in-domain, ego-conditioned"],
+      [["Uncond. + interaction sampling", "1.43", "BEST FID — and fully ego-blind"],
+       ["EgoPed-IA (ours)", "2.88", "in-domain, ego-conditioned"],
        ["Unconditional, properly trained", "3.24", "≈ H4 — FID is blind to conditioning"],
        ["Unconditional prior (ego zeroed)", "5.18", "a weak null branch, not a prior"],
        ["Pretrained text-to-motion MLD", "14.07", "T2M does not transfer"],
        ["Raw-space diffusion (MDM-style)", "26.43", "latent backbone justified"],
        ["Ego→motion regressor", "35.47", "L2-optimal, unrealistic"],
        ["Trajectory + static body", "47.7", "needs articulated motion"]],
-      [3.6, 1.3, 3.5], 9.5, good=(0,))
+      [3.6, 1.3, 3.5], 9.5, good=(1,))
 
 # ══ right: validation axes ═════════════════════════════════════════════════
 sec(RX, Inches(5.15), RW, "Validated on four independent axes")
 bul(RX, Inches(5.48), RW, Inches(1.3), [
-    "FID — 40% over pooled (non-overlapping CIs); but a trained prior also reaches 3.24, so FID alone does not credit conditioning.",
+    "FID — 40% over pooled (non-overlapping CIs); but a trained prior reaches 3.24 and, on IA's own data recipe, 1.43 — better than every conditional model. FID alone does not credit conditioning.",
     "Held-out split — scene-disjoint, never used for selection: ranking preserved.",
     "Trajectory ADE/FDE — no learned evaluator: H4 beats pooled on all 4 metrics; a trained prior with "
     "the SAME FID is 29% worse (ego-blind) — and EgoPed-IA, best by FID, is worse than H4 per-condition "
@@ -177,7 +178,8 @@ p = t.paragraphs[0]
 run(p, "RESULT: ", 9.5, BLUE, bold=True)
 run(p, "information ladder (FID / ADE / behaviour-separation) — 0 bits: 3.24 / 2.99 / 0.04 → 5-bit vehicle text: 5.91 / 2.52 / 0.21 → "
        "oracle text (told the behaviour): 2.82 / 1.90 / 0.93 → trajectory (H4): 3.39 / 2.32 / 0.33. The trajectory recovers 61% of the know-nothing→know-the-outcome ADE gap, "
-       "vehicle text 43%; FID ranks marginals, not conditioning. ",
+       "vehicle text 43%. FID ranks marginals, not conditioning — an ego-BLIND model trained on IA's interaction-sampling recipe scores the best FID in the study (1.43) "
+       "at chance-level conditioning (ADE 3.00, separation 0.02), so IA's FID lead is data curation, not conditioning; H4 is the best-conditioned model. ",
     9.5, INK)
 run(p, "Open: ", 9.5, BLUE, bold=True)
 run(p, "pose-label quality audit · EgoPed-IA is single-seed · no physics constraints · no perceptual study yet.",

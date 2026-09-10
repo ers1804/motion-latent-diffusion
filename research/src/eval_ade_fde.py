@@ -69,6 +69,11 @@ MODELS = {
     "uncond_trained": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
                            ckpt=f"{HM}/ego_motion_diffusion_uncond_trained/checkpoints/epoch=4999.ckpt",
                            guidance=1, zero_ego=True),
+    # prior trained WITH the interaction pipeline: bounds EgoPed-IA's FID the way
+    # uncond_trained (3.241) bounds H4 (3.392). ep4499 = best of the 3 late checkpoints.
+    "uncond_pipeline": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
+                            ckpt=f"{HM}/ego_motion_diffusion_uncond_pipeline/checkpoints/epoch=4499.ckpt",
+                            guidance=1, zero_ego=True),
     "text_oracle": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
                         ckpt=f"{HM}/ego_motion_diffusion_text_ego/checkpoints/epoch=3099.ckpt",
                         guidance=10,

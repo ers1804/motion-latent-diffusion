@@ -262,20 +262,27 @@ must also be a CFG sweep, not a single CFG=10 number.
   dissociation reproduced inside one model. Ladder row = epoch-matched cell.
 **ITEM 10 CLOSED 2026-09-08** — all rungs measured on FID + ADE/FDE + behaviour; paper tab:ladder,
 tab:adefde, tab:behavior complete.
-**Follow-up APPROVED by user 2026-09-08 — `uncond_pipeline`:** unconditional model trained WITH the
-interaction pipeline (IA recipe: same VAE/config, INTERACTION_CROP + WEIGHTED_SAMPLING on,
-`guidance_uncondp=1.0`, 5000 ep). Bounds EgoPed-IA's 2.880 the way the trained prior (3.241) bounds
-H4 (3.392). Chain (re-chained 2026-09-09): seg1 **820602** → seg2 **820603** (afterany) → seg3
-**824551** (afterany, 10 h wall, `rv_uncond_pipeline_seg3.sh`) → ego-zeroed evals
-**824552/824553/824554** (ep4999/4499/3999, afterany:seg3; eval_uncond.py, CFG 1, unified no-crop
-eval). Why seg3: pipeline runs pace ~98 ep/h (seg1 at ep 2141 after 22 h; IA's two segments ended
-at ep 4467), so seg2 TIMEOUTs near ep ~4650 and a TIMEOUT never satisfies `afterok` — the original
-evals 820604/5/6 would have sat as DependencyNeverSatisfied; cancelled 2026-09-09 08:25. Expected:
-seg2 ends 2026-09-10 ~10:15, seg3 ~4-7 h, evals ~1 h each → results 2026-09-10 evening.
-Training-time val is a LEAK for this model (do not quote). Then ADE/probe locally
-(`uncond_pipeline` MODELS entry) — expect ego-blind. Cron `85e223fc` (43 6,18 daily, session-only, expires 2026-09-16) collects; the earlier `5d739a6e` was replaced 2026-09-09 so its prompt names the seg3 chain.
-Access: `helma.nhr.fau.de` → helma4 is fenced ("Not allowed at this time"); helma3 works via the
-csnhr jump (HostKeyAlias). Cron replaced with the working path (`4b608753`).
+**Follow-up CLOSED 2026-09-10 — `uncond_pipeline`** (approved by the user 2026-09-08):
+unconditional model (`guidance_uncondp=1.0`, 5,000 ep) trained on EgoPed-IA's recipe
+(H4 config + `INTERACTION_CROP` + `INTERACTION_WEIGHTED_SAMPLING`), to bound IA's 2.880 the way the
+trained prior (3.241) bounds H4 (3.392). Chain ran seg1 **820602** → seg2 **820603** → seg3
+**824551** → evals **824552/824553/824554**; both training segments hit their 24 h wall, which is
+why seg3 was inserted 2026-09-09 (pipeline runs pace ~95-100 ep/h, and a TIMEOUT never satisfies
+`afterok`, so the original evals 820604/5/6 were cancelled and re-chained `afterany`).
+
+**RESULT — the strongest form of the FID/conditioning dissociation.** Ego-zeroed eval
+(`eval_uncond.py`, CFG 1, 3 reps, unified no-crop eval), gt_Diversity **5.4958 PASS** (identical to
+the reference run): FID **1.432 ± 0.183** (ep4499), 1.720 ± 0.133 (ep3999), 2.665 ± 0.195 (ep4999,
+final) — the **best FID in the project**, beating EgoPed-IA (2.880 ± 0.084) with non-overlapping
+CIs, H4 (3.392) and the no-pipeline prior (3.241). Ego-blind as predicted: R@1 exactly chance
+(0.0312), ADE **3.005** / FDE 6.233, separation **0.016** (lowest measured), Brier 0.203,
+stop-rate 0.112 vs GT 0.224. Interaction sampling helps the prior (−1.81 FID) far more than the
+conditional model (−0.51 FID) → it is a marginal-quality intervention, and IA's FID headline is not
+evidence of conditioning. H4 stays the best-conditioned model. Training-time val NOT quoted (leak).
+Recorded in `research/findings.md`; paper: `tab:trivial` row + footnote $^\P$, `tab:adefde` and
+`tab:behavior` rows, a sentence in §baselines and the `tab:ladder` caption. Logs archived in
+`research/data/helma_eval_logs/`, checkpoints ep4499/ep4999 + configs/logs on NAS under
+`ego_motion_diffusion_uncond_pipeline/`. Cron `85e223fc` can be retired.
 
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
 - ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →

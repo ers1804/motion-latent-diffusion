@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from intention_labels import is_stopping  # noqa: E402
 
 DATA = Path(__file__).resolve().parent.parent / "data"
-MODELS = ["h4", "ia", "ia_ep3399", "h2", "h6", "h4_uncond", "uncond_trained", "text_oracle", "text_fair", "text_fair_ep3399"]
+MODELS = ["h4", "ia", "ia_ep3399", "h2", "h6", "h4_uncond", "uncond_trained", "uncond_pipeline", "text_oracle", "text_fair", "text_fair_ep3399"]
 
 
 def probe(model):
