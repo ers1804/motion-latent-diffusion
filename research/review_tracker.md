@@ -284,6 +284,21 @@ Recorded in `research/findings.md`; paper: `tab:trivial` row + footnote $^\P$, `
 `research/data/helma_eval_logs/`, checkpoints ep4499/ep4999 + configs/logs on NAS under
 `ego_motion_diffusion_uncond_pipeline/`. Cron `85e223fc` can be retired.
 
+**NEW 2026-09-11 — EgoPed-IA second seed (user-approved):** IA's flagship FID 2.880 is
+single-seed, and H4's seed spread is large (3.392 / 4.719 / 4.803, mean 4.30 ± 0.79), so the
+headline needs a replicate. `rv_ia_seed2*.sh` = the IA recipe with ONLY `SEED_VALUE` 1234 → 2345
+(the value used for H4 seed B) and `NAME=ego_motion_diffusion_h4_pipeline_seed2` changed.
+Chain: seg1 **836062** → seg2 **836063** → seg3 **836064** (24h/24h/10h, all `afterany`) → evals
+**836065** (best-by-val) and **836066** (epoch-matched ep1299), both `afterany:seg3`, CFG 10,
+3 reps, unified no-crop eval, each with its own `NAME`. ~51 h of training, so expect results
+2026-09-13. Selection rule for 836065 reproduces seed 1's rule exactly (best training-time val FID
+among saved checkpoints); it was checked against seed 1's logs and returns epoch 1299, val FID
+3.664. Training-time val IS a valid selector here (conditional model, uncondp=0.1) — this is the
+opposite of the uncondp=1.0 runs. Expected reading: if seed 2 lands near 2.9 the IA headline
+replicates; if it lands near 4.5 (as H4's seeds B/C did) the paper must report an IA seed mean
+± spread instead of the single best number. Either way the per-condition story is unchanged, since
+the prior on the same recipe already reaches FID 1.43 while ego-blind.
+
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
 - ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →
   `checkpoints/mld_humanml3d_checkpoint/1222_mld_humanml3d_FID041.ckpt` (258 MB). CLIP present
