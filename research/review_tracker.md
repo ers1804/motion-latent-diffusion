@@ -296,7 +296,7 @@ among saved checkpoints); it was checked against seed 1's logs and returns epoch
 3.664. Training-time val IS a valid selector here (conditional model, uncondp=0.1) — this is the
 opposite of the uncondp=1.0 runs. Expected reading: if seed 2 lands near 2.9 the IA headline
 replicates; if it lands near 4.5 (as H4's seeds B/C did) the paper must report an IA seed mean
-± spread instead of the single best number. Either way the per-condition story is unchanged, since
+± spread instead of the single best number. Cron `c9d78ae1` (37 7,19 daily, session-only, expires 2026-09-18) collects. Either way the per-condition story is unchanged, since
 the prior on the same recipe already reaches FID 1.43 while ego-blind.
 
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
