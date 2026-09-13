@@ -220,6 +220,41 @@ reaches FID **1.43** at ADE 3.00 / separation 0.02 — a know-nothing model with
 the paper. FID does not merely fail to credit conditioning; on this data recipe it actively prefers
 the model that discards it.
 
+### EgoPed-IA REPLICATES across seeds — unlike H4 (2026-09-13)
+
+Second seed (2345) of the IA recipe, identical in every other respect (chain 836062 → 836063 →
+836064 → evals 836065/836066). Selected by the *same* rule as seed 1 (best training-time val FID
+among saved checkpoints — legitimate here because the model is conditional, uncondp=0.1).
+gt_Diversity 5.4958 on both evals, sanity gate PASS.
+
+| | seed 1 (1234) | seed 2 (2345) |
+|---|---|---|
+| best-val checkpoint | epoch 1299 (val 3.664) | epoch 899 (val 3.108) |
+| **definitive FID** | **2.880 ± 0.084** | **2.671 ± 0.031** |
+| Diversity / R@1 / MM | 5.67 / 0.323 / 3.37 | 5.59 / 0.316 / 3.16 |
+| ADE / FDE | 2.635 / 5.479 | 2.608 / 5.469 |
+| separation / Brier / stop-rate | 0.152 / 0.193 / 0.142 | 0.138 / 0.189 / 0.090 |
+
+**The IA headline replicates.** Seed mean 2.776, spread ±0.105 (half-range; sample sd 0.148) —
+an order of magnitude tighter than H4's seed spread (3.392 / 4.719 / 4.803, mean 4.30 ± 0.79).
+Seed 2 is in fact slightly *better*, with non-overlapping CIs, so the reported 2.880 is not a lucky
+draw; if anything it is the pessimistic seed. This retires the "IA is single-seed" limitation.
+
+**The per-condition deficit replicates too, and that is the more important half.** Seed 2 lands at
+ADE 2.61 and separation 0.138 — statistically the same as seed 1 (2.635 / 0.152) and well short of
+H4 (2.320 / 0.333). Both seeds also under-predict stopping (0.09 and 0.14 vs GT 0.224). So IA's
+weaker conditioning fidelity is a property of the interaction-sampling recipe, not of one seed.
+**H4 remains the best-conditioned model, now on replicated evidence.**
+
+**Protocol note worth keeping.** The two seeds peak at different epochs (1299 vs 899), and at a
+matched epoch 1299 seed 2 gives FID 3.320 ± 0.139 — worse than its own best and worse than seed 1.
+Comparing seeds at a fixed epoch would have produced the false conclusion "seed 2 is much worse".
+Per-seed checkpoint selection is the meaningful protocol; a fixed epoch is not.
+
+Artifacts: `research/data/helma_eval_logs/rv_eval_ia_seed2_{best_836065,ep1299_836066}.txt`;
+`research/data/ade_fde_ia_seed2{,_ep1299}_val_test_k5.npz`; NAS
+`.../models/mld/ego_motion_diffusion_h4_pipeline_seed2/` (ep899 + ep1299 + 3 configs/logs).
+
 ### The interaction pipeline's own prior beats every conditional model (2026-09-10) — DEFINITIVE
 
 Control approved by the user 2026-09-08 and completed 2026-09-10 (helma chain 820602 → 820603 →

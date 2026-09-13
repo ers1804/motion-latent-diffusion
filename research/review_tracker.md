@@ -284,20 +284,24 @@ Recorded in `research/findings.md`; paper: `tab:trivial` row + footnote $^\P$, `
 `research/data/helma_eval_logs/`, checkpoints ep4499/ep4999 + configs/logs on NAS under
 `ego_motion_diffusion_uncond_pipeline/`. Cron `85e223fc` can be retired.
 
-**NEW 2026-09-11 — EgoPed-IA second seed (user-approved):** IA's flagship FID 2.880 is
-single-seed, and H4's seed spread is large (3.392 / 4.719 / 4.803, mean 4.30 ± 0.79), so the
-headline needs a replicate. `rv_ia_seed2*.sh` = the IA recipe with ONLY `SEED_VALUE` 1234 → 2345
-(the value used for H4 seed B) and `NAME=ego_motion_diffusion_h4_pipeline_seed2` changed.
-Chain: seg1 **836062** → seg2 **836063** → seg3 **836064** (24h/24h/10h, all `afterany`) → evals
-**836065** (best-by-val) and **836066** (epoch-matched ep1299), both `afterany:seg3`, CFG 10,
-3 reps, unified no-crop eval, each with its own `NAME`. ~51 h of training, so expect results
-2026-09-13. Selection rule for 836065 reproduces seed 1's rule exactly (best training-time val FID
-among saved checkpoints); it was checked against seed 1's logs and returns epoch 1299, val FID
-3.664. Training-time val IS a valid selector here (conditional model, uncondp=0.1) — this is the
-opposite of the uncondp=1.0 runs. Expected reading: if seed 2 lands near 2.9 the IA headline
-replicates; if it lands near 4.5 (as H4's seeds B/C did) the paper must report an IA seed mean
-± spread instead of the single best number. Cron `c9d78ae1` (37 7,19 daily, session-only, expires 2026-09-18) collects. Either way the per-condition story is unchanged, since
-the prior on the same recipe already reaches FID 1.43 while ego-blind.
+**CLOSED 2026-09-13 — EgoPed-IA second seed (user-approved 2026-09-11): the headline REPLICATES.**
+Seed 2345, identical recipe, chain 836062 → 836063 → 836064 → evals 836065/836066 (both segments
+timed out at their walls as planned; `afterany` carried the chain). Selected by seed 1's own rule
+(best training-time val FID among saved checkpoints; valid here because the model is conditional).
+gt_Diversity 5.4958, sanity gate PASS on both evals.
+
+FID **2.671 ± 0.031** at epoch 899 vs seed 1's **2.880 ± 0.084** at epoch 1299 → seed mean
+2.78 ± 0.15, an order of magnitude tighter than H4's spread (3.392 / 4.719 / 4.803). Seed 2 is
+slightly better with non-overlapping CIs, so the reported number is the pessimistic seed. The
+per-condition deficit also replicates: ADE 2.608 / separation 0.138 (seed 1: 2.635 / 0.152), both
+well behind H4 (2.320 / 0.333) — IA's weaker conditioning is the recipe, not the seed, and H4 stays
+the best-conditioned model. At a matched epoch 1299 seed 2 gives FID 3.320 ± 0.139, so the seeds
+peak at different epochs and per-seed selection is the meaningful protocol.
+
+Paper updated: §\ref{sec:seeds} now reports the IA replication instead of "single seed", the
+tab:main caption follows, and both per-condition tables gained seed-2 rows. Logs archived in
+`research/data/helma_eval_logs/`; ep899 + ep1299 + configs/logs on NAS under
+`ego_motion_diffusion_h4_pipeline_seed2/`. Cron `c9d78ae1` can be retired.
 
 **(b) Original text-conditioned MLD** (Chen et al. 2023) as an external baseline.
 - ✅ CHECKPOINT OBTAINED 2026-09-02 via `prepare/download_pretrained_models.sh` (gdown) →

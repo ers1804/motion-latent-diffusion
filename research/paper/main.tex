@@ -352,7 +352,7 @@ The improvement is significant: the confidence intervals are non-overlapping (H4
 
 \begin{table}[t]
   \centering
-  \caption{Main evaluation results under a \emph{unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}; for Diversity, values closer to the ground-truth reference are better. \method-IA additionally uses interaction-aware training-data sampling (Section~\ref{sec:pipeline2x2}); it is a single training seed, whereas H4's seed sensitivity is quantified in Section~\ref{sec:seeds}.}
+  \caption{Main evaluation results under a \emph{unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}; for Diversity, values closer to the ground-truth reference are better. \method-IA additionally uses interaction-aware training-data sampling (Section~\ref{sec:pipeline2x2}); its FID replicates across two training seeds (2.880 and 2.671), whereas H4's seed sensitivity is much larger --- both are quantified in Section~\ref{sec:seeds}.}
   \label{tab:main}
   \vspace{4pt}
   \small
@@ -401,6 +401,8 @@ To measure conditioning fidelity without any learned evaluator or model-specific
     Regressor (deterministic, $K{=}1$) & 1.800 & 3.671 & --- & --- \\
     \method-IA (+ interaction sampling) & 2.635 & 5.479 & 1.707 & 3.505 \\
     \method-IA, epoch-matched to H4 (3399) & 2.578 & 5.339 & 1.526 & 3.112 \\
+    \method-IA, seed 2 (best-val, epoch 899) & 2.608 & 5.469 & 1.732 & 3.533 \\
+    \method-IA, seed 2 at epoch 1299 & 2.576 & 5.355 & 1.693 & 3.448 \\
     Unconditional (ego zeroed) & 2.880 & 5.876 & 1.228 & 2.454 \\
     Unconditional (trained, $p_\mathrm{drop}{=}1$) & 2.990 & 6.093 & 1.202 & 2.380 \\
     \quad + interaction sampling (FID 1.43) & 3.005 & 6.233 & 1.379 & 2.754 \\
@@ -437,6 +439,8 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
     H6 (unfrozen)      & 0.222 & \textbf{0.364} & 0.178 & 0.178 \\
     \method-IA (+ interaction sampling) & 0.142 & 0.152 & 0.238 & 0.193 \\
     \method-IA, epoch-matched to H4 (3399) & 0.129 & 0.228 & 0.168 & 0.176 \\
+    \method-IA, seed 2 (best-val, epoch 899) & 0.090 & 0.138 & 0.157 & 0.189 \\
+    \method-IA, seed 2 at epoch 1299 & 0.099 & 0.178 & 0.156 & 0.179 \\
     Unconditional      & 0.194 & 0.021 & 0.533 & 0.199 \\
     Unconditional (trained, $p_\mathrm{drop}{=}1$) & 0.232 & 0.041 & 0.590 & 0.199 \\
     \quad + interaction sampling (FID 1.43) & 0.112 & 0.016 & 0.338 & 0.203 \\
@@ -531,7 +535,7 @@ Second, the two interventions are approximately additive: interaction-aware samp
 We retrain H4 from two additional seeds under its original recipe and select each seed's best checkpoint by training-time validation FID (the same protocol as the main results).
 Definitive best-checkpoint FID across the three seeds is $3.392$, $4.719$, and $4.803$ (mean $4.30 \pm 0.79$): the headline seed is markedly better than the other two, so single-seed point estimates in this setting overstate precision, and we report the spread explicitly.
 The cross-\emph{architecture} conclusions are unaffected — every H4 seed remains well below the pooled baseline (5.620), and the H2 baseline itself proved training-unstable (two additional H2 seeds remained above FID 10.9 within twice the original training budget), meaning all our comparisons use the baseline's \emph{best} seed and are conservative in the baseline's favor.
-\method-IA is reported as a single seed.
+\method-IA, in contrast, \emph{replicates}: a second seed trained with an identical recipe and selected by the same rule reaches FID $2.671 \pm 0.031$ (its best-validation checkpoint is epoch 899) against the reported seed's $2.880 \pm 0.084$, i.e.\ a seed mean of $2.78 \pm 0.15$ --- a spread an order of magnitude tighter than H4's. The per-condition picture replicates as well: the second seed reaches ADE 2.61 and behavioural separation 0.14 (reported seed: 2.64 and 0.15), both short of H4 (2.32 and 0.33), so \method-IA's weaker conditioning fidelity is a property of the interaction-sampling recipe rather than of one unlucky seed. At a matched epoch (1299) the second seed gives FID $3.320 \pm 0.139$, which shows that the two seeds reach their best marginal at different epochs and that per-seed checkpoint selection, not a fixed epoch, is the meaningful protocol.
 
 \subsection{Encoder Freeze vs.\ Unfreeze (H6)}
 
@@ -747,7 +751,7 @@ Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval a
 
 \begin{enumerate}
   \item \textbf{Claims.} \emph{Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?}\\
-  Answer: [Yes]. Justification: The headline claims (40\% FID improvement from full-sequence conditioning under a unified evaluation pipeline; further gain from interaction-aware sampling; MultiModality collapse from unfreezing the ego encoder) are supported by replicated evaluations with confidence intervals in Tables~\ref{tab:main}, \ref{tab:pipeline2x2}, and~\ref{tab:h6}, seed-sensitivity reporting in Section~\ref{sec:seeds}, and held-out/evaluator-independent verification in Sections~\ref{sec:eval} and~\ref{sec:adefde}.
+  Answer: [Yes]. Justification: The headline claims (40\% FID improvement from full-sequence conditioning under a unified evaluation pipeline; further gain from interaction-aware sampling; MultiModality collapse from unfreezing the ego encoder) are supported by replicated evaluations with confidence intervals in Tables~\ref{tab:main}, \ref{tab:pipeline2x2}, and~\ref{tab:h6}, seed-sensitivity reporting for both H4 and \method-IA in Section~\ref{sec:seeds}, and held-out/evaluator-independent verification in Sections~\ref{sec:eval} and~\ref{sec:adefde}.
 
   \item \textbf{Limitations.} \emph{Does the paper discuss the limitations of the work?}\\
   Answer: [Yes]. Justification: Section~\ref{sec:discussion} lists estimated (not ground-truth) pose labels, restricted conditioning scope, the R@1 gap, lack of physical constraints, evaluator domain shift, and the absence of a perceptual study.

@@ -141,7 +141,7 @@ table(RX, Inches(1.45), RW,
        ["Skip encoder pretraining?", "R@1 = chance", "≈ unconditional"],
        ["Cross- instead of self-attention?", "3.49 vs 3.34", "no difference (p=.33)"],
        ["Bigger VAE latent (8 vs 4)?", "6.68 vs 5.62", "19% worse"],
-       ["Different training seed?", "3.39/4.72/4.80", "real variance"]],
+       ["Different training seed?", "H4 3.39/4.72/4.80", "H4 varies, IA replicates"]],
       [3.6, 2.3, 2.9], 9.5)
 
 # ══ right: baseline ladder ═════════════════════════════════════════════════
@@ -179,10 +179,11 @@ run(p, "RESULT: ", 9.5, BLUE, bold=True)
 run(p, "information ladder (FID / ADE / behaviour-separation) — 0 bits: 3.24 / 2.99 / 0.04 → 5-bit vehicle text: 5.91 / 2.52 / 0.21 → "
        "oracle text (told the behaviour): 2.82 / 1.90 / 0.93 → trajectory (H4): 3.39 / 2.32 / 0.33. The trajectory recovers 61% of the know-nothing→know-the-outcome ADE gap, "
        "vehicle text 43%. FID ranks marginals, not conditioning — an ego-BLIND model trained on IA's interaction-sampling recipe scores the best FID in the study (1.43) "
-       "at chance-level conditioning (ADE 3.00, separation 0.02), so IA's FID lead is data curation, not conditioning; H4 is the best-conditioned model. ",
+       "at chance-level conditioning (ADE 3.00, separation 0.02), so IA's FID lead is data curation, not conditioning; H4 is the best-conditioned model. "
+       "A second IA seed replicates both halves: FID 2.671 vs 2.880, and the same per-condition shortfall (ADE 2.61, separation 0.14). ",
     9.5, INK)
 run(p, "Open: ", 9.5, BLUE, bold=True)
-run(p, "pose-label quality audit · EgoPed-IA is single-seed · no physics constraints · no perceptual study yet.",
+run(p, "pose-label quality audit · no physics constraints · no perceptual study yet.",
     9.5, INK)
 
 os.makedirs("research/to_human", exist_ok=True)
