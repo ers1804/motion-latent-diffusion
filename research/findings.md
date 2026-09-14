@@ -220,6 +220,49 @@ reaches FID **1.43** at ADE 3.00 / separation 0.02 — a know-nothing model with
 the paper. FID does not merely fail to credit conditioning; on this data recipe it actively prefers
 the model that discards it.
 
+### Pseudo-GT pose audit: a canonical body sliding along a good trajectory (2026-09-14) — item 7 CLOSED
+
+Item 7 asked for pose-label quality and was marked "needs a reference source". It does not: most of
+it is answerable by internal physical consistency. `research/src/pose_quality_audit.py` audits all
+14,172 sequences (13,958 long enough to score; 214 too short/malformed = 1.5%) →
+`research/data/pose_quality_audit.npz`.
+
+**1. Body shape was never estimated.** All 13,958 sequences across AVA/nuScenes/Waymo share ONE
+skeleton: max relative bone-length deviation from the template 6.3e-6, distinct skeletons (to 1 mm)
+= 1, within-sequence bone CV 6.2e-7. HumanML3D conversion retargets everything onto a canonical
+body. Consequence: bone-length and left/right-symmetry checks are worthless as quality signals here
+(rigidity is imposed, not recovered), and the corpus has zero body-shape variation.
+
+**2. The feet do not plant** (the load-bearing check — internal, no domain confound). Slowest of the
+4 foot joints per frame ÷ root speed, over the 10,900 sequences with locomotion:
+
+| source | root m/s | skate ratio | % frames planted |
+|---|---|---|---|
+| AVA | 1.20 | 0.73 | 3.0% |
+| nuScenes | 1.29 | 0.99 | 0.5% |
+| Waymo | 1.34 | 0.95 | 0.8% |
+
+Median 0.97 (p10 0.69, p90 1.00) where 0 = clean footfalls and 1 = the body sliding as a rigid unit.
+**94.6% of moving sequences never hold a foot still for more than 5% of their frames.** Also: 14.1%
+have near-static legs (ankle swing < 5 cm), 1.2% penetrate the ground by > 5 cm.
+
+**3. Articulation is damped vs real mocap** (ours/HumanML3D per-dim std): root linear velocity
+**1.29**, joint rotations 0.68, root-relative joint positions **0.44**, root rotational velocity
+0.37, root height **0.26**. CAVEAT: HumanML3D spans every motion type and ours is walking near
+roads, so part of the gap is content, not quality — this corroborates (2), it is not independent
+evidence.
+
+**What it means for the paper.** The root trajectory is the trustworthy component; the body is a
+lightly articulated canonical template sliding along it. That splits our metrics cleanly:
+- **Safe:** root ADE/FDE and the stop/walk probe are computed from the root trajectory. Every
+  conditioning conclusion (including "H4 is the best-conditioned model") rests on the good half.
+- **Exposed:** FID scores body pose against this damped target, so the marginal is easier than pose
+  realism would suggest — a further reason an ego-blind prior reaches 1.43, and a reason FID here is
+  never a realism claim.
+
+Paper: new §\ref{sec:posequality} + Table~\ref{tab:posequality}, three rewritten Limitations
+bullets, a clause in §4.1 on the canonical skeleton, and the checklist justification.
+
 ### EgoPed-IA REPLICATES across seeds — unlike H4 (2026-09-13)
 
 Second seed (2345) of the IA recipe, identical in every other respect (chain 836062 → 836063 →

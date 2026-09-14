@@ -168,6 +168,8 @@ bul(RX, Inches(5.48), RW, Inches(1.3), [
     "(ADE 2.64 vs 2.32; separation 0.15 vs 0.33; still behind at matched epochs): H4 is the best-conditioned model.",
     "Behavioral probe — best coupling of stop/walk decisions to the ego; "
     "unconditional model is ego-blind (sanity ✓).",
+    "Pose-label audit (all 14,172 seqs, reference-free) — feet never plant (skate 0.97), one canonical "
+    "skeleton, articulation 0.44× mocap. ADE/probe use the ROOT (sound); FID scores the damped body (exposed).",
 ], 9.5)
 
 # ══ footer ═════════════════════════════════════════════════════════════════
@@ -183,7 +185,8 @@ run(p, "information ladder (FID / ADE / behaviour-separation) — 0 bits: 3.24 /
        "A second IA seed replicates both halves: FID 2.671 vs 2.880, and the same per-condition shortfall (ADE 2.61, separation 0.14). ",
     9.5, INK)
 run(p, "Open: ", 9.5, BLUE, bold=True)
-run(p, "pose-label quality audit · no physics constraints · no perceptual study yet.",
+run(p, "pseudo-GT is a canonical body that SLIDES (skate ratio 0.97; one skeleton for all 14,172) — root trajectories are sound, body pose is not · "
+       "no physics constraints · no perceptual study yet.",
     9.5, INK)
 
 os.makedirs("research/to_human", exist_ok=True)

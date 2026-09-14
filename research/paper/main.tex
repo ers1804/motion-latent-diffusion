@@ -215,7 +215,7 @@ We use DDIM~\cite{song2021ddim} for fast inference with 50 denoising steps.
 
 As there are no datasets available for the problem investigated in this work, we generated a dataset for ego-conditioned motion generation from two complementary sources: existing large-scale autonomous driving datasets (nuScenes, Waymo), which supply scale and behavioral diversity, and a small, deliberately \emph{staged} set of high-interaction scenes recorded with our sensor-equipped research vehicle AVA, which targets the close-range vehicle--pedestrian encounters that are rare in the public datasets. The vehicle is equipped with seven 128-layer LiDARs and eight RGB cameras for full 360° sensor coverage around the vehicle. \TODO{Figure ?? shows the vehicle and a detailed sensor setup.} To obtain scenes with meaningful interaction between the vehicle and a pedestrian, we staged \TODO{NUMBER} highly interactive scenarios. \TODO{An example scene of a pedestrian waving a vehicle through can be seen in Figure ??.} The recorded data is brought into nuScenes format and objects in the scene are annotated with 3D bounding boxes and orientation labels using MS3D \cite{tsai2024ms3d++, tsai2023ms3d}.
 
-With the data in nuScenes format fully annotated, we extract 3D human poses in SMPL~\cite{SMPL:2015} format using an adapted version of OmniRe~\cite{chen2025omnire} from all three data sources: AVA, nuScenes, and Waymo Open Dataset. We estimate poses for every pedestrian instance from all available camera images, using the projected 3D bounding box to localize the person in each view. Per-instance pose estimates from different cameras are then stitched into a single continuous sequence using the extrinsic calibration of the camera rigs. Finally, the SMPL pose sequences are converted to the 263D HumanML3D motion representation~\cite{guo2022humanml3d}. In addition to the pedestrian pose sequences, we extract the synchronized ego-vehicle trajectory from each scene's odometry.
+With the data in nuScenes format fully annotated, we extract 3D human poses in SMPL~\cite{SMPL:2015} format using an adapted version of OmniRe~\cite{chen2025omnire} from all three data sources: AVA, nuScenes, and Waymo Open Dataset. We estimate poses for every pedestrian instance from all available camera images, using the projected 3D bounding box to localize the person in each view. Per-instance pose estimates from different cameras are then stitched into a single continuous sequence using the extrinsic calibration of the camera rigs. Finally, the SMPL pose sequences are converted to the 263D HumanML3D motion representation~\cite{guo2022humanml3d}, which retargets every sequence onto a single canonical skeleton; body shape is therefore not represented in our data (Sec.~\ref{sec:posequality}). In addition to the pedestrian pose sequences, we extract the synchronized ego-vehicle trajectory from each scene's odometry.
 A single automated pipeline processes every (scene, pedestrian) pair end-to-end: it loads the annotated nuScenes-format scene, extracts and stitches the per-instance SMPL body sequence, resamples both the body motion and the ego odometry to a common $20$~fps grid, and expresses both streams in a \emph{pedestrian-centric} coordinate frame (translation- and yaw-normalized to the pedestrian) so that conditioning is invariant to the absolute world pose of the scene.
 Each resulting sample is stored as a self-contained record containing the pedestrian's 22 body-joint positions $(\texttt{ped\_in\_ped\_frame} \in \mathbb{R}^{T\times 22\times 3})$, the ego trajectory in the same frame $(\texttt{ego\_in\_ped\_frame} \in \mathbb{R}^{T\times 3})$, and the derived 263D HumanML3D motion vector $(\texttt{vectors\_263} \in \mathbb{R}^{T\times 263})$, where the native sequence length $T$ varies per scene and is windowed to $196$ frames at training time (see the interaction-aware cropping procedure below).
 
@@ -257,6 +257,43 @@ The pipeline supports drawing training samples with a \texttt{WeightedRandomSamp
 
 \paragraph{Interaction-aware cropping.}
 To bound the generation problem to a fixed horizon, we crop each scenario to $T=196$ timesteps ($\approx$40\% of sequences are longer). The pipeline supports centring the crop on the \emph{closest-approach frame} $t^\star = \arg\min_t \lVert \mathbf{g}_t - \mathbf{r}_t \rVert_2$, with uniform jitter of $\pm 25\%$ of the window length so the moment of closest approach is not memorized at a fixed position (the window is clamped to lie within the sequence); the alternative is a uniformly random window. The VAE, H2, and \method-IA use interaction-centred crops; the H4 reference model uses random windows (ablated in Section~\ref{sec:pipeline2x2}). In both modes, ego and motion streams are cropped with a shared index so they stay temporally aligned, and scenarios shorter than 196 frames are zero-padded at the end with their true length recorded for masking.
+
+\subsection{Pseudo-Ground-Truth Pose Quality}
+\label{sec:posequality}
+Our pose labels are OmniRe estimates rather than measured 3D ground truth, and no reference source (mocap or manual annotation) exists for these scenes. We therefore audit what can be checked \emph{without} a reference --- internal physical consistency --- over all 14{,}172 sequences (13{,}958 long enough to score); the audit script is released with the code. Table~\ref{tab:posequality} reports the result, and it materially qualifies how our metrics should be read.
+
+Three things stand out. First, \textbf{body shape was never estimated}: every sequence in all three sources shares one skeleton to within $10^{-5}$ relative bone length, so the corpus contains a single canonical body rather than per-person shapes. This also means bone-length and left/right-symmetry checks carry no quality signal here, since rigidity is imposed by the representation rather than recovered from images. Second, \textbf{the feet do not plant}. During locomotion at least one foot should be stationary in world coordinates; taking the slowest of the four foot joints per frame and dividing by root speed gives a median ratio of $0.97$, where $0$ denotes clean footfalls and $1$ a body sliding as a rigid unit, and $94.6\%$ of moving sequences never hold a foot still for more than $5\%$ of their frames. This check is internal and has no domain confound. Third, \textbf{articulation is damped} relative to real mocap: against HumanML3D's own per-dimension statistics, root translation is \emph{more} variable than mocap ($1.29\times$) while root-relative joint positions, root height and turning are far less ($0.44\times$, $0.26\times$, $0.37\times$). Part of that gap is content rather than quality --- HumanML3D spans every kind of motion and ours is people walking near roads --- so we read it as corroborating the foot-skate result rather than as an independent measurement.
+
+The picture is a lightly articulated canonical body translating along a well-tracked trajectory. That asymmetry maps cleanly onto our conclusions. The evidence that conditioning is \emph{used} --- root ADE/FDE (Sec.~\ref{sec:adefde}) and the stop/walk probe (Sec.~\ref{sec:behavior}) --- is computed from the root trajectory, the component this audit finds trustworthy, so those conclusions are unaffected. FID is the exposed quantity: it scores body pose against this same damped target, which makes the marginal easier to fit than the visual richness of real pedestrians would suggest and helps explain why an ego-blind prior can reach FID 1.43 (Table~\ref{tab:trivial}). Absolute FID values here should be read as within-benchmark comparisons only, never as a claim about pose realism.
+
+\begin{table}[t]
+  \centering
+  \caption{Reference-free audit of the pseudo-ground-truth poses (13{,}958 sequences; 10{,}900 contain locomotion). Upper block: internal physical consistency, no external reference and no domain confound. Lower block: ratio of our per-dimension standard deviation to HumanML3D's real-mocap statistics, by block of the 263-D representation; values below 1 indicate less variability than mocap, though part of that gap reflects the narrower motion content of driving scenes.}
+  \label{tab:posequality}
+  \vspace{4pt}
+  \small
+  \begin{tabular}{lc}
+    \toprule
+    Internal consistency check & Result \\
+    \midrule
+    Distinct skeletons among all sequences & 1 \\
+    Max.\ relative bone-length deviation from that template & $6.3\times10^{-6}$ \\
+    Foot-skate ratio, median (0 = footfalls, 1 = sliding) & 0.97 \\
+    \quad AVA / nuScenes / Waymo & 0.73 / 0.99 / 0.95 \\
+    Sequences never planting a foot in $>$5\% of moving frames & 94.6\% \\
+    Sequences with near-static legs (ankle swing $<$ 5\,cm) & 14.1\% \\
+    Sequences with ground penetration $>$ 5\,cm & 1.2\% \\
+    \midrule
+    Variability vs.\ real mocap (ours / HumanML3D std) & Ratio \\
+    \midrule
+    Root linear velocity & 1.29 \\
+    Joint rotations & 0.68 \\
+    Root-relative joint positions & 0.44 \\
+    Root rotational velocity & 0.37 \\
+    Root height & 0.26 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsection{Evaluation Protocol}
 \label{sec:eval}
@@ -652,11 +689,11 @@ R@1 measures only conditioning alignment, not generation quality; FID captures t
 
 \paragraph{Limitations.}
 \begin{itemize}
-  \item \textbf{Body pose quality}: Pedestrian poses are estimated (not ground-truth 3D), introducing noise in training labels. Direct 3D body annotation from datasets like JRDB-Pose or BEDLAM would improve quality.
+  \item \textbf{Body pose quality}: Pedestrian poses are estimated (not ground-truth 3D), and Sec.~\ref{sec:posequality} quantifies the cost: a single canonical skeleton for every pedestrian (no body-shape variation), a median foot-skate ratio of 0.97 with $94.6\%$ of moving sequences never planting a foot, and root-relative joint variability at $0.44\times$ real mocap. The root trajectories are reliable; the body is a lightly articulated template sliding along them. Direct 3D body annotation from datasets like JRDB-Pose or BEDLAM, or a physics-based refit of the existing labels, would address this, and we regard it as the single largest quality constraint on the benchmark.
   \item \textbf{Conditioning scope}: We condition only on 2D ego trajectory. Incorporating relative pedestrian-ego geometry, ego velocity profile, or map elements could improve fidelity.
   \item \textbf{R@1 gap}: H4 achieves R@1 $= 0.548$, below H2's $0.671$. The adapter-style approach described above is a natural next step.
-  \item \textbf{Physics}: Generated motions are not physically constrained (foot sliding, penetration). Post-hoc physics cleanup could improve realism for simulation deployment.
-  \item \textbf{Evaluator domain shift}: FID and Diversity rely on motion-feature encoders pretrained on HumanML3D, whose motion distribution differs from in-the-wild pedestrian motion; absolute FID values should be compared only within our benchmark.
+  \item \textbf{Physics}: Generated motions are not physically constrained (foot sliding, penetration). This is inherited as well as produced --- the training labels themselves slide (Sec.~\ref{sec:posequality}) --- so a model that reproduces the data faithfully will reproduce the sliding. Post-hoc physics cleanup, or a contact-aware loss, could improve realism for simulation deployment.
+  \item \textbf{Evaluator domain shift}: FID and Diversity rely on motion-feature encoders pretrained on HumanML3D, whose motion distribution differs from in-the-wild pedestrian motion; absolute FID values should be compared only within our benchmark. The target distribution is also damped relative to mocap (Sec.~\ref{sec:posequality}), which makes the marginal easier to fit than pose realism alone would imply --- a second reason not to read FID as a realism score.
   \item \textbf{Single benchmark, no perceptual study}: All results are on our combined AVA/nuScenes/Waymo benchmark, and we do not yet report a human perceptual study of motion realism.
 \end{itemize}
 
@@ -754,7 +791,7 @@ Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval a
   Answer: [Yes]. Justification: The headline claims (40\% FID improvement from full-sequence conditioning under a unified evaluation pipeline; further gain from interaction-aware sampling; MultiModality collapse from unfreezing the ego encoder) are supported by replicated evaluations with confidence intervals in Tables~\ref{tab:main}, \ref{tab:pipeline2x2}, and~\ref{tab:h6}, seed-sensitivity reporting for both H4 and \method-IA in Section~\ref{sec:seeds}, and held-out/evaluator-independent verification in Sections~\ref{sec:eval} and~\ref{sec:adefde}.
 
   \item \textbf{Limitations.} \emph{Does the paper discuss the limitations of the work?}\\
-  Answer: [Yes]. Justification: Section~\ref{sec:discussion} lists estimated (not ground-truth) pose labels, restricted conditioning scope, the R@1 gap, lack of physical constraints, evaluator domain shift, and the absence of a perceptual study.
+  Answer: [Yes]. Justification: Section~\ref{sec:discussion} lists estimated (not ground-truth) pose labels, restricted conditioning scope, the R@1 gap, lack of physical constraints, evaluator domain shift, and the absence of a perceptual study. Section~\ref{sec:posequality} additionally quantifies the pose-label limitation with a reference-free audit of all 14{,}172 sequences, and Sec.~\ref{sec:seeds} reports seed spread for both models.
 
   \item \textbf{Theory.} \emph{Does the paper include theoretical results?}\\
   Answer: [NA]. Justification: This is an empirical systems paper; no theoretical claims are made.

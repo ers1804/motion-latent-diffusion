@@ -64,13 +64,23 @@ R@1 uses each model's own encoder → H2-vs-H4 R@1 not apples-to-apples. Open TO
   Random frozen encoder ≈ unconditional prior (5.18) → **contrastive pretraining is what injects
   usable ego information**. Definitive 3-rep eval after job completes.
 
-### 7. 🟡 Pose pseudo-GT quality unquantified — ⚠️ **USER TODO**
-The entire dataset is OmniRe-estimated poses; no MPJPE vs any reference, no failure-rate stats.
-- **Why user**: needs a reference source (mocap subset, manually verified clips, or a labeled
-  benchmark like JRDB-Pose overlap) that the agent cannot conjure from the repo.
-- **Suggested minimal version**: manually rate N=50 random extracted sequences (good/usable/broken)
-  and report the rate; or quantify against any scene where a second pose source exists.
-- **Status**: ⚠️ waiting on Erik — decide reference source / do the manual rating.
+### 7. ✅ Pose pseudo-GT quality — QUANTIFIED AND CLOSED 2026-09-14
+The premise "needs a reference source" was wrong for most of the question: MPJPE-style *accuracy*
+needs a reference, but physical *consistency* does not, and that is where the problem turned out to
+be. `research/src/pose_quality_audit.py` over all 14,172 sequences (13,958 scorable):
+- **One canonical skeleton for every pedestrian** (max relative bone deviation 6.3e-6, 1 distinct
+  skeleton) — body shape is not in the data at all, and bone-length/symmetry checks are therefore
+  void as quality signals.
+- **Feet do not plant**: median foot-skate ratio 0.97 (0 = footfalls, 1 = sliding); 94.6% of the
+  10,900 locomotion sequences never hold a foot still for >5% of frames. Per source 0.73 / 0.99 /
+  0.95 (AVA / nuScenes / Waymo). 14.1% have near-static legs; 1.2% penetrate the ground >5 cm.
+- **Damped articulation vs mocap**: joint positions 0.44x, root height 0.26x, turning 0.37x, while
+  root linear velocity is 1.29x. (Partly content, not quality — corroborating, not independent.)
+Reading: a lightly articulated canonical body sliding along a well-tracked trajectory. Root-based
+metrics (ADE/FDE, behaviour probe) are on the trustworthy half, so conditioning conclusions stand;
+FID is the exposed one. In the paper as §\ref{sec:posequality} + Table~\ref{tab:posequality},
+rewritten Limitations bullets, a §4.1 clause and the checklist. A manual rating of N=50 clips is no
+longer the minimal version — it would add far less than the audit already reports.
 
 ### 8. 🟠 Statistical practice — IN PROGRESS
 CI-overlap eyeballing; n=3 normality assumption; main table on full val (also the selection set)
