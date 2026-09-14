@@ -264,6 +264,27 @@ Our pose labels are OmniRe estimates rather than measured 3D ground truth, and n
 
 Three things stand out. First, \textbf{body shape was never estimated}: every sequence in all three sources shares one skeleton to within $10^{-5}$ relative bone length, so the corpus contains a single canonical body rather than per-person shapes. This also means bone-length and left/right-symmetry checks carry no quality signal here, since rigidity is imposed by the representation rather than recovered from images. Second, \textbf{the feet do not plant}. During locomotion at least one foot should be stationary in world coordinates; taking the slowest of the four foot joints per frame and dividing by root speed gives a median ratio of $0.97$, where $0$ denotes clean footfalls and $1$ a body sliding as a rigid unit, and $94.6\%$ of moving sequences never hold a foot still for more than $5\%$ of their frames. This check is internal and has no domain confound. Third, \textbf{articulation is damped} relative to real mocap: against HumanML3D's own per-dimension statistics, root translation is \emph{more} variable than mocap ($1.29\times$) while root-relative joint positions, root height and turning are far less ($0.44\times$, $0.26\times$, $0.37\times$). Part of that gap is content rather than quality --- HumanML3D spans every kind of motion and ours is people walking near roads --- so we read it as corroborating the foot-skate result rather than as an independent measurement.
 
+\paragraph{Where the sliding lives.} Because the artifact is in the labels, it is worth asking whether it is also in the model, and whether a training-side fix could remove it. We apply the identical foot-skate measure at three points of the pipeline on the same held-out conditions (Table~\ref{tab:skate}). The labels slide at 0.96; a VAE round-trip of those labels, which involves no diffusion model at all, already slides at 0.94; and samples from the trained models slide at 0.93--0.94. Two things follow. Our models neither amplify nor repair the artifact --- they are faithful fits to a target that slides, which is the expected behaviour of a well-trained generative model and not an independent failure. And because the frozen VAE reproduces the sliding on its own, the artifact is embedded in the latent space that every denoiser in this paper decodes through, so a contact or foot-skate penalty applied to the denoiser would be optimizing against its own decoder. Removing the sliding therefore requires correcting the labels and retraining the VAE, which changes the target distribution and invalidates every FID value reported here; we leave it to future work rather than presenting a partial fix. We note also that any correction that preserves the tracked root --- the component this audit finds sound --- must re-synthesize the legs, replacing estimated poses with procedurally generated gait, which is a different trade rather than a strictly better ground truth.
+
+\begin{table}[t]
+  \centering
+  \caption{Foot-skate ratio measured at three points of the pipeline (held-out split, same metric as Table~\ref{tab:posequality}; 0 = clean footfalls, 1 = the body sliding as a rigid unit). The VAE round-trip involves no diffusion model, so the sliding is already present in the latent representation; the generative models inherit it without amplifying it.}
+  \label{tab:skate}
+  \vspace{4pt}
+  \small
+  \begin{tabular}{lcc}
+    \toprule
+    Pipeline stage & Skate ratio & \% frames planted \\
+    \midrule
+    Pseudo-ground-truth labels & 0.96 & 0.6 \\
+    VAE round-trip (encode + decode the labels) & 0.94 & 0.0 \\
+    Generated, H4 & 0.94 & 0.0 \\
+    Generated, \method-IA & 0.93 & 0.0 \\
+    Generated, unconditional + interaction sampling & 0.84 & 0.6 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
 The picture is a lightly articulated canonical body translating along a well-tracked trajectory. That asymmetry maps cleanly onto our conclusions. The evidence that conditioning is \emph{used} --- root ADE/FDE (Sec.~\ref{sec:adefde}) and the stop/walk probe (Sec.~\ref{sec:behavior}) --- is computed from the root trajectory, the component this audit finds trustworthy, so those conclusions are unaffected. FID is the exposed quantity: it scores body pose against this same damped target, which makes the marginal easier to fit than the visual richness of real pedestrians would suggest and helps explain why an ego-blind prior can reach FID 1.43 (Table~\ref{tab:trivial}). Absolute FID values here should be read as within-benchmark comparisons only, never as a claim about pose realism.
 
 \begin{table}[t]

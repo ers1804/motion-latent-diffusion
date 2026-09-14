@@ -76,6 +76,13 @@ be. `research/src/pose_quality_audit.py` over all 14,172 sequences (13,958 scora
   0.95 (AVA / nuScenes / Waymo). 14.1% have near-static legs; 1.2% penetrate the ground >5 cm.
 - **Damped articulation vs mocap**: joint positions 0.44x, root height 0.26x, turning 0.37x, while
   root linear velocity is 1.29x. (Partly content, not quality — corroborating, not independent.)
+**Decomposition (2026-09-14, `research/src/skate_decomposition.py`):** labels 0.96 → VAE round-trip
+0.94 (no diffusion involved) → generated H4 0.94 / IA 0.93 / uncond_pipeline 0.84. The models are
+faithful fits to a sliding target, and the sliding is already in the VAE latent space — so a contact
+loss on the denoiser would fight its own frozen decoder (and the diffusion stage's loss is
+latent-only in any case). Fixing it = relabel + retrain VAE + retrain all models + re-run all evals,
+which invalidates every FID in the paper; a root-preserving refit would also have to synthesize the
+legs (procedural gait, not better GT). Logged as future work, NOT attempted.
 Reading: a lightly articulated canonical body sliding along a well-tracked trajectory. Root-based
 metrics (ADE/FDE, behaviour probe) are on the trustworthy half, so conditioning conclusions stand;
 FID is the exposed one. In the paper as §\ref{sec:posequality} + Table~\ref{tab:posequality},

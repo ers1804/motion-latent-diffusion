@@ -252,6 +252,31 @@ have near-static legs (ankle swing < 5 cm), 1.2% penetrate the ground by > 5 cm.
 roads, so part of the gap is content, not quality — this corroborates (2), it is not independent
 evidence.
 
+**WHERE THE SLIDING LIVES (2026-09-14, `research/src/skate_decomposition.py`).** Same metric, same
+held-out conditions, three points of the pipeline:
+
+| stage | skate ratio | % frames planted |
+|---|---|---|
+| pseudo-GT labels | 0.96 | 0.6% |
+| VAE round-trip (encode+decode GT, NO diffusion) | 0.94 | 0.0% |
+| generated H4 | 0.94 | 0.0% |
+| generated EgoPed-IA | 0.93 | 0.0% |
+| generated uncond_pipeline | 0.84 | 0.6% |
+
+Two consequences, and they settle the "can we just add a contact loss" question:
+1. **The models are faithful fits to a sliding target** — they neither amplify nor repair it. Not an
+   independent model failure.
+2. **The artifact is already in the VAE latent space** (0.94 with no diffusion model involved), so a
+   foot-skate/contact penalty on the DENOISER would be optimizing against its own frozen decoder.
+   The diffusion stage's loss is latent-only anyway (`mld/models/losses/mld.py`: diffusion stage =
+   `inst_loss`/`x_loss`; motion-space joint losses exist only in the `vae`/`vae_diffusion` stages).
+
+**Cost of actually fixing it:** correct the labels → retrain the VAE (6,000 ep) → retrain every
+diffusion model → re-run every eval. That changes the target distribution, so EVERY FID in the paper
+is invalidated. It is a new paper, not a rerun. Additional caveat: any refit that preserves the
+tracked root (the sound component) must re-synthesize the legs — replacing estimated poses with
+procedural gait, which is differently synthetic, not better GT. Recorded as future work.
+
 **What it means for the paper.** The root trajectory is the trustworthy component; the body is a
 lightly articulated canonical template sliding along it. That splits our metrics cleanly:
 - **Safe:** root ADE/FDE and the stop/walk probe are computed from the root trajectory. Every
