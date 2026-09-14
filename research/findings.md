@@ -271,6 +271,30 @@ Two consequences, and they settle the "can we just add a contact loss" question:
    The diffusion stage's loss is latent-only anyway (`mld/models/losses/mld.py`: diffusion stage =
    `inst_loss`/`x_loss`; motion-space joint losses exist only in the `vae`/`vae_diffusion` stages).
 
+**FEASIBILITY PILOT (2026-09-14) — the latent space is NOT the obstacle.** Before costing the full
+path, the question worth answering was whether the VAE bottleneck can represent planted feet at all.
+`research/src/refit_contacts.py` anchors footfalls to the measured root path (root + upper body
+preserved; legs re-solved by 2-link IK, bone lengths held to 1e-7), `refit_dataset.py` regenerates
+the 263-D features with the repo's own HumanML3D extractor (checked to reproduce the shipped
+`vectors_263` from the shipped joints to 2.5e-5 mean abs err). 1,418 sequences refitted
+(1,147 train / 271 val) → `/home/erik/ssd2/datasets/egoped_deslid`. Then a 400-epoch fine-tune of the
+H4 VAE on the corrected labels (local GPU, ~25 min):
+
+| foot skate on the SAME de-slid held-out sequences | ratio |
+|---|---|
+| de-slid labels (input) | 0.012 |
+| reconstruction: ORIGINAL VAE (trained on sliding labels) | **0.753** |
+| reconstruction: VAE fine-tuned 400 ep on de-slid labels | **0.150** |
+
+Two readings. (a) The original VAE **re-imposes sliding on clean input** (0.012 → 0.753): its latent
+space genuinely encodes the artifact, which independently confirms why a denoiser-side contact loss
+cannot work. (b) A modest fine-tune takes reconstruction to 0.150, so the bottleneck CAN represent
+planted feet — the remaining residual is plausibly just budget (400 ep on 1.1k sequences vs 6,000 ep
+on 14k). **The expensive path leads somewhere.**
+CAVEAT (unchanged): measured leg swing is only ~0.73x what the root speed requires, so the refit is
+part correction and part synthesis — the legs become procedural gait. Physically consistent, but no
+longer a pose estimate.
+
 **Cost of actually fixing it:** correct the labels → retrain the VAE (6,000 ep) → retrain every
 diffusion model → re-run every eval. That changes the target distribution, so EVERY FID in the paper
 is invalidated. It is a new paper, not a rerun. Additional caveat: any refit that preserves the

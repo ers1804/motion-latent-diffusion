@@ -82,7 +82,14 @@ faithful fits to a sliding target, and the sliding is already in the VAE latent 
 loss on the denoiser would fight its own frozen decoder (and the diffusion stage's loss is
 latent-only in any case). Fixing it = relabel + retrain VAE + retrain all models + re-run all evals,
 which invalidates every FID in the paper; a root-preserving refit would also have to synthesize the
-legs (procedural gait, not better GT). Logged as future work, NOT attempted.
+legs (procedural gait, not better GT). NOT attempted for this paper.
+**Feasibility pilot DONE 2026-09-14** (`refit_contacts.py` + `refit_dataset.py` +
+`vae_deslid_pilot_eval.py`): 1,418 sequences de-slid (skate 0.985 → 0.000 in joints and through the
+263-D features), then a 400-epoch fine-tune of the H4 VAE on them. On the same de-slid held-out set:
+labels 0.012, ORIGINAL VAE reconstruction **0.753** (it re-imposes sliding on clean input — direct
+confirmation that a denoiser-side contact loss is hopeless), fine-tuned VAE **0.150**. The latent
+bottleneck is NOT the obstacle; relabelling is viable. Full path still = relabel + VAE 6k ep +
+retrain all models + re-run all evals, and it invalidates every FID. Pilot reported in the paper.
 Reading: a lightly articulated canonical body sliding along a well-tracked trajectory. Root-based
 metrics (ADE/FDE, behaviour probe) are on the trustworthy half, so conditioning conclusions stand;
 FID is the exposed one. In the paper as §\ref{sec:posequality} + Table~\ref{tab:posequality},
