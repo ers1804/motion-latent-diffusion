@@ -116,6 +116,9 @@ def main():
         f"DATASET.EGOMOTION.EGO_MEAN_STD_PATH={split_dir}",
         "DATASET.EGOMOTION.INTERACTION_CROP=False",
         "DATASET.EGOMOTION.INTERACTION_WEIGHTED_SAMPLING=False",
+        # every model must see the identical 196-frame window per condition, otherwise the
+        # paired comparison across models is meaningless (see EgoMotion.deterministic_crop)
+        "DATASET.EGOMOTION.DETERMINISTIC_CROP=True",
         f"TEST.CHECKPOINTS={spec['ckpt']}",
         "METRIC.TYPE=['EgoMotionMetrics']",
         "TEST.REPLICATION_TIMES=1",

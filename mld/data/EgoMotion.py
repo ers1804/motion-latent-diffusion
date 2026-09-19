@@ -12,6 +12,7 @@ JSON structure:
     - vectors_263: [[263 features], ...] - motion features, shape (T, 263)
 """
 
+import hashlib
 import json
 import os
 from os.path import join as pjoin
@@ -63,12 +64,14 @@ class EgoMotionDataset(Dataset):
         overfit: bool = False,
         split_list_root: Optional[str] = None,
         interaction_crop: bool = False,
+        deterministic_crop: bool = False,
         interaction_weighted_sampling: bool = False,
         captions_path: Optional[str] = None,
         caption_vocab: str = "ego",
         **kwargs
     ):
         self.interaction_crop = interaction_crop
+        self.deterministic_crop = deterministic_crop
         self.interaction_weighted_sampling = interaction_weighted_sampling
         # Optional synthesized captions (text-conditioned baselines, item 10b).
         # Default None => the historical "Placeholder" text, so existing
@@ -472,6 +475,7 @@ class EgoMotionDataset(Dataset):
         ego_sequence: np.ndarray, 
         max_length: int,
         ego_ped_dists: Optional[np.ndarray] = None,
+        crop_key: Optional[str] = None,
     ) -> tuple:
         """
         Pad/crop motion and ego together with aligned indexing.
@@ -513,7 +517,16 @@ class EgoMotionDataset(Dataset):
                 start_idx = max(0, min(start_idx, actual_length - max_length))
             else:
                 # Randomly select a contiguous subsequence
-                start_idx = np.random.randint(0, actual_length - max_length + 1)
+                if getattr(self, "deterministic_crop", False) and crop_key is not None:
+                    # Evaluation: the window must depend only on the sample, so that every
+                    # model is scored on identical conditions. Drawing from the global RNG
+                    # makes the window depend on how much randomness the config happened to
+                    # consume first, which silently de-aligns models (observed 2026-09).
+                    h = int(hashlib.sha1(str(crop_key).encode()).hexdigest()[:8], 16)
+                    rng = np.random.default_rng(h)
+                    start_idx = int(rng.integers(0, actual_length - max_length + 1))
+                else:
+                    start_idx = np.random.randint(0, actual_length - max_length + 1)
             sequence = sequence[start_idx:start_idx + max_length]
             ego_sequence = ego_sequence[start_idx:start_idx + max_length]
             actual_length = max_length
@@ -570,6 +583,7 @@ class EgoMotionDataset(Dataset):
         # Pad/crop sequences
         motion, ego, motion_length = self._pad_or_crop_ego_motion(
             motion, ego, self.max_motion_length, ego_ped_dists=ego_ped_dists,
+            crop_key=self.sample_paths[idx],
         )
         ego_length = motion_length
         # Filter by length constraints
@@ -651,6 +665,7 @@ class EgoMotionDataModule(pl.LightningDataModule):
             debug=self.debug,
             overfit=self.overfit,
             interaction_crop=interaction_crop,
+            deterministic_crop=getattr(self.cfg.DATASET.EGOMOTION, 'DETERMINISTIC_CROP', False),
             interaction_weighted_sampling=interaction_weighted,
             captions_path=getattr(self.cfg.DATASET.EGOMOTION, 'CAPTIONS_PATH', None),
             caption_vocab=getattr(self.cfg.DATASET.EGOMOTION, 'CAPTION_VOCAB', 'ego'),

@@ -220,6 +220,41 @@ reaches FID **1.43** at ADE 3.00 / separation 0.02 — a know-nothing model with
 the paper. FID does not merely fail to credit conditioning; on this data recipe it actively prefers
 the model that discards it.
 
+### ⚠️ EVAL-WINDOW MISALIGNMENT FOUND AND FIXED (2026-09-19) — paired tests were invalid
+
+A second review pass caught a real bug I introduced. `eval_ade_fde.py` runs with
+`INTERACTION_CROP=False`, and in that branch `EgoMotion._pad_or_crop_ego_motion` picked the
+196-frame window with `np.random.randint` off the GLOBAL numpy stream. `pl.seed_everything` makes
+that deterministic only for a fixed sequence of draws, so configs that consume randomness
+differently (text models load captions; H2 has a different config) got DIFFERENT windows.
+Verified from the dumps: h2 differed from h4 on 504/1190 conditions, each text model on 497/1190;
+the whole h4 family (seeds, h6, ia*, uncond*) happened to agree. The tell-tale was already visible
+in the probe output — GT stop base-rate printed 0.216 for h2/text and 0.224 for the rest.
+
+**Consequence:** the paired-bootstrap paragraph added earlier was invalid for exactly the headline
+comparison (H2 vs H4) and for the text rungs. Within the h4 family it was fine.
+
+**Fix:** added `DATASET.EGOMOTION.DETERMINISTIC_CROP` (default False, so training is untouched).
+When set, the window is derived from a SHA-1 of the sample path, so it depends only on the sample.
+`eval_ade_fde.py` now sets it. All 15 models re-dumped; all now share byte-identical `roots_gt`.
+
+**Corrected numbers (all 15 models, identical windows, K=5, N=1,190):** H4 2.360, H4-seedB 2.375,
+H4-seedC 2.258, H2 2.456, H6 2.262, IA 2.659, IA@3399 2.615, IA-seed2 2.633, uncond 3.010,
+uncond+pipeline 3.016, vehicle-text@3399 2.483, oracle 1.882. Separation: H4 0.334, seedB 0.325,
+seedC 0.311, H2 0.280, H6 0.351, IA 0.158, uncond 0.045, uncond+pipe 0.024, oracle 0.936.
+
+**Paired bootstrap, now legitimate:** H2 vs H4 +0.097 [0.017,0.175] p=0.017 — and significant for
+ALL THREE seeds (p=0.048, p<1e-4), which is BETTER than the pre-fix picture where one seed was
+n.s. Prior vs H4 +0.650 p<1e-4; IA vs H4 +0.299 p<1e-4; H6 vs H4 −0.098 p=0.015 (H6 still wins on
+ADE); oracle vs H4 −0.478 p<1e-4; vehicle-text vs H4 +0.123 p=0.019.
+
+**Seed stability holds:** FID 3.39–4.80 (33% relative), ADE 2.258–2.375 (5%), separation
+0.311–0.334 (7%). Wording softened from "order of magnitude" to "several times".
+
+**Lesson:** any cross-model comparison must be checked for shared conditions, not assumed. The
+cheap check is comparing the stored GT arrays across dumps; the visible symptom was a GT base rate
+that differed between models, which should never happen.
+
 ### Per-condition metrics are seed-STABLE while FID is not (2026-09-19)
 
 Ran the held-out per-condition protocol on all three H4 seeds (checkpoints from NAS: seedB ep3099,
