@@ -220,6 +220,29 @@ reaches FID **1.43** at ADE 3.00 / separation 0.02 — a know-nothing model with
 the paper. FID does not merely fail to credit conditioning; on this data recipe it actively prefers
 the model that discards it.
 
+### Per-condition metrics are seed-STABLE while FID is not (2026-09-19)
+
+Ran the held-out per-condition protocol on all three H4 seeds (checkpoints from NAS: seedB ep3099,
+seedC ep1799) plus paired-bootstrap significance on the identical 1,190 conditions.
+
+| seed | FID | ADE | separation |
+|---|---|---|---|
+| A (reported) | 3.392 | 2.320 | 0.333 |
+| B | 4.719 | 2.371 | 0.323 |
+| C | 4.803 | 2.212 | 0.318 |
+| **relative spread** | **33%** | **7%** | **5%** |
+
+This is the strongest single argument for the paper's methodological thesis: the metric the field
+reports is an order of magnitude less stable under reseeding than the per-condition instruments.
+
+**Paired bootstrap** (same conditions, 20k resamples) — all comparisons that matter are significant:
+H2 vs H4 +0.114 [0.028,0.199] p=0.011; uncond_trained vs H4 +0.670 p<1e-4; uncond_pipeline vs H4
++0.684 p<1e-4; IA vs H4 +0.315 p<1e-4 and seed2 +0.288 p<1e-4; H4 vs oracle +0.422 p<1e-4.
+Two caveats recorded honestly in the paper: **H6 beats H4** on ADE (+0.094, p=0.029) while collapsing
+MM by 34%, and **H4 seed B does NOT significantly beat H2** (p=0.20) though seeds A and C do.
+Marginal CIs in tab:adefde overlap for close pairs — the paired test is the right one and is now
+stated in the paper. Dumps: `research/data/ade_fde_h4_seed{B,C}_*.npz`, `ade_fde_bootstrap_ci.npz`.
+
 ### Pseudo-GT pose audit: a canonical body sliding along a good trajectory (2026-09-14) — item 7 CLOSED
 
 Item 7 asked for pose-label quality and was marked "needs a reference source". It does not: most of

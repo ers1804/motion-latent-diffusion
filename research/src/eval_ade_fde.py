@@ -77,6 +77,13 @@ MODELS = {
     "ia_seed2_ep1299": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
                             ckpt=f"{HM}/ego_motion_diffusion_h4_pipeline_seed2/checkpoints/epoch=1299.ckpt",
                             guidance=10),   # epoch-matched to seed 1's flagship
+    # H4 seed variance: do the per-condition conclusions hold across seeds?
+    "h4_seedB": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
+                     ckpt=f"{HM}/ego_motion_diffusion_h4_seedB/checkpoints/epoch=3099.ckpt",
+                     guidance=10),
+    "h4_seedC": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
+                     ckpt=f"{HM}/ego_motion_diffusion_h4_seedC/checkpoints/epoch=1799.ckpt",
+                     guidance=10),
     # prior trained WITH the interaction pipeline: bounds EgoPed-IA's FID the way
     # uncond_trained (3.241) bounds H4 (3.392). ep4499 = best of the 3 late checkpoints.
     "uncond_pipeline": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
