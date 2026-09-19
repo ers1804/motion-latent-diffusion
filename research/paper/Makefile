@@ -4,7 +4,7 @@ BIBTEX = bibtex
 
 all: $(MAIN).pdf
 
-$(MAIN).pdf: $(MAIN).tex refs.bib neurips.sty
+$(MAIN).pdf: $(MAIN).tex refs.bib
 	$(LATEX) -interaction=nonstopmode $(MAIN)
 	$(BIBTEX) $(MAIN)
 	$(LATEX) -interaction=nonstopmode $(MAIN)

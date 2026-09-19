@@ -13,147 +13,285 @@
 \gdef\HyperFirstAtBeginDocument#1{#1}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{camara2021pedmodels2}
+\citation{rasouli2017jaad}
+\citation{rasouli2019pie}
+\citation{alahi2016sociallstm,salzmann2020trajectron,gu2022mid}
 \citation{chen2023mld,tevet2023mdm,zhang2022motiondiffuse,guo2024momask}
 \citation{mao2023led}
 \citation{feng2024unitraj}
-\@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
+\citation{karunratanakul2023gmd,xie2024omnicontrol}
 \citation{chen2023mld}
 \citation{rombach2022sd}
 \citation{ye2023ipadapter}
 \citation{zhang2023controlnet}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{section.1}\protected@file@percent }
+\citation{caesar2020nuscenes}
+\citation{sun2020waymo}
+\citation{camara2021pedmodels1}
+\citation{camara2021pedmodels2}
+\citation{rasouli2017jaad}
+\citation{rasouli2019pie}
+\citation{kotseruba2021benchmark}
+\citation{kotseruba2021benchmark}
+\citation{alahi2016sociallstm}
+\citation{gupta2018socialgan}
+\citation{mohamed2020stgcnn}
+\citation{salzmann2020trajectron}
+\citation{yuan2021agentformer}
+\citation{mangalam2020pecnet,mangalam2021ynet}
+\citation{gu2022mid}
 \citation{mao2023led}
+\citation{shi2022mtr}
 \citation{feng2024unitraj}
-\@writefile{toc}{\contentsline {section}{\numberline {2}Related Work}{2}{section.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Ego-conditioned and context-conditioned motion generation.}{2}{section*.2}\protected@file@percent }
-\citation{zhang2023remodiffuse}
-\citation{liang2024intergen}
-\citation{chen2023mld}
+\citation{rudenko2020survey}
+\citation{karle2021survey}
+\citation{petrovich2021actor}
+\citation{petrovich2022temos}
+\citation{guo2022humanml3d}
+\citation{ho2020ddpm}
+\citation{song2021ddim}
+\citation{ho2022cfg}
 \citation{tevet2023mdm}
+\citation{zhang2022motiondiffuse}
+\citation{chen2023mld}
+\citation{kingma2014vae}
+\citation{rombach2022sd}
+\citation{vaswani2017attention}
 \citation{zhang2023t2mgpt}
 \citation{guo2024momask}
-\citation{ho2022cfg}
+\citation{jiang2023motiongpt}
+\citation{zhang2023remodiffuse}
+\citation{shafir2024priormdm}
+\@writefile{toc}{\contentsline {section}{\numberline {II}Related Work}{2}{section.2}\protected@file@percent }
+\newlabel{sec:related}{{II}{2}{Related Work}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-A}}Pedestrian Behaviour Modelling for Automated Driving}{2}{subsection.2.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-B}}Pedestrian and Agent Trajectory Prediction}{2}{subsection.2.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-C}}Human Motion Synthesis and Latent Diffusion}{2}{subsection.2.3}\protected@file@percent }
+\citation{karunratanakul2023gmd}
+\citation{xie2024omnicontrol}
+\citation{hassan2019prox}
+\citation{hassan2021samp}
+\citation{wang2022humanise}
+\citation{jiang2024trumans}
+\citation{liang2024intergen}
 \citation{rombach2022sd}
 \citation{ye2023ipadapter}
 \citation{zhang2023controlnet}
 \citation{ruiz2023dreambooth}
+\citation{caesar2020nuscenes,sun2020waymo,wilson2021argoverse2}
+\citation{martinmartin2023jrdb}
+\citation{chen2025omnire}
+\citation{SMPL:2015}
+\citation{bogo2016smplify}
+\citation{kocabas2020vibe,li2021hybrik,goel2023hmr2}
+\citation{ye2023slahmr,shin2024wham}
+\citation{mahmood2019amass}
+\citation{rempe2020contact}
+\citation{xie2021physics}
+\citation{zhang2021motionpriors}
+\citation{yuan2023physdiff}
+\citation{mourot2022underpressure}
+\citation{heusel2017fid}
+\citation{chong2020unbiasedfid}
+\citation{parmar2022cleanfid}
+\citation{kynkaanniemi2023imagenetfid}
+\citation{binkowski2018mmdgan}
+\citation{jayasumana2024cmmd}
+\citation{kynkaanniemi2019precisionrecall}
+\citation{barratt2018inception}
+\citation{unterthiner2018fvd}
 \citation{guo2022humanml3d}
 \citation{chen2023mld}
-\@writefile{toc}{\contentsline {paragraph}{Interaction-aware and retrieval-augmented motion generation.}{3}{section*.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Latent diffusion for human motion.}{3}{section*.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Classifier-free guidance.}{3}{section*.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Frozen encoders in generative models.}{3}{section*.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Method}{3}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Problem Formulation}{3}{subsection.3.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Motion VAE}{3}{subsection.3.2}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces EgoPed\xspace  architecture. The ego trajectory is encoded by a \emph  {frozen} transformer encoder into 196 per-timestep conditioning tokens. At every denoising step, the noisy latent $\mathbf  {z}_t$ is concatenated with the full 196-token ego sequence (and the timestep embedding) and jointly processed by a self-attention transformer denoiser; the latent output tokens predict the noise. Diffusion runs in the latent space of a frozen HumanML3D VAE; only the denoiser is trained. Section\nobreakspace  {}\ref {sec:xattn} ablates an alternative cross-attention denoiser.\relax }}{4}{figure.caption.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-D}}Interaction- and Scene-Conditioned Motion}{3}{subsection.2.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-E}}Frozen Encoders in Conditional Generative Models}{3}{subsection.2.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-F}}Pseudo-Ground-Truth Motion Labels}{3}{subsection.2.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {II-G}}Evaluating Conditional Generative Models}{3}{subsection.2.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {III}Method}{3}{section.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-A}}Problem Formulation}{3}{subsection.3.1}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces EgoPed\xspace  architecture. The ego trajectory is encoded by a \emph  {frozen} transformer encoder into 196 per-timestep conditioning tokens. At every denoising step, the noisy latent $\mathbf  {z}_t$ is concatenated with the full 196-token ego sequence (and the timestep embedding) and jointly processed by a self-attention transformer denoiser; the latent output tokens predict the noise. Diffusion runs in the latent space of a frozen HumanML3D VAE; only the denoiser is trained. Section\nobreakspace  {}\ref {sec:xattn} ablates an alternative cross-attention denoiser.\relax }}{4}{figure.caption.1}\protected@file@percent }
 \providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
-\newlabel{fig:architecture}{{1}{4}{\method architecture. The ego trajectory is encoded by a \emph {frozen} transformer encoder into 196 per-timestep conditioning tokens. At every denoising step, the noisy latent $\mathbf {z}_t$ is concatenated with the full 196-token ego sequence (and the timestep embedding) and jointly processed by a self-attention transformer denoiser; the latent output tokens predict the noise. Diffusion runs in the latent space of a frozen HumanML3D VAE; only the denoiser is trained. Section~\ref {sec:xattn} ablates an alternative cross-attention denoiser.\relax }{figure.caption.7}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Ego Encoder}{4}{subsection.3.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Ego encoder pretraining.}{4}{section*.8}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Frozen encoder (key design choice).}{4}{section*.9}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Diffusion Denoiser}{4}{subsection.3.4}\protected@file@percent }
+\newlabel{fig:architecture}{{1}{4}{\method architecture. The ego trajectory is encoded by a \emph {frozen} transformer encoder into 196 per-timestep conditioning tokens. At every denoising step, the noisy latent $\mathbf {z}_t$ is concatenated with the full 196-token ego sequence (and the timestep embedding) and jointly processed by a self-attention transformer denoiser; the latent output tokens predict the noise. Diffusion runs in the latent space of a frozen HumanML3D VAE; only the denoiser is trained. Section~\ref {sec:xattn} ablates an alternative cross-attention denoiser.\relax }{figure.caption.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-B}}Motion VAE}{4}{subsection.3.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-C}}Ego Encoder}{4}{subsection.3.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-C}0a}Ego encoder pretraining.}{4}{paragraph.3.3.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {III-C}0b}Frozen encoder (key design choice).}{4}{paragraph.3.3.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-D}}Diffusion Denoiser}{4}{subsection.3.4}\protected@file@percent }
 \citation{ho2022cfg}
 \citation{song2021ddim}
+\citation{caesar2020nuscenes}
+\citation{sun2020waymo}
 \citation{tsai2024ms3d++,tsai2023ms3d}
 \citation{SMPL:2015}
 \citation{chen2025omnire}
 \citation{guo2022humanml3d}
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Classifier-Free Guidance}{5}{subsection.3.5}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {3.6}Training Objective}{5}{subsection.3.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Experiments}{5}{section.4}\protected@file@percent }
-\newlabel{sec:experiments}{{4}{5}{Experiments}{section.4}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.1}Dataset}{5}{subsection.4.1}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Dataset composition. Each sample is a paired sequence of ego odometry ($196\times 2$) and pedestrian body motion ($196\times 263$), extracted from AVA, nuScenes, and Waymo. Train/validation splits are disjoint at the scene level; the validation split is the evaluation set used for all reported metrics.\relax }}{6}{table.caption.10}\protected@file@percent }
-\newlabel{tab:dataset}{{1}{6}{Dataset composition. Each sample is a paired sequence of ego odometry ($196\times 2$) and pedestrian body motion ($196\times 263$), extracted from AVA, nuScenes, and Waymo. Train/validation splits are disjoint at the scene level; the validation split is the evaluation set used for all reported metrics.\relax }{table.caption.10}{}}
-\@writefile{toc}{\contentsline {paragraph}{Interaction scoring.}{6}{section*.11}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Interaction-weighted sampling.}{6}{section*.12}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Interaction-aware cropping.}{6}{section*.13}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-E}}Classifier-Free Guidance}{5}{subsection.3.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {III-F}}Training Objective}{5}{subsection.3.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Experiments}{5}{section.4}\protected@file@percent }
+\newlabel{sec:experiments}{{IV}{5}{Experiments}{section.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-A}}Dataset}{5}{subsection.4.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0a}Interaction scoring.}{5}{paragraph.4.1.0.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Dataset composition. Each sample is a paired sequence of ego odometry ($196\times 2$) and pedestrian body motion ($196\times 263$), extracted from AVA, nuScenes, and Waymo. Train/validation splits are disjoint at the scene level; the validation split is the evaluation set used for all reported metrics.\relax }}{6}{table.caption.2}\protected@file@percent }
+\newlabel{tab:dataset}{{I}{6}{Dataset composition. Each sample is a paired sequence of ego odometry ($196\times 2$) and pedestrian body motion ($196\times 263$), extracted from AVA, nuScenes, and Waymo. Train/validation splits are disjoint at the scene level; the validation split is the evaluation set used for all reported metrics.\relax }{table.caption.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0b}Interaction-weighted sampling.}{6}{paragraph.4.1.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-A}0c}Interaction-aware cropping.}{6}{paragraph.4.1.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-B}}Pseudo-Ground-Truth Pose Quality}{6}{subsection.4.2}\protected@file@percent }
+\newlabel{sec:posequality}{{\mbox  {IV-B}}{6}{Pseudo-Ground-Truth Pose Quality}{subsection.4.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-B}0a}Where the sliding lives.}{6}{paragraph.4.2.0.1}\protected@file@percent }
 \citation{guo2022humanml3d}
 \citation{guo2022humanml3d}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Reference-free audit of the pseudo-ground-truth poses (13{,}958 sequences; 10{,}900 contain locomotion). Upper block: internal physical consistency, no external reference and no domain confound. Lower block: ratio of our per-dimension standard deviation to HumanML3D's real-mocap statistics, by block of the 263-D representation; values below 1 indicate less variability than mocap, though part of that gap reflects the narrower motion content of driving scenes.\relax }}{7}{table.caption.3}\protected@file@percent }
+\newlabel{tab:posequality}{{II}{7}{Reference-free audit of the pseudo-ground-truth poses (13{,}958 sequences; 10{,}900 contain locomotion). Upper block: internal physical consistency, no external reference and no domain confound. Lower block: ratio of our per-dimension standard deviation to HumanML3D's real-mocap statistics, by block of the 263-D representation; values below 1 indicate less variability than mocap, though part of that gap reflects the narrower motion content of driving scenes.\relax }{table.caption.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-C}}Evaluation Protocol}{7}{subsection.4.3}\protected@file@percent }
+\newlabel{sec:eval}{{\mbox  {IV-C}}{7}{Evaluation Protocol}{subsection.4.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Foot-skate ratio measured at three points of the pipeline (held-out split, same metric as Table\nobreakspace  {}\ref {tab:posequality}; 0 = clean footfalls, 1 = the body sliding as a rigid unit). The VAE round-trip involves no diffusion model, so the sliding is already present in the latent representation; the generative models inherit it without amplifying it.\relax }}{7}{table.caption.4}\protected@file@percent }
+\newlabel{tab:skate}{{III}{7}{Foot-skate ratio measured at three points of the pipeline (held-out split, same metric as Table~\ref {tab:posequality}; 0 = clean footfalls, 1 = the body sliding as a rigid unit). The VAE round-trip involves no diffusion model, so the sliding is already present in the latent representation; the generative models inherit it without amplifying it.\relax }{table.caption.4}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-D}}Implementation Details}{7}{subsection.4.4}\protected@file@percent }
+\newlabel{app:impl}{{\mbox  {IV-D}}{7}{Implementation Details}{subsection.4.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0a}Ego encoder.}{7}{paragraph.4.4.0.1}\protected@file@percent }
 \citation{tevet2023mdm}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.2}Evaluation Protocol}{7}{subsection.4.2}\protected@file@percent }
-\newlabel{sec:eval}{{4.2}{7}{Evaluation Protocol}{subsection.4.2}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.3}Baselines}{7}{subsection.4.3}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Reference baselines bounding the metric space (val split; same evaluator, normalization, and split lists as Table\nobreakspace  {}\ref {tab:main}). All rows are mean $\pm $ 95\% CI over 3 replications (the unconditional row resamples the diffusion model; the non-learned rows are reseeded end-to-end). Retrieval attains near-zero FID by copying real motions but is non-generative; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. Ego conditioning improves EgoPed\xspace  's FID by 34\% over its own unconditional prior (5.18\nobreakspace  {}$\to $\nobreakspace  {}3.39) — and even the unconditional H4 prior outperforms conditionally generated H2 motions, underscoring the architectural advantage of full-sequence conditioning.\relax }}{8}{table.caption.14}\protected@file@percent }
-\newlabel{tab:trivial}{{2}{8}{Reference baselines bounding the metric space (val split; same evaluator, normalization, and split lists as Table~\ref {tab:main}). All rows are mean $\pm $ 95\% CI over 3 replications (the unconditional row resamples the diffusion model; the non-learned rows are reseeded end-to-end). Retrieval attains near-zero FID by copying real motions but is non-generative; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. Ego conditioning improves \method 's FID by 34\% over its own unconditional prior (5.18~$\to $~3.39) — and even the unconditional H4 prior outperforms conditionally generated H2 motions, underscoring the architectural advantage of full-sequence conditioning.\relax }{table.caption.14}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Main evaluation results under a \emph  {unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table\nobreakspace  {}\ref {tab:cfg}). All values are mean $\pm $ 95\% CI over 3 replications. Best values in \textbf  {bold}; for Diversity, values closer to the ground-truth reference are better. EgoPed\xspace  -IA additionally uses interaction-aware training-data sampling (Section\nobreakspace  {}\ref {sec:pipeline2x2}); it is a single training seed, whereas H4's seed sensitivity is quantified in Section\nobreakspace  {}\ref {sec:seeds}.\relax }}{8}{table.caption.15}\protected@file@percent }
-\newlabel{tab:main}{{3}{8}{Main evaluation results under a \emph {unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table~\ref {tab:cfg}). All values are mean $\pm $ 95\% CI over 3 replications. Best values in \textbf {bold}; for Diversity, values closer to the ground-truth reference are better. \method -IA additionally uses interaction-aware training-data sampling (Section~\ref {sec:pipeline2x2}); it is a single training seed, whereas H4's seed sensitivity is quantified in Section~\ref {sec:seeds}.\relax }{table.caption.15}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.4}Main Results}{8}{subsection.4.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.5}Evaluator-Independent Conditioning: Trajectory ADE/FDE}{9}{subsection.4.5}\protected@file@percent }
-\newlabel{sec:adefde}{{4.5}{9}{Evaluator-Independent Conditioning: Trajectory ADE/FDE}{subsection.4.5}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Root-trajectory displacement errors (meters, held-out test split, $K{=}5$ samples per condition, $N{=}1{,}190$). H4 beats the pooled baseline on \emph  {all four} metrics (paired bootstrap over conditions: ADE, minADE, and minFDE significant) despite its lower R@1 — direct evidence that the cross-model R@1 gap is an embedding-space artifact. The deterministic regressor minimizes expected L2 by construction yet is unrealistic (FID 35.5, Table\nobreakspace  {}\ref {tab:trivial}); with only 5 samples H4's minADE beats even this L2-optimal predictor. Mean ADE rewards mode concentration (collapsed H6 scores best) while min-of-$K$ rewards coverage — the two must be read together.\relax }}{9}{table.caption.16}\protected@file@percent }
-\newlabel{tab:adefde}{{4}{9}{Root-trajectory displacement errors (meters, held-out test split, $K{=}5$ samples per condition, $N{=}1{,}190$). H4 beats the pooled baseline on \emph {all four} metrics (paired bootstrap over conditions: ADE, minADE, and minFDE significant) despite its lower R@1 — direct evidence that the cross-model R@1 gap is an embedding-space artifact. The deterministic regressor minimizes expected L2 by construction yet is unrealistic (FID 35.5, Table~\ref {tab:trivial}); with only 5 samples H4's minADE beats even this L2-optimal predictor. Mean ADE rewards mode concentration (collapsed H6 scores best) while min-of-$K$ rewards coverage — the two must be read together.\relax }{table.caption.16}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.6}Behavioral Validity: Intention Distributions}{9}{subsection.4.6}\protected@file@percent }
-\newlabel{sec:behavior}{{4.6}{9}{Behavioral Validity: Intention Distributions}{subsection.4.6}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {4.7}CFG Scale Analysis}{9}{subsection.4.7}\protected@file@percent }
-\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.224). The unconditional model is behaviorally ego-blind (separation $\approx $ 0), validating the probe. H4 couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a third evaluator-independent axis, after FID and ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. H6 shows the MultiModality collapse in behavior space: the highest separation at the \emph  {lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than H2's (overconfidence).\relax }}{10}{table.caption.17}\protected@file@percent }
-\newlabel{tab:behavior}{{5}{10}{Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.224). The unconditional model is behaviorally ego-blind (separation $\approx $ 0), validating the probe. H4 couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a third evaluator-independent axis, after FID and ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. H6 shows the MultiModality collapse in behavior space: the highest separation at the \emph {lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than H2's (overconfidence).\relax }{table.caption.17}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces CFG sweep. H4 FID is nearly flat across guidance scales; H2 degrades steeply. H2 rows are reported under its original evaluation pipeline (the sweep predates our unified protocol); the within-model \emph  {trends}, which are the point of this table, are unaffected.\relax }}{10}{table.caption.18}\protected@file@percent }
-\newlabel{tab:cfg}{{6}{10}{CFG sweep. H4 FID is nearly flat across guidance scales; H2 degrades steeply. H2 rows are reported under its original evaluation pipeline (the sweep predates our unified protocol); the within-model \emph {trends}, which are the point of this table, are unaffected.\relax }{table.caption.18}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {5}Ablation Study}{10}{section.5}\protected@file@percent }
-\newlabel{sec:ablation}{{5}{10}{Ablation Study}{section.5}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.1}Latent Dimension: 4 vs.\ 8 (H3)}{10}{subsection.5.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.2}Interaction-Aware Sampling: a Training-Data 2$\times $2}{10}{subsection.5.2}\protected@file@percent }
-\newlabel{sec:pipeline2x2}{{5.2}{10}{Interaction-Aware Sampling: a Training-Data 2$\times $2}{subsection.5.2}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Qualitative results from H4 (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The body motion exhibits realistic gait, foot contact, and orientation changes that respond to the ego context.\relax }}{11}{figure.caption.19}\protected@file@percent }
-\newlabel{fig:qualitatives}{{2}{11}{Qualitative results from H4 (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The body motion exhibits realistic gait, foot contact, and orientation changes that respond to the ego context.\relax }{figure.caption.19}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Training-data pipeline 2$\times $2 (FID $\downarrow $, unified eval, 3 replications; best checkpoint per cell). The two interventions are approximately additive: conditioning granularity dominates ($\approx $2.7--2.8 FID in both columns), and interaction-aware sampling contributes a similar absolute gain to both architectures ($-$0.59 pooled, $-$0.51 full-sequence).\relax }}{11}{table.caption.20}\protected@file@percent }
-\newlabel{tab:pipeline2x2}{{7}{11}{Training-data pipeline 2$\times $2 (FID $\downarrow $, unified eval, 3 replications; best checkpoint per cell). The two interventions are approximately additive: conditioning granularity dominates ($\approx $2.7--2.8 FID in both columns), and interaction-aware sampling contributes a similar absolute gain to both architectures ($-$0.59 pooled, $-$0.51 full-sequence).\relax }{table.caption.20}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.3}Training-Seed Sensitivity}{11}{subsection.5.3}\protected@file@percent }
-\newlabel{sec:seeds}{{5.3}{11}{Training-Seed Sensitivity}{subsection.5.3}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.4}Encoder Freeze vs.\ Unfreeze (H6)}{11}{subsection.5.4}\protected@file@percent }
+\citation{chen2023mld}
+\citation{chen2023mld}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0b}Diffusion model.}{8}{paragraph.4.4.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0c}Checkpoint selection.}{8}{paragraph.4.4.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-D}0d}Evaluation.}{8}{paragraph.4.4.0.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-E}}Baselines}{8}{subsection.4.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-E}0a}Information ladder: how much conditioning information is needed?}{8}{paragraph.4.5.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-F}}Main Results}{9}{subsection.4.6}\protected@file@percent }
+\newlabel{sec:main}{{\mbox  {IV-F}}{9}{Main Results}{subsection.4.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-G}}Evaluator-Independent Conditioning: Trajectory ADE/FDE}{9}{subsection.4.7}\protected@file@percent }
+\newlabel{sec:adefde}{{\mbox  {IV-G}}{9}{Evaluator-Independent Conditioning: Trajectory ADE/FDE}{subsection.4.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {IV-G}0a}Significance.}{9}{paragraph.4.7.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-H}}Behavioral Validity: Intention Distributions}{9}{subsection.4.8}\protected@file@percent }
+\newlabel{sec:behavior}{{\mbox  {IV-H}}{9}{Behavioral Validity: Intention Distributions}{subsection.4.8}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IV}{\ignorespaces Reference baselines bounding the metric space (val split; same evaluator, normalization, and split lists as Table\nobreakspace  {}\ref {tab:main}). All rows are mean $\pm $ 95\% CI over 3 replications (the unconditional row resamples the diffusion model; the non-learned rows are reseeded end-to-end). Retrieval attains near-zero FID by copying real motions but is non-generative; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. The 5.18 row is \emph  {not} a prior: it is the under-trained null branch of a conditional model, and separately trained unconditional models reach 3.24 on the standard recipe and 1.43 with interaction sampling. FID differences across these rows therefore order marginal fit, not the use of the ego; see Sec.\nobreakspace  {}\ref {sec:adefde} and Sec.\nobreakspace  {}\ref {sec:behavior}.\relax }}{10}{table.caption.5}\protected@file@percent }
+\newlabel{tab:trivial}{{IV}{10}{Reference baselines bounding the metric space (val split; same evaluator, normalization, and split lists as Table~\ref {tab:main}). All rows are mean $\pm $ 95\% CI over 3 replications (the unconditional row resamples the diffusion model; the non-learned rows are reseeded end-to-end). Retrieval attains near-zero FID by copying real motions but is non-generative; trajectory$+$kinematic shows that following the root trajectory with a static body is catastrophic. The 5.18 row is \emph {not} a prior: it is the under-trained null branch of a conditional model, and separately trained unconditional models reach 3.24 on the standard recipe and 1.43 with interaction sampling. FID differences across these rows therefore order marginal fit, not the use of the ego; see Sec.~\ref {sec:adefde} and Sec.~\ref {sec:behavior}.\relax }{table.caption.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {V}{\ignorespaces Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph  {marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches EgoPed\xspace  -IA. Whether a condition is actually \emph  {used} is measured in Secs.\nobreakspace  {}\ref {sec:adefde} and \ref {sec:behavior}. ADE (m) and behavioural separation (held-out split, $K{=}5$) show which signals are actually \emph  {used}: the trained prior is ego-blind despite matching EgoPed\xspace  's FID, the oracle is told the answer, and interaction sampling improves the marginal but not the per-condition fidelity (bold: best non-oracle model). The vehicle-only row is the epoch-matched checkpoint; its FID-best checkpoint (5.12) does not use the condition. The dissociation is sharpest off the ladder: an unconditional model trained with EgoPed\xspace  -IA's own interaction-sampling recipe reaches FID 1.43, better than every conditional model here, at ADE 3.00 and separation 0.02 (Table\nobreakspace  {}\ref {tab:trivial}).\relax }}{10}{table.caption.6}\protected@file@percent }
+\newlabel{tab:ladder}{{V}{10}{Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph {marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches \method -IA. Whether a condition is actually \emph {used} is measured in Secs.~\ref {sec:adefde} and \ref {sec:behavior}. ADE (m) and behavioural separation (held-out split, $K{=}5$) show which signals are actually \emph {used}: the trained prior is ego-blind despite matching \method 's FID, the oracle is told the answer, and interaction sampling improves the marginal but not the per-condition fidelity (bold: best non-oracle model). The vehicle-only row is the epoch-matched checkpoint; its FID-best checkpoint (5.12) does not use the condition. The dissociation is sharpest off the ladder: an unconditional model trained with \method -IA's own interaction-sampling recipe reaches FID 1.43, better than every conditional model here, at ADE 3.00 and separation 0.02 (Table~\ref {tab:trivial}).\relax }{table.caption.6}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {IV-I}}CFG Scale Analysis}{10}{subsection.4.9}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {V}Ablation Study}{10}{section.5}\protected@file@percent }
+\newlabel{sec:ablation}{{V}{10}{Ablation Study}{section.5}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-A}}Latent Dimension: 4 vs.\ 8}{10}{subsection.5.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {VI}{\ignorespaces Main evaluation results under a \emph  {unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table\nobreakspace  {}\ref {tab:cfg}). All values are mean $\pm $ 95\% CI over 3 replications. Best values in \textbf  {bold}; for Diversity, values closer to the ground-truth reference are better. EgoPed\xspace  -IA additionally uses interaction-aware training-data sampling (Section\nobreakspace  {}\ref {sec:pipeline2x2}); its FID replicates across two training seeds (2.880 and 2.671), whereas EgoPed\xspace  's seed sensitivity is much larger --- both are quantified in Section\nobreakspace  {}\ref {sec:seeds}.\relax }}{11}{table.caption.7}\protected@file@percent }
+\newlabel{tab:main}{{VI}{11}{Main evaluation results under a \emph {unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table~\ref {tab:cfg}). All values are mean $\pm $ 95\% CI over 3 replications. Best values in \textbf {bold}; for Diversity, values closer to the ground-truth reference are better. \method -IA additionally uses interaction-aware training-data sampling (Section~\ref {sec:pipeline2x2}); its FID replicates across two training seeds (2.880 and 2.671), whereas \method 's seed sensitivity is much larger --- both are quantified in Section~\ref {sec:seeds}.\relax }{table.caption.7}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VII}{\ignorespaces Root-trajectory displacement errors (meters, held-out test split, $K{=}5$ samples per condition, $N{=}1{,}190$). EgoPed\xspace  beats the pooled baseline on \emph  {all four} metrics (paired bootstrap over conditions: ADE, minADE, and minFDE significant) despite its lower R@1 — direct evidence that the cross-model R@1 gap is an embedding-space artifact. The deterministic regressor minimizes expected L2 by construction yet is unrealistic (FID 35.5, Table\nobreakspace  {}\ref {tab:trivial}); with only 5 samples EgoPed\xspace  's minADE beats even this L2-optimal predictor. Mean ADE rewards mode concentration (collapsed Unfrozen scores best) while min-of-$K$ rewards coverage — the two must be read together. Bold marks the best ego-trajectory-conditioned model per column; the unconditional and oracle rows are reference bounds (min-of-$K$ rewards the diversity of an unconditional sampler and is not a conditioning test).\relax }}{11}{table.caption.8}\protected@file@percent }
+\newlabel{tab:adefde}{{VII}{11}{Root-trajectory displacement errors (meters, held-out test split, $K{=}5$ samples per condition, $N{=}1{,}190$). \method beats the pooled baseline on \emph {all four} metrics (paired bootstrap over conditions: ADE, minADE, and minFDE significant) despite its lower R@1 — direct evidence that the cross-model R@1 gap is an embedding-space artifact. The deterministic regressor minimizes expected L2 by construction yet is unrealistic (FID 35.5, Table~\ref {tab:trivial}); with only 5 samples \method 's minADE beats even this L2-optimal predictor. Mean ADE rewards mode concentration (collapsed Unfrozen scores best) while min-of-$K$ rewards coverage — the two must be read together. Bold marks the best ego-trajectory-conditioned model per column; the unconditional and oracle rows are reference bounds (min-of-$K$ rewards the diversity of an unconditional sampler and is not a conditioning test).\relax }{table.caption.8}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-B}}Interaction-Aware Sampling: a Training-Data 2$\times $2}{11}{subsection.5.2}\protected@file@percent }
+\newlabel{sec:pipeline2x2}{{\mbox  {V-B}}{11}{Interaction-Aware Sampling: a Training-Data 2$\times $2}{subsection.5.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-C}}Training-Seed Sensitivity}{11}{subsection.5.3}\protected@file@percent }
+\newlabel{sec:seeds}{{\mbox  {V-C}}{11}{Training-Seed Sensitivity}{subsection.5.3}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {VIII}{\ignorespaces Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.218). The unconditional model is behaviorally ego-blind (separation $\approx $ 0), validating the probe. EgoPed\xspace  couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a second evaluator-independent axis, after ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. Unfrozen shows the MultiModality collapse in behavior space: the highest separation at the \emph  {lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than Pooled's (overconfidence). Bold marks the best ego-trajectory-conditioned model per column. The trained unconditional model is as ego-blind as the zeroed one (separation 0.04, Brier at chance); the oracle's 0.93 is the probe reading its own label back from the caption (``\ldots  and then stops''), which validates the probe rather than a conditioning claim.\relax }}{12}{table.caption.9}\protected@file@percent }
+\newlabel{tab:behavior}{{VIII}{12}{Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.218). The unconditional model is behaviorally ego-blind (separation $\approx $ 0), validating the probe. \method couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a second evaluator-independent axis, after ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. Unfrozen shows the MultiModality collapse in behavior space: the highest separation at the \emph {lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than Pooled's (overconfidence). Bold marks the best ego-trajectory-conditioned model per column. The trained unconditional model is as ego-blind as the zeroed one (separation 0.04, Brier at chance); the oracle's 0.93 is the probe reading its own label back from the caption (``\ldots and then stops''), which validates the probe rather than a conditioning claim.\relax }{table.caption.9}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {IX}{\ignorespaces CFG sweep. EgoPed\xspace  's FID is non-monotonic in guidance with an optimum at CFG 10; Pooled degrades monotonically. Pooled rows are reported under its original evaluation pipeline (the sweep predates our unified protocol); the within-model \emph  {trends}, which are the point of this table, are unaffected.\relax }}{12}{table.caption.10}\protected@file@percent }
+\newlabel{tab:cfg}{{IX}{12}{CFG sweep. \method 's FID is non-monotonic in guidance with an optimum at CFG 10; Pooled degrades monotonically. Pooled rows are reported under its original evaluation pipeline (the sweep predates our unified protocol); the within-model \emph {trends}, which are the point of this table, are unaffected.\relax }{table.caption.10}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {X}{\ignorespaces Training-data pipeline 2$\times $2 (FID $\downarrow $, unified eval, 3 replications; best checkpoint per cell). The two interventions are approximately additive: conditioning granularity dominates ($\approx $2.7--2.8 FID in both columns), and interaction-aware sampling contributes a similar absolute gain to both architectures ($-$0.59 pooled, $-$0.51 full-sequence).\relax }}{12}{table.caption.12}\protected@file@percent }
+\newlabel{tab:pipeline2x2}{{X}{12}{Training-data pipeline 2$\times $2 (FID $\downarrow $, unified eval, 3 replications; best checkpoint per cell). The two interventions are approximately additive: conditioning granularity dominates ($\approx $2.7--2.8 FID in both columns), and interaction-aware sampling contributes a similar absolute gain to both architectures ($-$0.59 pooled, $-$0.51 full-sequence).\relax }{table.caption.12}{}}
 \citation{rombach2022sd,ye2023ipadapter,zhang2023controlnet}
-\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces H6 definitive evaluation at three checkpoints. H4 reference included for comparison.\relax }}{12}{table.caption.21}\protected@file@percent }
-\newlabel{tab:h6}{{8}{12}{H6 definitive evaluation at three checkpoints. H4 reference included for comparison.\relax }{table.caption.21}{}}
-\@writefile{toc}{\contentsline {paragraph}{Mechanism.}{12}{section*.22}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Is the pretraining necessary?}{12}{section*.24}\protected@file@percent }
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.5}Conditioning Mechanism: Self-Attention vs.\ Cross-Attention}{12}{subsection.5.5}\protected@file@percent }
-\newlabel{sec:xattn}{{5.5}{12}{Conditioning Mechanism: Self-Attention vs.\ Cross-Attention}{subsection.5.5}{}}
-\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces H6 training trajectory (FREEZE\_EGO=False): training-time validation FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch, over the full 5000-epoch run. FID is best at epoch\nobreakspace  {}2099 and degrades as R@1 rises; after epoch\nobreakspace  {}$\approx $3299, R@1 saturates in the 0.37--0.42 band while FID oscillates between 5.1 and 6.3. Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.\relax }}{13}{figure.caption.23}\protected@file@percent }
-\newlabel{fig:h6_training}{{3}{13}{H6 training trajectory (FREEZE\_EGO=False): training-time validation FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch, over the full 5000-epoch run. FID is best at epoch~2099 and degrades as R@1 rises; after epoch~$\approx $3299, R@1 saturates in the 0.37--0.42 band while FID oscillates between 5.1 and 6.3. Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.\relax }{figure.caption.23}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Conditioning-mechanism ablation. Both denoisers consume the full 196-token ego sequence and differ only in how they attend to it. Evaluated on the held-out test split (a scene-disjoint half of the validation set), CFG\nobreakspace  {}=\nobreakspace  {}10, mean\nobreakspace  {}$\pm $\nobreakspace  {}95\% CI over 3 replications, best checkpoint each. The two mechanisms are statistically comparable (overlapping FID intervals); cross-attention provides no advantage.\relax }}{13}{table.caption.25}\protected@file@percent }
-\newlabel{tab:xattn}{{9}{13}{Conditioning-mechanism ablation. Both denoisers consume the full 196-token ego sequence and differ only in how they attend to it. Evaluated on the held-out test split (a scene-disjoint half of the validation set), CFG~=~10, mean~$\pm $~95\% CI over 3 replications, best checkpoint each. The two mechanisms are statistically comparable (overlapping FID intervals); cross-attention provides no advantage.\relax }{table.caption.25}{}}
-\@writefile{toc}{\contentsline {subsection}{\numberline {5.6}Checkpoint Selection}{13}{subsection.5.6}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {6}Discussion}{13}{section.6}\protected@file@percent }
-\newlabel{sec:discussion}{{6}{13}{Discussion}{section.6}{}}
-\@writefile{toc}{\contentsline {paragraph}{Architecture recommendation.}{13}{section*.27}\protected@file@percent }
-\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces H4 training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) across the late training segment. Epoch\nobreakspace  {}3399 is the best checkpoint (highest R@1, FID within noise of epoch\nobreakspace  {}3199, and best definitive 3-replication FID); both metrics then degrade steadily through epoch\nobreakspace  {}4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.\relax }}{14}{figure.caption.26}\protected@file@percent }
-\newlabel{fig:h4_training}{{4}{14}{H4 training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) across the late training segment. Epoch~3399 is the best checkpoint (highest R@1, FID within noise of epoch~3199, and best definitive 3-replication FID); both metrics then degrade steadily through epoch~4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.\relax }{figure.caption.26}{}}
-\@writefile{toc}{\contentsline {paragraph}{R-Precision@1 and the conditioning-diversity tradeoff.}{14}{section*.28}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Limitations.}{14}{section*.29}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Broader impact.}{14}{section*.30}\protected@file@percent }
-\bibstyle{plainnat}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Qualitative results from EgoPed\xspace  (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The root trajectory and orientation changes respond to the ego context. Note that the body pose inherits the limitations quantified in Sec.\nobreakspace  {}\ref {sec:posequality}: the feet slide rather than plant, in the generated motion as in the labels.\relax }}{13}{figure.caption.11}\protected@file@percent }
+\newlabel{fig:qualitatives}{{2}{13}{Qualitative results from \method (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The root trajectory and orientation changes respond to the ego context. Note that the body pose inherits the limitations quantified in Sec.~\ref {sec:posequality}: the feet slide rather than plant, in the generated motion as in the labels.\relax }{figure.caption.11}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-D}}Encoder Freeze vs.\ Unfreeze}{13}{subsection.5.4}\protected@file@percent }
+\newlabel{sec:h6}{{\mbox  {V-D}}{13}{Encoder Freeze vs.\ Unfreeze}{subsection.5.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0a}Mechanism.}{13}{paragraph.5.4.0.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {V-D}0b}Is the pretraining necessary?}{13}{paragraph.5.4.0.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {XI}{\ignorespaces Unfrozen definitive evaluation at three checkpoints. EgoPed\xspace  reference included for comparison.\relax }}{14}{table.caption.13}\protected@file@percent }
+\newlabel{tab:h6}{{XI}{14}{Unfrozen definitive evaluation at three checkpoints. \method reference included for comparison.\relax }{table.caption.13}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Unfrozen training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch, over the full 5000-epoch run. FID is best at epoch\nobreakspace  {}2099 and degrades as R@1 rises; after epoch\nobreakspace  {}$\approx $3299, R@1 saturates in the 0.37--0.42 band while FID oscillates between 5.1 and 6.3. Dashed reference lines show EgoPed\xspace  's best operating point (FID=3.392, R@1=0.548 at epoch 3399, CFG 10). Unfrozen never approaches EgoPed\xspace  's performance on either metric.\relax }}{14}{figure.caption.14}\protected@file@percent }
+\newlabel{fig:h6_training}{{3}{14}{Unfrozen training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch, over the full 5000-epoch run. FID is best at epoch~2099 and degrades as R@1 rises; after epoch~$\approx $3299, R@1 saturates in the 0.37--0.42 band while FID oscillates between 5.1 and 6.3. Dashed reference lines show \method 's best operating point (FID=3.392, R@1=0.548 at epoch 3399, CFG 10). Unfrozen never approaches \method 's performance on either metric.\relax }{figure.caption.14}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-E}}Conditioning Mechanism: Self-Attention vs.\ Cross-Attention}{14}{subsection.5.5}\protected@file@percent }
+\newlabel{sec:xattn}{{\mbox  {V-E}}{14}{Conditioning Mechanism: Self-Attention vs.\ Cross-Attention}{subsection.5.5}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces EgoPed\xspace  training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) across the late training segment. Epoch\nobreakspace  {}3399 is the best checkpoint (highest R@1, FID within noise of epoch\nobreakspace  {}3199, and best definitive 3-replication FID); both metrics then degrade steadily through epoch\nobreakspace  {}4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.\relax }}{14}{figure.caption.16}\protected@file@percent }
+\newlabel{fig:h4_training}{{4}{14}{\method training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) across the late training segment. Epoch~3399 is the best checkpoint (highest R@1, FID within noise of epoch~3199, and best definitive 3-replication FID); both metrics then degrade steadily through epoch~4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.\relax }{figure.caption.16}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {V-F}}Checkpoint Selection}{14}{subsection.5.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Discussion}{14}{section.6}\protected@file@percent }
+\newlabel{sec:discussion}{{VI}{14}{Discussion}{section.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0a}Architecture recommendation.}{14}{paragraph.6.0.0.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {XII}{\ignorespaces Conditioning-mechanism ablation. Both denoisers consume the full 196-token ego sequence and differ only in how they attend to it. Evaluated on the held-out test split (a scene-disjoint half of the validation set), CFG\nobreakspace  {}=\nobreakspace  {}10, mean\nobreakspace  {}$\pm $\nobreakspace  {}95\% CI over 3 replications, best checkpoint each. The two mechanisms are statistically comparable (overlapping FID intervals); cross-attention provides no advantage. The intervals here are over sampling replications at one training seed per arm, and EgoPed\xspace  's seed spread ($\pm 0.79$, Sec.\nobreakspace  {}\ref {sec:seeds}) is far wider, so this comparison can exclude a large effect but cannot resolve a small one.\relax }}{15}{table.caption.15}\protected@file@percent }
+\newlabel{tab:xattn}{{XII}{15}{Conditioning-mechanism ablation. Both denoisers consume the full 196-token ego sequence and differ only in how they attend to it. Evaluated on the held-out test split (a scene-disjoint half of the validation set), CFG~=~10, mean~$\pm $~95\% CI over 3 replications, best checkpoint each. The two mechanisms are statistically comparable (overlapping FID intervals); cross-attention provides no advantage. The intervals here are over sampling replications at one training seed per arm, and \method 's seed spread ($\pm 0.79$, Sec.~\ref {sec:seeds}) is far wider, so this comparison can exclude a large effect but cannot resolve a small one.\relax }{table.caption.15}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0b}R-Precision@1 and the conditioning-diversity tradeoff.}{15}{paragraph.6.0.0.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VI-}0c}Broader impact.}{15}{paragraph.6.0.0.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Limitations and Future Work}{15}{section.7}\protected@file@percent }
+\newlabel{sec:limitations}{{VII}{15}{Limitations and Future Work}{section.7}{}}
+\@writefile{toc}{\contentsline {paragraph}{\numberline {\mbox  {VII-}0a}Future work.}{15}{paragraph.7.0.0.1}\protected@file@percent }
+\bibstyle{IEEEtran}
 \bibdata{refs}
-\bibcite{chen2023mld}{{1}{2023}{{Chen et~al.}}{{Chen, Jiang, Liu, Huang, Fu, Chen, and Yu}}}
-\bibcite{chen2025omnire}{{2}{2025}{{Chen et~al.}}{{Chen, Yang, Huang, de~Lutio, Esturo, Ivanovic, Litany, Gojcic, Fidler, Pavone, Song, and Wang}}}
-\bibcite{feng2024unitraj}{{3}{2024}{{Feng et~al.}}{{Feng, Bahari, Amor, Zablocki, Cord, and Alahi}}}
-\bibcite{guo2022humanml3d}{{4}{2022}{{Guo et~al.}}{{Guo, Zou, Zuo, Wang, Ji, Li, and Cheng}}}
-\bibcite{guo2024momask}{{5}{2024}{{Guo et~al.}}{{Guo, Mu, Javed, Wang, and Cheng}}}
-\bibcite{ho2022cfg}{{6}{2022}{{Ho and Salimans}}{{}}}
-\bibcite{liang2024intergen}{{7}{2024}{{Liang et~al.}}{{Liang, Zhang, Li, Yu, and Xu}}}
-\bibcite{SMPL:2015}{{8}{2015}{{Loper et~al.}}{{Loper, Mahmood, Romero, Pons-Moll, and Black}}}
-\bibcite{mao2023led}{{9}{2023}{{Mao et~al.}}{{Mao, Xu, Zhu, Chen, and Wang}}}
-\bibcite{rombach2022sd}{{10}{2022}{{Rombach et~al.}}{{Rombach, Blattmann, Lorenz, Esser, and Ommer}}}
-\@writefile{toc}{\contentsline {section}{\numberline {7}Conclusion}{15}{section.7}\protected@file@percent }
-\bibcite{ruiz2023dreambooth}{{11}{2023}{{Ruiz et~al.}}{{Ruiz, Li, Jampani, Pritch, Rubinstein, and Aberman}}}
-\bibcite{song2021ddim}{{12}{2021}{{Song et~al.}}{{Song, Meng, and Ermon}}}
-\bibcite{tevet2023mdm}{{13}{2023}{{Tevet et~al.}}{{Tevet, Raab, Gordon, Shafir, Cohen-Or, and Bermano}}}
-\bibcite{tsai2023ms3d}{{14}{2023}{{Tsai et~al.}}{{Tsai, Berrio, Shan, Nebot, and Worrall}}}
-\bibcite{tsai2024ms3d++}{{15}{2024}{{Tsai et~al.}}{{Tsai, Berrio, Shan, Nebot, and Worrall}}}
-\bibcite{ye2023ipadapter}{{16}{2023}{{Ye et~al.}}{{Ye, Zhang, Liu, Han, and Yang}}}
-\bibcite{zhang2023t2mgpt}{{17}{2023{a}}{{Zhang et~al.}}{{Zhang, Zhang, Cun, Zhang, Zhao, Lu, Shen, and Shan}}}
-\bibcite{zhang2023controlnet}{{18}{2023{b}}{{Zhang et~al.}}{{Zhang, Rao, and Agrawala}}}
-\bibcite{zhang2023remodiffuse}{{19}{2023{c}}{{Zhang et~al.}}{{Zhang, Guo, Pan, Cai, Hong, Li, Yang, and Liu}}}
-\bibcite{zhang2022motiondiffuse}{{20}{2024}{{Zhang et~al.}}{{Zhang, Cai, Pan, Hong, Guo, Yang, and Liu}}}
-\@writefile{toc}{\contentsline {section}{\numberline {A}Implementation Details}{16}{appendix.A}\protected@file@percent }
-\newlabel{app:impl}{{A}{16}{Implementation Details}{appendix.A}{}}
-\@writefile{toc}{\contentsline {paragraph}{Ego encoder.}{16}{section*.32}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Diffusion model.}{16}{section*.33}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Checkpoint selection.}{17}{section*.34}\protected@file@percent }
-\@writefile{toc}{\contentsline {paragraph}{Evaluation.}{17}{section*.35}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {B}H6 Training Trajectory Table}{17}{appendix.B}\protected@file@percent }
-\newlabel{app:h6_trajectory}{{B}{17}{H6 Training Trajectory Table}{appendix.B}{}}
-\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces H6 (FREEZE\_EGO=False) training-time validation metrics at selected checkpoint evaluation points (validation runs every 100 epochs; full curve in Figure\nobreakspace  {}\ref {fig:h6_training}). Training-time FID is best at epoch 2099 (4.789); R@1 rises until epoch $\approx $3299, then saturates in the 0.37--0.42 band (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3.\relax }}{17}{table.caption.36}\protected@file@percent }
-\newlabel{tab:h6_trajectory}{{10}{17}{H6 (FREEZE\_EGO=False) training-time validation metrics at selected checkpoint evaluation points (validation runs every 100 epochs; full curve in Figure~\ref {fig:h6_training}). Training-time FID is best at epoch 2099 (4.789); R@1 rises until epoch $\approx $3299, then saturates in the 0.37--0.42 band (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3.\relax }{table.caption.36}{}}
-\@writefile{toc}{\contentsline {section}{\numberline {C}NeurIPS Paper Checklist}{17}{appendix.C}\protected@file@percent }
+\bibcite{camara2021pedmodels2}{1}
+\bibcite{rasouli2017jaad}{2}
+\bibcite{rasouli2019pie}{3}
+\bibcite{alahi2016sociallstm}{4}
+\bibcite{salzmann2020trajectron}{5}
+\bibcite{gu2022mid}{6}
+\bibcite{chen2023mld}{7}
+\bibcite{tevet2023mdm}{8}
+\bibcite{zhang2022motiondiffuse}{9}
+\bibcite{guo2024momask}{10}
+\bibcite{mao2023led}{11}
+\bibcite{feng2024unitraj}{12}
+\bibcite{karunratanakul2023gmd}{13}
+\bibcite{xie2024omnicontrol}{14}
+\bibcite{rombach2022sd}{15}
+\bibcite{ye2023ipadapter}{16}
+\bibcite{zhang2023controlnet}{17}
+\bibcite{caesar2020nuscenes}{18}
+\bibcite{sun2020waymo}{19}
+\bibcite{camara2021pedmodels1}{20}
+\bibcite{kotseruba2021benchmark}{21}
+\bibcite{gupta2018socialgan}{22}
+\bibcite{mohamed2020stgcnn}{23}
+\bibcite{yuan2021agentformer}{24}
+\@writefile{toc}{\contentsline {section}{\numberline {VIII}Conclusion}{16}{section.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{References}{16}{section*.17}\protected@file@percent }
+\bibcite{mangalam2020pecnet}{25}
+\bibcite{mangalam2021ynet}{26}
+\bibcite{shi2022mtr}{27}
+\bibcite{rudenko2020survey}{28}
+\bibcite{karle2021survey}{29}
+\bibcite{petrovich2021actor}{30}
+\bibcite{petrovich2022temos}{31}
+\bibcite{guo2022humanml3d}{32}
+\bibcite{ho2020ddpm}{33}
+\bibcite{song2021ddim}{34}
+\bibcite{ho2022cfg}{35}
+\bibcite{kingma2014vae}{36}
+\bibcite{vaswani2017attention}{37}
+\bibcite{zhang2023t2mgpt}{38}
+\bibcite{jiang2023motiongpt}{39}
+\bibcite{zhang2023remodiffuse}{40}
+\bibcite{shafir2024priormdm}{41}
+\bibcite{hassan2019prox}{42}
+\bibcite{hassan2021samp}{43}
+\bibcite{wang2022humanise}{44}
+\bibcite{jiang2024trumans}{45}
+\bibcite{liang2024intergen}{46}
+\bibcite{ruiz2023dreambooth}{47}
+\bibcite{wilson2021argoverse2}{48}
+\bibcite{martinmartin2023jrdb}{49}
+\bibcite{chen2025omnire}{50}
+\bibcite{SMPL:2015}{51}
+\bibcite{bogo2016smplify}{52}
+\bibcite{kocabas2020vibe}{53}
+\bibcite{li2021hybrik}{54}
+\bibcite{goel2023hmr2}{55}
+\bibcite{ye2023slahmr}{56}
+\bibcite{shin2024wham}{57}
+\bibcite{mahmood2019amass}{58}
+\bibcite{rempe2020contact}{59}
+\bibcite{xie2021physics}{60}
+\bibcite{zhang2021motionpriors}{61}
+\bibcite{yuan2023physdiff}{62}
+\bibcite{mourot2022underpressure}{63}
+\bibcite{heusel2017fid}{64}
+\bibcite{chong2020unbiasedfid}{65}
+\bibcite{parmar2022cleanfid}{66}
+\bibcite{kynkaanniemi2023imagenetfid}{67}
+\bibcite{binkowski2018mmdgan}{68}
+\bibcite{jayasumana2024cmmd}{69}
+\bibcite{kynkaanniemi2019precisionrecall}{70}
+\bibcite{barratt2018inception}{71}
+\bibcite{unterthiner2018fvd}{72}
+\bibcite{tsai2024ms3d++}{73}
+\bibcite{tsai2023ms3d}{74}
+\@writefile{lot}{\contentsline {table}{\numberline {XIII}{\ignorespaces Unfrozen: training-time validation metrics at selected checkpoint evaluation points (validation runs every 100 epochs; full curve in Figure\nobreakspace  {}\ref {fig:h6_training}). Training-time FID is best at epoch 2099 (4.789); R@1 rises until epoch $\approx $3299, then saturates in the 0.37--0.42 band (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3.\relax }}{18}{table.caption.19}\protected@file@percent }
+\newlabel{tab:h6_trajectory}{{XIII}{18}{Unfrozen: training-time validation metrics at selected checkpoint evaluation points (validation runs every 100 epochs; full curve in Figure~\ref {fig:h6_training}). Training-time FID is best at epoch 2099 (4.789); R@1 rises until epoch $\approx $3299, then saturates in the 0.37--0.42 band (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3.\relax }{table.caption.19}{}}
+\@writefile{toc}{\contentsline {section}{Appendix\nobreakspace  A: Unfrozen-Encoder Training Trajectory}{18}{section*.18}\protected@file@percent }
+\newlabel{app:h6_trajectory}{{A}{18}{\appendixname \nobreakspace \thesectiondis \\* Unfrozen-Encoder Training Trajectory}{section*.18}{}}
 \gdef \@abspage@last{18}

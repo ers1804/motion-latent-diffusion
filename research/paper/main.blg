@@ -1,46 +1,62 @@
 This is BibTeX, Version 0.99d (TeX Live 2022)
 Capacity: max_strings=200000, hash_size=200000, hash_prime=170003
 The top-level auxiliary file: main.aux
-The style file: plainnat.bst
+The style file: IEEEtran.bst
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
+Reallocated wiz_functions (elt_size=4) to 6000 items from 3000.
+Reallocated singl_function (elt_size=4) to 100 items from 50.
 Database file #1: refs.bib
-You've used 20 entries,
-            2773 wiz_defined-function locations,
-            691 strings with 9209 characters,
-and the built_in function-call counts, 12030 in all, are:
-= -- 928
-> -- 1095
-< -- 3
-+ -- 367
-- -- 345
-* -- 1069
-:= -- 1916
-add.period$ -- 75
-call.type$ -- 20
-change.case$ -- 175
-chr.to.int$ -- 18
-cite$ -- 40
-duplicate$ -- 471
-empty$ -- 798
-format.name$ -- 367
-if$ -- 2457
-int.to.chr$ -- 3
-int.to.str$ -- 1
-missing$ -- 20
-newline$ -- 123
-num.names$ -- 80
-pop$ -- 388
+-- IEEEtran.bst version 1.14 (2015/08/26) by Michael Shell.
+-- http://www.michaelshell.org/tex/ieeetran/bibtex/
+-- See the "IEEEtran_bst_HOWTO.pdf" manual for usage information.
+Warning--missing publisher in salzmann2020trajectron
+Warning--missing publisher in mangalam2020pecnet
+Warning--missing publisher in petrovich2022temos
+Warning--missing publisher in bogo2016smplify
+Warning--missing publisher in rempe2020contact
+
+Done.
+You've used 74 entries,
+            4087 wiz_defined-function locations,
+            1154 strings with 23537 characters,
+and the built_in function-call counts, 65710 in all, are:
+= -- 4688
+> -- 2182
+< -- 481
++ -- 1240
+- -- 503
+* -- 3193
+:= -- 8705
+add.period$ -- 143
+call.type$ -- 74
+change.case$ -- 83
+chr.to.int$ -- 1296
+cite$ -- 79
+duplicate$ -- 4520
+empty$ -- 5678
+format.name$ -- 493
+if$ -- 15579
+int.to.chr$ -- 0
+int.to.str$ -- 74
+missing$ -- 890
+newline$ -- 245
+num.names$ -- 74
+pop$ -- 2417
 preamble$ -- 1
-purify$ -- 155
-quote$ -- 0
-skip$ -- 372
+purify$ -- 0
+quote$ -- 2
+skip$ -- 4966
 stack$ -- 0
-substring$ -- 123
-swap$ -- 52
-text.length$ -- 2
+substring$ -- 3343
+swap$ -- 3636
+text.length$ -- 49
 text.prefix$ -- 0
-top$ -- 0
-type$ -- 220
-warning$ -- 0
-while$ -- 66
-width$ -- 0
-write$ -- 280
+top$ -- 5
+type$ -- 74
+warning$ -- 5
+while$ -- 244
+width$ -- 76
+write$ -- 672
+(There were 5 warnings)
