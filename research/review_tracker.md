@@ -438,3 +438,32 @@ h4_pipeline ep1299 (EgoPed-IA) · h2_nopipeline ep1199 · h4_seedB ep3099 · h4_
 h4_randinit_ego ep3199 · mdm_style ep299 · h4_real_trans_dec(+_bs128) ep2499 (from local) ·
 h2_seedB/C configs+logs only (instability evidence). Verified 2026-08-03; original H4/H2/H3/H6
 mirrors were already present. Paper numbers → weights+configs+logs now in two locations.
+
+## Venue change: NeurIPS → IEEE T-ITS (2026-09-19, commit b51aa87)
+
+Erik chose **IEEE Transactions on Intelligent Transportation Systems**; scope = reformat +
+strengthen, **no new compute** (the relabel/VAE-retrain stays deferred because it invalidates
+every FID). This **closes the page-budget item** that both review passes rated the top
+desk-reject risk: T-ITS has no hard page limit, so nothing is cut for length.
+
+Converted: `IEEEtran[journal]` two-column, `IEEEtran.bst`, IEEEkeywords, IEEEPARstart,
+single-blind named authors, NeurIPS checklist deleted, 8 wide tables + architecture figure
+promoted to starred floats, implementation details moved from appendix into Experiments.
+**18 pages, 0 errors, 0 undefined refs, 0 overfull boxes.**
+
+Bibliography **21 → 74**. All new metadata harvested from Crossref/arXiv with title matching,
+never written from memory; 4 false Crossref matches rejected (incl. a predatory-journal
+duplicate of the Heusel FID paper, and 2025 papers titled almost identically to DDPM and
+"Attention Is All You Need"). New coverage: pedestrian behaviour/intention for AD, trajectory
+prediction, human mesh recovery (our pseudo-label provenance), physics/foot-contact correction,
+and the FID-critique literature — the last of these lets the dissociation finding be positioned
+explicitly: existing critiques concern *marginal* fidelity, ours concerns silence about the
+*condition*.
+
+Defects found while converting (all fixed): 3 tables were never cited in the text
+(2×2, unfrozen eval, unfrozen trajectory); table numbering did not follow first-mention order;
+one caption sat below its tabular against IEEE style; HTML entities from harvested metadata
+broke 2 bib entries; "is has" typo.
+
+**Still blocked on Erik (red `\TODO` in the PDF):** author/affiliation block, and the
+staged-scenario count in the dataset section.
