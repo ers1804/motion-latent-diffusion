@@ -93,15 +93,15 @@ ax_r1 = ax_fid.twinx()
 c_fid = "#c0392b"
 c_r1 = "#2c3e50"
 
-l_fid, = ax_fid.plot(epochs, fids, color=c_fid, marker="o", markersize=3.0, label="H6 FID")
-l_r1,  = ax_r1.plot(epochs, r1s,  color=c_r1, marker="s", markersize=3.0, label="H6 R@1")
+l_fid, = ax_fid.plot(epochs, fids, color=c_fid, marker="o", markersize=3.0, label="Unfrozen FID")
+l_r1,  = ax_r1.plot(epochs, r1s,  color=c_r1, marker="s", markersize=3.0, label="Unfrozen R@1")
 
 ax_fid.axhline(H4_FID, color=c_fid, linestyle="--", linewidth=0.9, alpha=0.7)
 ax_r1.axhline(H4_R1,  color=c_r1,  linestyle="--", linewidth=0.9, alpha=0.7)
 
-ax_fid.text(epochs[-1] + 50, H4_FID + 0.05, f"H4 FID = {H4_FID}",
+ax_fid.text(epochs[-1] + 50, H4_FID + 0.05, f"EgoPed FID = {H4_FID}",
             color=c_fid, fontsize=7, ha="right", va="bottom")
-ax_r1.text(epochs[0] + 50, H4_R1 + 0.01, f"H4 R@1 = {H4_R1}",
+ax_r1.text(epochs[0] + 50, H4_R1 + 0.01, f"EgoPed R@1 = {H4_R1}",
            color=c_r1, fontsize=7, ha="left", va="bottom")
 
 ax_fid.set_xlabel("Epoch")

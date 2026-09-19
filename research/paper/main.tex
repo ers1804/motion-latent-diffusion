@@ -75,18 +75,18 @@ The key architectural question is: \emph{how should the ego trajectory be inject
 
 We study two families of conditioning mechanisms:
 \begin{itemize}
-\item \textbf{Pooled conditioning (H2)}: The ego trajectory is encoded by a transformer encoder and mean-pooled to a single 256D token, which is concatenated alongside the time embedding in the denoiser's self-attention. This gives the denoiser a coarse summary of the ego trajectory but no temporal resolution.
-\item \textbf{Full-sequence conditioning (H4)}: The ego trajectory is encoded to a full 196-token sequence, which is concatenated with the latent tokens and jointly self-attended at each denoising step. This exposes every denoising step to the full ego trajectory, enabling temporally fine-grained conditioning.
+\item \textbf{Pooled conditioning}: The ego trajectory is encoded by a transformer encoder and mean-pooled to a single 256D token, which is concatenated alongside the time embedding in the denoiser's self-attention. This gives the denoiser a coarse summary of the ego trajectory but no temporal resolution.
+\item \textbf{Full-sequence conditioning}: The ego trajectory is encoded to a full 196-token sequence, which is concatenated with the latent tokens and jointly self-attended at each denoising step. This exposes every denoising step to the full ego trajectory, enabling temporally fine-grained conditioning.
 \end{itemize}
 
 Our main finding is that full-sequence conditioning dramatically outperforms pooled conditioning.
-H4 achieves \textbf{FID = 3.392} versus the pooled baseline's 5.620 under a unified evaluation pipeline — a 40\% improvement with the same denoiser capacity, whose best checkpoint occurs \emph{earlier} in training (epoch 3399 vs.\ 4399), so the gain does not come from additional compute. Adding interaction-aware training-data sampling improves our best system further to FID = 2.880.
+\method achieves \textbf{FID = 3.392} versus the pooled baseline's 5.620 under a unified evaluation pipeline — a 40\% improvement with the same denoiser capacity, whose best checkpoint occurs \emph{earlier} in training (epoch 3399 vs.\ 4399), so the gain does not come from additional compute. Adding interaction-aware training-data sampling improves our best system further to FID = 2.880.
 The full-sequence denoiser can attend to specific moments in the ego trajectory rather than a coarse average, producing motion that more closely follows the ground truth distribution.
 
 A secondary but equally important finding concerns the ego encoder's training regime.
-H4 uses a \emph{frozen} ego encoder — pretrained to align mean-pooled ego trajectories with VAE motion latents, then fixed during diffusion training.
-We ablate this choice with H6, which unfreezes the encoder and allows it to co-adapt with the denoiser.
-H6 consistently \emph{underperforms} H4 on the distributional metrics at every evaluated checkpoint: FID worsens by 50\%, R-Precision@1 drops by 36\%, and MultiModality collapses by 34\%.
+\method uses a \emph{frozen} ego encoder — pretrained to align mean-pooled ego trajectories with VAE motion latents, then fixed during diffusion training.
+We ablate this choice with Unfrozen, which unfreezes the encoder and allows it to co-adapt with the denoiser.
+Unfrozen consistently \emph{underperforms} \method on the distributional metrics at every evaluated checkpoint: FID worsens by 50\%, R-Precision@1 drops by 36\%, and MultiModality collapses by 34\%.
 We show that this occurs because the unfrozen encoder specializes to discriminative, per-condition representations that over-constrain generation diversity — consistent with the frozen-encoder paradigm in image generation (frozen CLIP in Stable Diffusion~\cite{rombach2022sd}, adapters on frozen backbones in IP-Adapter~\cite{ye2023ipadapter} and ControlNet~\cite{zhang2023controlnet}).
 
 Our contributions are:
@@ -96,7 +96,7 @@ Our contributions are:
 \item A demonstration that full-sequence temporal conditioning achieves a 40\% FID improvement over single-token pooled conditioning under a unified evaluation pipeline (non-overlapping confidence intervals, 3 replications), and --- more importantly --- that it also leads on per-condition metrics computed on a scene-disjoint held-out split (trajectory ADE and the coupling of stopping decisions to the vehicle), which is what distinguishes conditioning from marginal fit. The gain is robust to the attention mechanism.
 \item A reference-free audit of the pseudo-ground-truth poses over the full extraction of 14{,}172 sequences, quantifying what the labels do and do not support: the root trajectories are reliable, while body shape is a single canonical template and the feet do not plant. We show the artifact is already present in the motion VAE, and that correcting the labels removes it from reconstruction, which scopes the fix as relabelling rather than an added training loss.
 \item An ablation showing that frozen ego encoders are critical for generative diversity in ego-conditioned motion: unfreezing collapses MultiModality by 34\% and worsens FID by 50\%, though it slightly improves mean trajectory error --- a trade we quantify rather than assert away.
-\item A design recommendation: frozen ego encoder + full-sequence conditioning (H4) is the best-conditioned architecture for this task, and the one we recommend deploying; interaction-aware sampling is an orthogonal data-side choice that trades per-condition fidelity for marginal realism.
+\item A design recommendation: frozen ego encoder + full-sequence conditioning (\method) is the best-conditioned architecture for this task, and the one we recommend deploying; interaction-aware sampling is an orthogonal data-side choice that trades per-condition fidelity for marginal realism.
 \end{enumerate}
 
 %----------------------------------------------------------------------
@@ -123,13 +123,13 @@ MoMask~\cite{guo2024momask} achieves state-of-the-art FID on HumanML3D with mask
 
 \paragraph{Classifier-free guidance.}
 CFG~\cite{ho2022cfg} trains conditional and unconditional models jointly, enabling quality-diversity tradeoff at inference.
-We find that CFG interacts strongly with conditioning granularity: pooled conditioning (H2) shows monotonically increasing FID with CFG scale, while full-sequence conditioning (H4) is has an interior CFG optimum. This suggests that richer conditioning naturally prevents the over-constraint that degrades FID at high CFG.
+We find that CFG interacts strongly with conditioning granularity: pooled conditioning shows monotonically increasing FID with CFG scale, while full-sequence conditioning (\method) is has an interior CFG optimum. This suggests that richer conditioning naturally prevents the over-constraint that degrades FID at high CFG.
 
 \paragraph{Frozen encoders in generative models.}
 A recurring pattern in conditional image generation is that frozen encoders preserve generative diversity better than fine-tuned ones.
 Stable Diffusion~\cite{rombach2022sd} freezes CLIP during diffusion training; IP-Adapter~\cite{ye2023ipadapter} and ControlNet~\cite{zhang2023controlnet} add conditioning adapters on frozen diffusion backbones.
 Conversely, approaches that fine-tune the generative stack end-to-end, such as DreamBooth~\cite{ruiz2023dreambooth}, are known to trade diversity for condition fidelity and require explicit prior-preservation regularization to counteract it.
-Our H6 ablation provides direct empirical evidence for the same phenomenon in motion generation: unfreezing the ego encoder degrades generation quality and collapses per-condition diversity.
+Our Unfrozen ablation provides direct empirical evidence for the same phenomenon in motion generation: unfreezing the ego encoder degrades generation quality and collapses per-condition diversity.
 
 %----------------------------------------------------------------------
 \section{Method}
@@ -161,7 +161,7 @@ The ego trajectory $\mathbf{e} \in \mathbb{R}^{196 \times 2}$ is encoded by a li
   \mathbf{c} = \mathrm{EgoEncoder}(\mathbf{e}) \in \mathbb{R}^{196 \times 256}.
 \end{equation}
 The encoder consists of a linear projection from 2D to 256D, followed by sinusoidal positional encodings, and $N=4$ transformer encoder layers with 4 heads.
-Unlike the pooled variant (H2), which applies mean-pooling to produce a single token $\mathbf{c} \in \mathbb{R}^{1 \times 256}$, our encoder preserves the full temporal sequence.
+Unlike the pooled variant (Pooled), which applies mean-pooling to produce a single token $\mathbf{c} \in \mathbb{R}^{1 \times 256}$, our encoder preserves the full temporal sequence.
 
 \paragraph{Ego encoder pretraining.}
 Before diffusion training, the ego encoder is pretrained with a regression-based alignment objective that distills the paired motion's VAE latent into the ego encoding.
@@ -188,7 +188,7 @@ At each denoising step, the $L=4$ noisy latent tokens $\mathbf{z}_t$, the timest
 \end{equation}
 where the transformer applies self-attention over the joint sequence and the sampler computes $\mathbf{z}_{t-1}$ from $\hat{\boldsymbol{\epsilon}}$.
 Because every ego token participates in the same self-attention as the latent tokens, each denoising step has access to the full ego trajectory at per-timestep resolution: the denoiser can attend to specific moments in the ego trajectory (e.g., a braking event or sharp turn) rather than a global average.
-This is the key distinction from the pooled baseline (H2), whose denoiser sees only a single mean-pooled ego token ($L+2$ tokens in total) and therefore has no temporal resolution over the ego trajectory.
+This is the key distinction from the pooled baseline (Pooled), whose denoiser sees only a single mean-pooled ego token ($L+2$ tokens in total) and therefore has no temporal resolution over the ego trajectory.
 
 The added cost over the pooled baseline is modest at this scale: self-attention over $201$ tokens versus $L+2$.
 A natural alternative is a \emph{cross-attention} denoiser, in which the $L$ latent tokens act as queries and the ego sequence as keys/values, reducing the attention cost to $\mathcal{O}(L \times T)$ rather than $\mathcal{O}((L+T)^2)$.
@@ -202,7 +202,7 @@ At inference, the guided score is:
   \hat{\boldsymbol{\epsilon}}_t = \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, \emptyset) + w \cdot \bigl(\boldsymbol{\epsilon}_\theta(\mathbf{z}_t, \mathbf{c}) - \boldsymbol{\epsilon}_\theta(\mathbf{z}_t, \emptyset)\bigr),
 \end{equation}
 with guidance scale $w$.
-We find $w = 10$ optimal for H4 (Section~\ref{sec:experiments}).
+We find $w = 10$ optimal for \method (Section~\ref{sec:experiments}).
 
 \subsection{Training Objective}
 
@@ -259,10 +259,10 @@ where $\mathbb{1}[\cdot]$ denotes the indicator function, $\phi_t = \operatornam
 Intuitively, a scenario scores highly when the pedestrian moves substantially, spends many frames within 5\,m of the vehicle, and sweeps a large relative bearing (\eg crossing in front of the vehicle).
 
 \paragraph{Interaction-weighted sampling.}
-The pipeline supports drawing training samples with a \texttt{WeightedRandomSampler} whose weights are the interaction scores $s$ (floored at $0.01$ so low-interaction scenarios are still occasionally seen, then normalized to sum to the dataset size), concentrating gradient updates on the ego-relevant portion of the data distribution without discarding any samples. The VAE, the pooled baseline (H2), and our best system (\method-IA) train with this weighting; the H4 reference model trains with uniform sampling, and we disentangle the two effects with a full 2$\times$2 ablation in Section~\ref{sec:pipeline2x2}. Evaluation always uses uniform (unweighted) sampling.
+The pipeline supports drawing training samples with a \texttt{WeightedRandomSampler} whose weights are the interaction scores $s$ (floored at $0.01$ so low-interaction scenarios are still occasionally seen, then normalized to sum to the dataset size), concentrating gradient updates on the ego-relevant portion of the data distribution without discarding any samples. The VAE, the pooled baseline (Pooled), and our best system (\method-IA) train with this weighting; the \method reference model trains with uniform sampling, and we disentangle the two effects with a full 2$\times$2 ablation in Section~\ref{sec:pipeline2x2}. Evaluation always uses uniform (unweighted) sampling.
 
 \paragraph{Interaction-aware cropping.}
-To bound the generation problem to a fixed horizon, we crop each scenario to $T=196$ timesteps ($\approx$40\% of sequences are longer). The pipeline supports centring the crop on the \emph{closest-approach frame} $t^\star = \arg\min_t \lVert \mathbf{g}_t - \mathbf{r}_t \rVert_2$, with uniform jitter of $\pm 25\%$ of the window length so the moment of closest approach is not memorized at a fixed position (the window is clamped to lie within the sequence); the alternative is a uniformly random window. The VAE, H2, and \method-IA use interaction-centred crops; the H4 reference model uses random windows (ablated in Section~\ref{sec:pipeline2x2}). In both modes, ego and motion streams are cropped with a shared index so they stay temporally aligned, and scenarios shorter than 196 frames are zero-padded at the end with their true length recorded for masking.
+To bound the generation problem to a fixed horizon, we crop each scenario to $T=196$ timesteps ($\approx$40\% of sequences are longer). The pipeline supports centring the crop on the \emph{closest-approach frame} $t^\star = \arg\min_t \lVert \mathbf{g}_t - \mathbf{r}_t \rVert_2$, with uniform jitter of $\pm 25\%$ of the window length so the moment of closest approach is not memorized at a fixed position (the window is clamped to lie within the sequence); the alternative is a uniformly random window. The VAE, Pooled, and \method-IA use interaction-centred crops; the \method reference model uses random windows (ablated in Section~\ref{sec:pipeline2x2}). In both modes, ego and motion streams are cropped with a shared index so they stay temporally aligned, and scenarios shorter than 196 frames are zero-padded at the end with their true length recorded for masking.
 
 \subsection{Pseudo-Ground-Truth Pose Quality}
 \label{sec:posequality}
@@ -284,7 +284,7 @@ Three things stand out. First, \textbf{body shape was never estimated}: every se
     \midrule
     Pseudo-ground-truth labels & 0.96 & 0.6 \\
     VAE round-trip (encode + decode the labels) & 0.94 & 0.0 \\
-    Generated, H4 & 0.94 & 0.0 \\
+    Generated, \method & 0.94 & 0.0 \\
     Generated, \method-IA & 0.93 & 0.0 \\
     Generated, unconditional + interaction sampling & 0.84 & 0.6 \\
     \bottomrule
@@ -345,12 +345,12 @@ R-Precision, in contrast, retrieves with each model's \emph{own} ego encoder emb
 \subsection{Baselines}
 
 \begin{itemize}
-  \item \textbf{H2 (Pooled, our baseline)}: EgoEncoderPooled (transformer + mean-pool $\to$ single 256D token), trans\_enc denoiser (concatenated self-attention over $[\mathbf{z}, \mathbf{c}_\mathrm{pool}, \mathbf{t}]$). Best at epoch 4399, CFG~=~5.
-  \item \textbf{H3 (Latent-8)}: Same as H2 but with latent dimension $L=8$ (larger VAE). Best at epoch 4399, CFG~=~5.
+  \item \textbf{Pooled (our baseline)}: pooled ego encoder (transformer + mean-pool $\to$ single 256D token), self-attention denoiser (concatenated self-attention over $[\mathbf{z}, \mathbf{c}_\mathrm{pool}, \mathbf{t}]$). Best at epoch 4399, CFG~=~5.
+  \item \textbf{Latent-8}: Same as Pooled but with latent dimension $L=8$ (larger VAE). Best at epoch 4399, CFG~=~5.
 \end{itemize}
 
 We additionally report four non-learned or reference baselines (Table~\ref{tab:trivial}) that bound the metric space.
-\textbf{Unconditional MLD} runs our H4 model (epoch 3399) with every ego trajectory zeroed; because CFG training dropout uses the same zeroed-trajectory construction, both guidance branches receive identical embeddings and guidance cancels exactly, so guidance cancels and the model falls back on whatever it learned to produce without the ego. We report it because the literature uses this construction, not because it is a well-trained prior --- the separately trained models below show it is not. A \emph{separately trained} unconditional model (identical recipe, ego dropped at every training step, 5,000 epochs, evaluated through the same ego-zeroing at guidance scale 1) reaches FID 3.24 $\pm$ 0.13 --- statistically indistinguishable from the full-sequence model (3.39 $\pm$ 0.18). FID therefore does not by itself credit ego conditioning: the ego-zeroed branch of a conditional model is merely a weak unconditional generator, and a well-trained prior matches the conditional model's \emph{marginal}. Repeating the control on the interaction-sampling data recipe is more striking still: an unconditional model trained that way reaches FID 1.43 $\pm$ 0.18 --- the best marginal of any model in this paper, better than \method-IA (2.88 $\pm$ 0.08) with non-overlapping intervals --- while being demonstrably ego-blind (ADE 3.00, behavioural separation 0.02, R@1 at chance). Interaction sampling is therefore largely a \emph{marginal-quality} intervention: it improves the prior (3.24 $\to$ 1.43) more than it improves the conditional model (3.39 $\to$ 2.88), so \method-IA's FID advantage does not survive comparison against its own prior. Evidence that the conditioning is used comes from the evaluator-independent trajectory metrics (Sec.~\ref{sec:adefde}) and the behavioral probe (Sec.~\ref{sec:behavior}), which a model without ego access cannot match.
+\textbf{Unconditional MLD} runs our \method model (epoch 3399) with every ego trajectory zeroed; because CFG training dropout uses the same zeroed-trajectory construction, both guidance branches receive identical embeddings and guidance cancels exactly, so guidance cancels and the model falls back on whatever it learned to produce without the ego. We report it because the literature uses this construction, not because it is a well-trained prior --- the separately trained models below show it is not. A \emph{separately trained} unconditional model (identical recipe, ego dropped at every training step, 5,000 epochs, evaluated through the same ego-zeroing at guidance scale 1) reaches FID 3.24 $\pm$ 0.13 --- statistically indistinguishable from the full-sequence model (3.39 $\pm$ 0.18). FID therefore does not by itself credit ego conditioning: the ego-zeroed branch of a conditional model is merely a weak unconditional generator, and a well-trained prior matches the conditional model's \emph{marginal}. Repeating the control on the interaction-sampling data recipe is more striking still: an unconditional model trained that way reaches FID 1.43 $\pm$ 0.18 --- the best marginal of any model in this paper, better than \method-IA (2.88 $\pm$ 0.08) with non-overlapping intervals --- while being demonstrably ego-blind (ADE 3.00, behavioural separation 0.02, R@1 at chance). Interaction sampling is therefore largely a \emph{marginal-quality} intervention: it improves the prior (3.24 $\to$ 1.43) more than it improves the conditional model (3.39 $\to$ 2.88), so \method-IA's FID advantage does not survive comparison against its own prior. Evidence that the conditioning is used comes from the evaluator-independent trajectory metrics (Sec.~\ref{sec:adefde}) and the behavioral probe (Sec.~\ref{sec:behavior}), which a model without ego access cannot match.
 \textbf{Retrieval} returns, for each test ego trajectory, the training motion whose ego trajectory is the nearest neighbour (32-point resampled L2).
 \textbf{VAE interpolation} decodes a random latent interpolation of two training motions.
 \textbf{Trajectory$+$kinematic} replaces all body features with the training mean, keeping either the ground-truth root velocity (\emph{oracle}) or nothing (\emph{mean}), simulating a trajectory-prediction-then-fitting pipeline with no learned body model.
@@ -370,11 +370,11 @@ To separate \emph{that} a condition helps from \emph{how much} information it mu
     None (trained unconditional, $p_\mathrm{drop}{=}1$) & 0 bits & 3.24 {\scriptsize $\pm$0.130} & 3.01 & 0.05 & 5.91 \\
     Vehicle-only text (epoch-matched, 3399) & 5.17 bits & 5.91 {\scriptsize $\pm$0.055} & 2.48 & 0.21 & 5.67 \\
     Oracle text (+ ground-truth pedestrian behaviour) & 6.09 bits & 2.82 {\scriptsize $\pm$0.027} & 1.88 & 0.94 & 6.20 \\
-    Ego trajectory (H4) & continuous, $196\times2$ & 3.39 {\scriptsize $\pm$0.179} & \textbf{2.36} & \textbf{0.33} & 5.79 \\
+    Ego trajectory (\method) & continuous, $196\times2$ & 3.39 {\scriptsize $\pm$0.179} & \textbf{2.36} & \textbf{0.33} & 5.79 \\
     Ego trajectory + interaction sampling (\method-IA) & continuous, $196\times2$ & \textbf{2.88} {\scriptsize $\pm$0.084} & 2.66 & 0.16 & 5.67 \\
     \bottomrule
   \end{tabular}
-  \caption{Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph{marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches \method-IA. Whether a condition is actually \emph{used} is measured in Secs.~\ref{sec:adefde} and \ref{sec:behavior}. ADE (m) and behavioural separation (held-out split, $K{=}5$) show which signals are actually \emph{used}: the trained prior is ego-blind despite matching H4's FID, the oracle is told the answer, and interaction sampling improves the marginal but not the per-condition fidelity (bold: best non-oracle model). The vehicle-only row is the epoch-matched checkpoint; its FID-best checkpoint (5.12) does not use the condition. The dissociation is sharpest off the ladder: an unconditional model trained with \method-IA's own interaction-sampling recipe reaches FID 1.43, better than every conditional model here, at ADE 3.00 and separation 0.02 (Table~\ref{tab:trivial}).}
+  \caption{Information ladder (val split, unified pipeline, 3 replications; CFG 10 for all conditional models, CFG 1 for the unconditional one). FID orders the \emph{marginals}, not the conditioning: a well-trained unconditional model matches the trajectory model, and an oracle that is told the pedestrian's behaviour matches \method-IA. Whether a condition is actually \emph{used} is measured in Secs.~\ref{sec:adefde} and \ref{sec:behavior}. ADE (m) and behavioural separation (held-out split, $K{=}5$) show which signals are actually \emph{used}: the trained prior is ego-blind despite matching \method's FID, the oracle is told the answer, and interaction sampling improves the marginal but not the per-condition fidelity (bold: best non-oracle model). The vehicle-only row is the epoch-matched checkpoint; its FID-best checkpoint (5.12) does not use the condition. The dissociation is sharpest off the ladder: an unconditional model trained with \method-IA's own interaction-sampling recipe reaches FID 1.43, better than every conditional model here, at ADE 3.00 and separation 0.02 (Table~\ref{tab:trivial}).}
   \label{tab:ladder}
 \end{table}
 
@@ -400,8 +400,8 @@ To separate \emph{that} a condition helps from \emph{how much} information it mu
     Unconditional \method (trained, $p_\mathrm{drop}{=}1$)$^\P$ & 3.24 {\scriptsize $\pm$0.130} & 5.91 & 0.031$^\dagger$ \\
     \quad + interaction sampling$^\P$ & 1.43 {\scriptsize $\pm$0.183} & 5.76 & 0.031$^\dagger$ \\
     \midrule
-    H2 (Pooled)                      & 5.620  & 5.82 & 0.665 \\
-    H4 (\method)                     & 3.392 & 5.79 & 0.548 \\
+    Pooled                      & 5.620  & 5.82 & 0.665 \\
+    \method                     & 3.392 & 5.79 & 0.548 \\
     \method-IA (ours)                & \textbf{2.880} & 5.67 & 0.323 \\
     \bottomrule
   \end{tabular}
@@ -412,12 +412,12 @@ To separate \emph{that} a condition helps from \emph{how much} information it mu
 \subsection{Main Results}
 
 Table~\ref{tab:main} shows the definitive evaluation results.
-H4 achieves FID $= 3.392 \pm 0.179$ at epoch 3399 and CFG $= 10$, a \textbf{40\% improvement} over the pooled baseline under the unified evaluation pipeline (H2: FID $= 5.620 \pm 0.117$ at CFG $= 5$), and \method-IA improves this further to $2.880 \pm 0.084$.
-The improvement is significant: the confidence intervals are non-overlapping (H4 CI: $[3.213, 3.571]$; H2 CI: $[5.503, 5.737]$).
+\method achieves FID $= 3.392 \pm 0.179$ at epoch 3399 and CFG $= 10$, a \textbf{40\% improvement} over the pooled baseline under the unified evaluation pipeline (FID $= 5.620 \pm 0.117$ at CFG $= 5$), and \method-IA improves this further to $2.880 \pm 0.084$.
+The improvement is significant: the confidence intervals are non-overlapping (\method CI: $[3.213, 3.571]$; Pooled CI: $[5.503, 5.737]$).
 
 \begin{table}[t]
   \centering
-  \caption{Main evaluation results under a \emph{unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}; for Diversity, values closer to the ground-truth reference are better. \method-IA additionally uses interaction-aware training-data sampling (Section~\ref{sec:pipeline2x2}); its FID replicates across two training seeds (2.880 and 2.671), whereas H4's seed sensitivity is much larger --- both are quantified in Section~\ref{sec:seeds}.}
+  \caption{Main evaluation results under a \emph{unified} evaluation pipeline (identical eval-time data processing for all systems; each method at its own optimal CFG, sweep in Table~\ref{tab:cfg}). All values are mean $\pm$ 95\% CI over 3 replications. Best values in \textbf{bold}; for Diversity, values closer to the ground-truth reference are better. \method-IA additionally uses interaction-aware training-data sampling (Section~\ref{sec:pipeline2x2}); its FID replicates across two training seeds (2.880 and 2.671), whereas \method's seed sensitivity is much larger --- both are quantified in Section~\ref{sec:seeds}.}
   \label{tab:main}
   \vspace{4pt}
   \small
@@ -426,24 +426,24 @@ The improvement is significant: the confidence intervals are non-overlapping (H4
     \toprule
     Method & Epoch & CFG & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ & Diversity \\
     \midrule
-    H2 (Pooled, baseline)            & 4399 & 5  & 5.620 {\scriptsize $\pm$0.117} & \textbf{0.665} {\scriptsize $\pm$0.003} & 3.708 & 5.819 \\
-    H3 (Latent-8 VAE)                & 4399 & 5  & 6.677 {\scriptsize $\pm$0.135} & 0.663 {\scriptsize $\pm$0.002} & 3.374 {\scriptsize $\pm$0.356} & 5.887 \\
+    Pooled (baseline)            & 4399 & 5  & 5.620 {\scriptsize $\pm$0.117} & \textbf{0.665} {\scriptsize $\pm$0.003} & 3.708 & 5.819 \\
+    Latent-8                & 4399 & 5  & 6.677 {\scriptsize $\pm$0.135} & 0.663 {\scriptsize $\pm$0.002} & 3.374 {\scriptsize $\pm$0.356} & 5.887 \\
     \midrule
-    H4 (Ours, full-sequence)         & 3399 & 10 & 3.392 {\scriptsize $\pm$0.179} & 0.548 {\scriptsize $\pm$0.002} & \textbf{3.956} {\scriptsize $\pm$0.406} & 5.794 \\
+    \method (ours)         & 3399 & 10 & 3.392 {\scriptsize $\pm$0.179} & 0.548 {\scriptsize $\pm$0.002} & \textbf{3.956} {\scriptsize $\pm$0.406} & 5.794 \\
     \method-IA (Ours, + interaction sampling) & 1299 & 10 & \textbf{2.880} {\scriptsize $\pm$0.084} & 0.323 {\scriptsize $\pm$0.004} & 3.371 {\scriptsize $\pm$0.361} & 5.671 \\
-    H6 (Ablation, unfrozen encoder)  & 3399 & 10 & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 {\scriptsize $\pm$0.309} & 6.064 \\
+    Unfrozen (Ablation, unfrozen encoder)  & 3399 & 10 & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 {\scriptsize $\pm$0.309} & 6.064 \\
     \midrule
     Ground truth (reference)         & ---  & --- & --- & --- & --- & 5.496 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-Interestingly, R-Precision@1 for H4 (0.548) is \emph{lower} than H2's baseline (0.665).
+Interestingly, R-Precision@1 for \method (0.548) is \emph{lower} than Pooled's baseline (0.665).
 Three factors make cross-model R@1 comparisons unreliable:
-(1) H4 generates more diverse motions per ego condition (MM: 3.956 vs.\ 3.708), spreading the generated distribution in feature space and naturally reducing retrieval accuracy;
+(1) \method generates more diverse motions per ego condition (MM: 3.956 vs.\ 3.708), spreading the generated distribution in feature space and naturally reducing retrieval accuracy;
 (2) the R@1 metric measures alignment between generated VAE latents and ego encoder outputs — as the denoiser learns richer dynamics, this alignment metric underestimates the true conditioning fidelity;
 (3) R@1 retrieves with each model's \emph{own} ego encoder (Section~\ref{sec:eval}), so the pooled and full-sequence encoders define retrieval tasks of different intrinsic difficulty.
-The next section settles the question with an evaluator-independent metric: on actual trajectory-following, H4 conditions \emph{better} than H2, not worse.
+The next section settles the question with an evaluator-independent metric: on actual trajectory-following, \method conditions \emph{better} than Pooled, not worse.
 
 \subsection{Evaluator-Independent Conditioning: Trajectory ADE/FDE}
 \label{sec:adefde}
@@ -452,7 +452,7 @@ To measure conditioning fidelity without any learned evaluator or model-specific
 
 \begin{table}[h]
   \centering
-  \caption{Root-trajectory displacement errors (meters, held-out test split, $K{=}5$ samples per condition, $N{=}1{,}190$). H4 beats the pooled baseline on \emph{all four} metrics (paired bootstrap over conditions: ADE, minADE, and minFDE significant) despite its lower R@1 — direct evidence that the cross-model R@1 gap is an embedding-space artifact. The deterministic regressor minimizes expected L2 by construction yet is unrealistic (FID 35.5, Table~\ref{tab:trivial}); with only 5 samples H4's minADE beats even this L2-optimal predictor. Mean ADE rewards mode concentration (collapsed H6 scores best) while min-of-$K$ rewards coverage — the two must be read together. Bold marks the best ego-trajectory-conditioned model per column; the unconditional and oracle rows are reference bounds (min-of-$K$ rewards the diversity of an unconditional sampler and is not a conditioning test).}
+  \caption{Root-trajectory displacement errors (meters, held-out test split, $K{=}5$ samples per condition, $N{=}1{,}190$). \method beats the pooled baseline on \emph{all four} metrics (paired bootstrap over conditions: ADE, minADE, and minFDE significant) despite its lower R@1 — direct evidence that the cross-model R@1 gap is an embedding-space artifact. The deterministic regressor minimizes expected L2 by construction yet is unrealistic (FID 35.5, Table~\ref{tab:trivial}); with only 5 samples \method's minADE beats even this L2-optimal predictor. Mean ADE rewards mode concentration (collapsed Unfrozen scores best) while min-of-$K$ rewards coverage — the two must be read together. Bold marks the best ego-trajectory-conditioned model per column; the unconditional and oracle rows are reference bounds (min-of-$K$ rewards the diversity of an unconditional sampler and is not a conditioning test).}
   \label{tab:adefde}
   \vspace{4pt}
   \small
@@ -460,14 +460,14 @@ To measure conditioning fidelity without any learned evaluator or model-specific
     \toprule
     Model & ADE $\downarrow$ & FDE $\downarrow$ & minADE$_5$ $\downarrow$ & minFDE$_5$ $\downarrow$ \\
     \midrule
-    H4 (full-sequence) & 2.360 {\scriptsize $\pm$0.110} & 4.896 {\scriptsize $\pm$0.221} & 1.306 & 2.625 \\
-    H4, seed B & 2.375 {\scriptsize $\pm$0.116} & 4.932 {\scriptsize $\pm$0.220} & 1.321 & 2.631 \\
-    H4, seed C & 2.258 {\scriptsize $\pm$0.108} & 4.666 {\scriptsize $\pm$0.216} & 1.421 & 2.873 \\
-    H2 (pooled) & 2.456 {\scriptsize $\pm$0.114} & 5.032 {\scriptsize $\pm$0.230} & 1.493 & 3.013 \\
-    H6 (unfrozen) & 2.262 {\scriptsize $\pm$0.113} & 4.637 {\scriptsize $\pm$0.229} & 1.535 & 3.101 \\
+    \method & 2.360 {\scriptsize $\pm$0.110} & 4.896 {\scriptsize $\pm$0.221} & 1.306 & 2.625 \\
+    \method, seed B & 2.375 {\scriptsize $\pm$0.116} & 4.932 {\scriptsize $\pm$0.220} & 1.321 & 2.631 \\
+    \method, seed C & 2.258 {\scriptsize $\pm$0.108} & 4.666 {\scriptsize $\pm$0.216} & 1.421 & 2.873 \\
+    Pooled & 2.456 {\scriptsize $\pm$0.114} & 5.032 {\scriptsize $\pm$0.230} & 1.493 & 3.013 \\
+    Unfrozen & 2.262 {\scriptsize $\pm$0.113} & 4.637 {\scriptsize $\pm$0.229} & 1.535 & 3.101 \\
     Regressor (deterministic, $K{=}1$) & 1.800 & 3.671 & --- & --- \\
     \method-IA (+ interaction sampling) & 2.659 {\scriptsize $\pm$0.114} & 5.551 {\scriptsize $\pm$0.243} & 1.732 & 3.571 \\
-    \method-IA, epoch-matched to H4 (3399) & 2.615 {\scriptsize $\pm$0.112} & 5.438 {\scriptsize $\pm$0.234} & 1.564 & 3.217 \\
+    \method-IA, epoch-matched to \method (3399) & 2.615 {\scriptsize $\pm$0.112} & 5.438 {\scriptsize $\pm$0.234} & 1.564 & 3.217 \\
     \method-IA, seed 2 (best-val, epoch 899) & 2.633 {\scriptsize $\pm$0.111} & 5.526 {\scriptsize $\pm$0.238} & 1.744 & 3.555 \\
     \method-IA, seed 2 at epoch 1299 & 2.599 {\scriptsize $\pm$0.115} & 5.401 {\scriptsize $\pm$0.246} & 1.712 & 3.471 \\
     Unconditional (ego zeroed) & 2.897 {\scriptsize $\pm$0.101} & 5.913 {\scriptsize $\pm$0.205} & 1.236 & 2.463 \\
@@ -480,13 +480,13 @@ To measure conditioning fidelity without any learned evaluator or model-specific
   \end{tabular}
 \end{table}
 
-Three controls sharpen this reading. A \emph{separately trained} unconditional model, whose FID (3.24) is indistinguishable from H4's, is 28\% worse in ADE and 25\% worse in FDE: identical marginals, no per-condition fidelity --- the trajectory metrics see what FID cannot. An \emph{oracle} text model that is told the pedestrian's own behaviour (Table~\ref{tab:ladder}) reaches ADE 1.88, approaching the $L_2$-optimal regressor while remaining generative; it bounds what a perfect description of the outcome would buy. Finally, \method-IA --- the best model by FID --- is \emph{worse} than H4 on every per-condition metric (ADE 2.66 vs.\ 2.36; minADE$_5$ 1.73 vs.\ 1.31). Interaction-aware sampling improves the marginal but not the conditioning. Its FID-selected checkpoint is trained for a third as long (epoch 1299 vs.\ 3399); an epoch-matched checkpoint recovers part of the gap (ADE 2.58, minADE$_5$ 1.53) but still trails H4 on every metric, so the effect is attributable to the sampling itself rather than to under-training.
+Three controls sharpen this reading. A \emph{separately trained} unconditional model, whose FID (3.24) is indistinguishable from \method's, is 28\% worse in ADE and 25\% worse in FDE: identical marginals, no per-condition fidelity --- the trajectory metrics see what FID cannot. An \emph{oracle} text model that is told the pedestrian's own behaviour (Table~\ref{tab:ladder}) reaches ADE 1.88, approaching the $L_2$-optimal regressor while remaining generative; it bounds what a perfect description of the outcome would buy. Finally, \method-IA --- the best model by FID --- is \emph{worse} than \method on every per-condition metric (ADE 2.66 vs.\ 2.36; minADE$_5$ 1.73 vs.\ 1.31). Interaction-aware sampling improves the marginal but not the conditioning. Its FID-selected checkpoint is trained for a third as long (epoch 1299 vs.\ 3399); an epoch-matched checkpoint recovers part of the gap (ADE 2.58, minADE$_5$ 1.53) but still trails \method on every metric, so the effect is attributable to the sampling itself rather than to under-training.
 
 The unconditional reference is worst on mean ADE/FDE, confirming that ego conditioning demonstrably improves trajectory-following (3.01~$\to$~2.36 mean ADE); its deceptively low minADE$_5$ reflects raw sample diversity, not conditioning.
 
 Figure~\ref{fig:qualitatives} shows generated samples for three held-out ego conditions.
 
-\paragraph{Significance.} Every model is scored on an identical 196-frame window per condition: the evaluation crop is derived deterministically from the sample identity rather than drawn from the global random stream, which otherwise makes the window depend on how much randomness a particular configuration happens to consume first. Marginal intervals in Table~\ref{tab:adefde} are percentile bootstraps and several of them overlap, but because the conditions are shared the appropriate test is a paired bootstrap on the per-condition difference. All comparisons that matter are significant at the 95\% level: full-sequence beats pooled by $0.097$\,m ($[0.017, 0.175]$, $p = 0.017$), and does so for all three training seeds ($p = 0.048$ and $p < 10^{-4}$ for the other two); both trained priors are worse than H4 by $0.650$\,m and $0.656$\,m ($p < 10^{-4}$), which is the conditioning effect and is roughly seven times the pooled-vs-full-sequence gap; \method-IA is worse than H4 by $0.299$\,m at its own best checkpoint and $0.274$\,m at its second seed ($p < 10^{-4}$), so its per-condition deficit is not a sampling artifact; vehicle-only text is worse than H4 by $0.123$\,m ($p = 0.019$); and the oracle beats H4 by $0.478$\,m ($p < 10^{-4}$). The one comparison that cuts against our recommendation is H6, which beats H4 by $0.098$\,m ($[0.019, 0.178]$, $p = 0.015$); we return to it below, since H6 buys that accuracy with a $34\%$ collapse in per-condition diversity.
+\paragraph{Significance.} Every model is scored on an identical 196-frame window per condition: the evaluation crop is derived deterministically from the sample identity rather than drawn from the global random stream, which otherwise makes the window depend on how much randomness a particular configuration happens to consume first. Marginal intervals in Table~\ref{tab:adefde} are percentile bootstraps and several of them overlap, but because the conditions are shared the appropriate test is a paired bootstrap on the per-condition difference. All comparisons that matter are significant at the 95\% level: full-sequence beats pooled by $0.097$\,m ($[0.017, 0.175]$, $p = 0.017$), and does so for all three training seeds ($p = 0.048$ and $p < 10^{-4}$ for the other two); both trained priors are worse than \method by $0.650$\,m and $0.656$\,m ($p < 10^{-4}$), which is the conditioning effect and is roughly seven times the pooled-vs-full-sequence gap; \method-IA is worse than \method by $0.299$\,m at its own best checkpoint and $0.274$\,m at its second seed ($p < 10^{-4}$), so its per-condition deficit is not a sampling artifact; vehicle-only text is worse than \method by $0.123$\,m ($p = 0.019$); and the oracle beats \method by $0.478$\,m ($p < 10^{-4}$). The one comparison that cuts against our recommendation is Unfrozen, which beats \method by $0.098$\,m ($[0.019, 0.178]$, $p = 0.015$); we return to it below, since Unfrozen buys that accuracy with a $34\%$ collapse in per-condition diversity.
 
 \subsection{Behavioral Validity: Intention Distributions}
 \label{sec:behavior}
@@ -497,7 +497,7 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
 
 \begin{table}[h]
   \centering
-  \caption{Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.218). The unconditional model is behaviorally ego-blind (separation $\approx$ 0), validating the probe. H4 couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a second evaluator-independent axis, after ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. H6 shows the MultiModality collapse in behavior space: the highest separation at the \emph{lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than H2's (overconfidence). Bold marks the best ego-trajectory-conditioned model per column. The trained unconditional model is as ego-blind as the zeroed one (separation 0.04, Brier at chance); the oracle's 0.93 is the probe reading its own label back from the caption (``\ldots and then stops''), which validates the probe rather than a conditioning claim.}
+  \caption{Behavioral probe on the held-out split ($N{=}1{,}190$; GT stopping base rate 0.218). The unconditional model is behaviorally ego-blind (separation $\approx$ 0), validating the probe. \method couples behavior to the ego better than the pooled baseline (higher separation, best Brier) — a second evaluator-independent axis, after ADE/FDE, on which full-sequence conditioning wins despite its lower R@1. Unfrozen shows the MultiModality collapse in behavior space: the highest separation at the \emph{lowest} entropy — it commits to a single behavior per condition — yet its Brier is no better than Pooled's (overconfidence). Bold marks the best ego-trajectory-conditioned model per column. The trained unconditional model is as ego-blind as the zeroed one (separation 0.04, Brier at chance); the oracle's 0.93 is the probe reading its own label back from the caption (``\ldots and then stops''), which validates the probe rather than a conditioning claim.}
   \label{tab:behavior}
   \vspace{4pt}
   \small
@@ -505,13 +505,13 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
     \toprule
     Model & Gen.\ stop-rate & Separation $\uparrow$ & Entropy & Brier $\downarrow$ \\
     \midrule
-    H4 (full-sequence) & 0.174 & 0.334 & 0.238 & 0.147 \\
-    H4, seed B & 0.216 & 0.325 & 0.264 & 0.167 \\
-    H4, seed C & 0.167 & 0.311 & 0.187 & 0.163 \\
-    H2 (pooled) & 0.230 & 0.280 & 0.302 & 0.182 \\
-    H6 (unfrozen) & 0.217 & 0.351 & 0.182 & 0.178 \\
+    \method & 0.174 & 0.334 & 0.238 & 0.147 \\
+    \method, seed B & 0.216 & 0.325 & 0.264 & 0.167 \\
+    \method, seed C & 0.167 & 0.311 & 0.187 & 0.163 \\
+    Pooled & 0.230 & 0.280 & 0.302 & 0.182 \\
+    Unfrozen & 0.217 & 0.351 & 0.182 & 0.178 \\
     \method-IA (+ interaction sampling) & 0.145 & 0.158 & 0.236 & 0.190 \\
-    \method-IA, epoch-matched to H4 (3399) & 0.128 & 0.222 & 0.171 & 0.175 \\
+    \method-IA, epoch-matched to \method (3399) & 0.128 & 0.222 & 0.171 & 0.175 \\
     \method-IA, seed 2 (best-val, epoch 899) & 0.092 & 0.125 & 0.157 & 0.190 \\
     \method-IA, seed 2 at epoch 1299 & 0.101 & 0.177 & 0.160 & 0.178 \\
     Unconditional & 0.194 & 0.026 & 0.533 & 0.195 \\
@@ -524,32 +524,32 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
   \end{tabular}
 \end{table}
 
-\method-IA couples behaviour to the ego less than half as strongly as H4 (separation 0.15 vs.\ 0.33) and under-predicts stopping (0.14 vs.\ a base rate of 0.22); at a matched epoch the coupling improves (0.23) while the stopping calibration worsens further (0.13), consistent with the interaction-weighted training distribution shifting behavioural calibration rather than with under-training. Across Tables~\ref{tab:adefde} and \ref{tab:behavior}, H4 --- not the FID-best \method-IA --- is the best-\emph{conditioned} model.
+\method-IA couples behaviour to the ego less than half as strongly as \method (separation 0.15 vs.\ 0.33) and under-predicts stopping (0.14 vs.\ a base rate of 0.22); at a matched epoch the coupling improves (0.23) while the stopping calibration worsens further (0.13), consistent with the interaction-weighted training distribution shifting behavioural calibration rather than with under-training. Across Tables~\ref{tab:adefde} and \ref{tab:behavior}, \method --- not the FID-best \method-IA --- is the best-\emph{conditioned} model.
 
 Path-crossing labels (pedestrian/ego polyline intersection) occur at only a $\sim$2\% base rate in our windows and are omitted from the primary analysis.
 
 \subsection{CFG Scale Analysis}
 
-We sweep CFG $\in \{5, 10, 15\}$ for H4 at epoch 3399 (Table~\ref{tab:cfg}).
-H4's FID varies non-monotonically with guidance and has a clear optimum at CFG~$=10$ (3.842~$\to$~3.392~$\to$~3.547), whereas H2 degrades monotonically as guidance rises (6.603~$\to$~6.963~$\to$~7.400).
+We sweep CFG $\in \{5, 10, 15\}$ for \method at epoch 3399 (Table~\ref{tab:cfg}).
+\method's FID varies non-monotonically with guidance and has a clear optimum at CFG~$=10$ (3.842~$\to$~3.392~$\to$~3.547), whereas Pooled degrades monotonically as guidance rises (6.603~$\to$~6.963~$\to$~7.400).
 This indicates that full-sequence conditioning naturally provides a rich, overdetermined conditioning signal — the denoiser attends to 196 ego tokens, so higher guidance amplifies an already high-fidelity signal rather than forcing mode collapse onto a coarse pooled token.
 
 \begin{table}[t]
   \centering
-  \caption{CFG sweep. H4's FID is non-monotonic in guidance with an optimum at CFG 10; H2 degrades monotonically. H2 rows are reported under its original evaluation pipeline (the sweep predates our unified protocol); the within-model \emph{trends}, which are the point of this table, are unaffected.}
+  \caption{CFG sweep. \method's FID is non-monotonic in guidance with an optimum at CFG 10; Pooled degrades monotonically. Pooled rows are reported under its original evaluation pipeline (the sweep predates our unified protocol); the within-model \emph{trends}, which are the point of this table, are unaffected.}
   \label{tab:cfg}
   \vspace{4pt}
   \begin{tabular}{lcccc}
     \toprule
     Method & CFG & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ \\
     \midrule
-    H2 (Pooled) & 5  & 6.603 {\scriptsize $\pm$0.067} & 0.671 {\scriptsize $\pm$0.003} & 3.503 \\
-    H2 (Pooled) & 10 & 6.963 {\scriptsize $\pm$0.035} & 0.767 {\scriptsize $\pm$0.006} & 3.031 \\
-    H2 (Pooled) & 15 & 7.400 {\scriptsize $\pm$0.016} & 0.797 {\scriptsize $\pm$0.005} & 2.724 \\
+    Pooled & 5  & 6.603 {\scriptsize $\pm$0.067} & 0.671 {\scriptsize $\pm$0.003} & 3.503 \\
+    Pooled & 10 & 6.963 {\scriptsize $\pm$0.035} & 0.767 {\scriptsize $\pm$0.006} & 3.031 \\
+    Pooled & 15 & 7.400 {\scriptsize $\pm$0.016} & 0.797 {\scriptsize $\pm$0.005} & 2.724 \\
     \midrule
-    H4 (Ours)   & 5  & 3.842 {\scriptsize $\pm$0.108} & 0.506 {\scriptsize $\pm$0.009} & 4.141 \\
-    H4 (Ours)   & 10 & \textbf{3.392} {\scriptsize $\pm$0.179} & 0.548 {\scriptsize $\pm$0.002} & 3.956 \\
-    H4 (Ours)   & 15 & 3.547 {\scriptsize $\pm$0.122} & 0.536 {\scriptsize $\pm$0.003} & 3.910 \\
+    \method   & 5  & 3.842 {\scriptsize $\pm$0.108} & 0.506 {\scriptsize $\pm$0.009} & 4.141 \\
+    \method   & 10 & \textbf{3.392} {\scriptsize $\pm$0.179} & 0.548 {\scriptsize $\pm$0.002} & 3.956 \\
+    \method   & 15 & 3.547 {\scriptsize $\pm$0.122} & 0.536 {\scriptsize $\pm$0.003} & 3.910 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -557,7 +557,7 @@ This indicates that full-sequence conditioning naturally provides a rich, overde
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/qualitatives.pdf}
-  \caption{Qualitative results from H4 (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The root trajectory and orientation changes respond to the ego context. Note that the body pose inherits the limitations quantified in Sec.~\ref{sec:posequality}: the feet slide rather than plant, in the generated motion as in the labels.}
+  \caption{Qualitative results from \method (epoch 3399, CFG=10) on three ego-conditioned samples from our test set. Each row shows five timesteps of the generated 3D body motion (HumanML3D, rendered as a rigged skeleton on a small ground plane) alongside a bird's-eye-view trajectory plot (rightmost column) showing the predicted pedestrian root trajectory (blue), ground-truth root trajectory (orange), and ego-vehicle trajectory (red). The root trajectory and orientation changes respond to the ego context. Note that the body pose inherits the limitations quantified in Sec.~\ref{sec:posequality}: the feet slide rather than plant, in the generated motion as in the labels.}
   \label{fig:qualitatives}
 \end{figure*}
 
@@ -566,11 +566,11 @@ This indicates that full-sequence conditioning naturally provides a rich, overde
 \label{sec:ablation}
 %----------------------------------------------------------------------
 
-\subsection{Latent Dimension: 4 vs.\ 8 (H3)}
+\subsection{Latent Dimension: 4 vs.\ 8}
 
-To test whether a larger VAE latent space improves generation quality, we train a latent-8 VAE and ego-conditioned diffusion model (H3).
-As shown in Table~\ref{tab:main}, H3 achieves FID $= 6.677$ — \textbf{19\% worse} than H2's 5.620 at the same epoch and CFG (unified evaluation).
-R-Precision is essentially unchanged (H3: 0.663 vs.\ H2: 0.665), confirming that the bottleneck for conditioning quality is the ego encoder, not the latent space.
+To test whether a larger VAE latent space improves generation quality, we train a latent-8 VAE and ego-conditioned diffusion model (Latent-8).
+As shown in Table~\ref{tab:main}, Latent-8 achieves FID $= 6.677$ — \textbf{19\% worse} than Pooled's 5.620 at the same epoch and CFG (unified evaluation).
+R-Precision is essentially unchanged (Latent-8: 0.663 vs.\ Pooled: 0.665), confirming that the bottleneck for conditioning quality is the ego encoder, not the latent space.
 
 The mechanism: the fixed-capacity denoiser must now model an 8D latent distribution instead of 4D, a strictly harder task, without any additional denoiser parameters.
 The marginal diversity improvement (Diversity: 5.887 vs.\ 5.819, $+1.2\%$) does not compensate.
@@ -580,7 +580,7 @@ The marginal diversity improvement (Diversity: 5.887 vs.\ 5.819, $+1.2\%$) does 
 \label{sec:pipeline2x2}
 
 The interaction-aware pipeline of Section~4.1 (score-weighted sampling + closest-approach cropping) is a training-\emph{data} intervention, orthogonal to the conditioning architecture.
-We disentangle the two with a full 2$\times$2: each conditioning architecture (pooled H2, full-sequence H4) trained with and without the interaction pipeline, all evaluated under the unified pipeline.
+We disentangle the two with a full 2$\times$2: each conditioning architecture (pooled, full-sequence) trained with and without the interaction pipeline, all evaluated under the unified pipeline.
 
 \begin{table}[h]
   \centering
@@ -591,8 +591,8 @@ We disentangle the two with a full 2$\times$2: each conditioning architecture (p
     \toprule
     & $-$ interaction sampling & $+$ interaction sampling \\
     \midrule
-    H2 (pooled)        & 6.214 {\scriptsize $\pm$0.105} & 5.620 {\scriptsize $\pm$0.117} \\
-    H4 (full-sequence) & 3.392 {\scriptsize $\pm$0.179} & \textbf{2.880} {\scriptsize $\pm$0.084} \\
+    Pooled        & 6.214 {\scriptsize $\pm$0.105} & 5.620 {\scriptsize $\pm$0.117} \\
+    \method & 3.392 {\scriptsize $\pm$0.179} & \textbf{2.880} {\scriptsize $\pm$0.084} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -600,58 +600,58 @@ We disentangle the two with a full 2$\times$2: each conditioning architecture (p
 Two conclusions follow.
 First, the conditioning-granularity gap ($\approx$2.7--2.8 FID in both columns) is roughly five times the pipeline effect, confirming that full-sequence conditioning — not data curation — is the primary driver.
 Second, the two interventions are approximately additive: interaction-aware sampling contributes a similar absolute gain to both architectures ($-$0.59 pooled, $-$0.51 full-sequence), and for the full-sequence model the best checkpoint additionally arrives at $1/3$ the epochs.
-The $+$pipeline full-sequence cell (\method-IA) has the best marginal of the four; H4 remains the best-conditioned configuration (Sec.~\ref{sec:adefde}).
+The $+$pipeline full-sequence cell (\method-IA) has the best marginal of the four; \method remains the best-conditioned configuration (Sec.~\ref{sec:adefde}).
 
 \subsection{Training-Seed Sensitivity}
 \label{sec:seeds}
 
-We retrain H4 from two additional seeds under its original recipe and select each seed's best checkpoint by training-time validation FID (the same protocol as the main results).
+We retrain \method from two additional seeds under its original recipe and select each seed's best checkpoint by training-time validation FID (the same protocol as the main results).
 Definitive best-checkpoint FID across the three seeds is $3.392$, $4.719$, and $4.803$ (mean $4.30 \pm 0.79$): the headline seed is markedly better than the other two, so single-seed point estimates in this setting overstate precision, and we report the spread explicitly.
-The cross-\emph{architecture} conclusions are unaffected — every H4 seed remains well below the pooled baseline (5.620), and the H2 baseline itself proved training-unstable (two additional H2 seeds were still above FID 10.9 when stopped at roughly 2{,}400 epochs, about half the epoch at which the reported seed peaked, at around four times lower throughput), meaning all our comparisons use the baseline's \emph{best} seed and are conservative in the baseline's favor.
-Running the per-condition protocol on all three H4 seeds sharpens the point considerably. While FID ranges over $3.392$--$4.803$ across those seeds, a relative spread of $33\%$, their trajectory error ranges only over $2.258$--$2.375$\,m ($5\%$) and their behavioural separation over $0.311$--$0.334$ ($7\%$). The per-condition instruments are several times more stable under reseeding than the metric the field reports, which is a further argument for reading conditioning off them. All three seeds beat the trained unconditional prior decisively and the pooled baseline significantly (paired bootstrap, $p \le 0.048$), so the per-condition ranking --- unlike the FID ranking --- does not depend on which seed we happened to report.
-\method-IA, in contrast, \emph{replicates}: a second seed trained with an identical recipe and selected by the same rule reaches FID $2.671 \pm 0.031$ (its best-validation checkpoint is epoch 899) against the reported seed's $2.880 \pm 0.084$, i.e.\ a seed mean of $2.78 \pm 0.15$ --- a spread far tighter than H4's. The per-condition picture replicates as well: the second seed reaches ADE 2.63 and behavioural separation 0.13 (reported seed: 2.66 and 0.16), both short of H4 (2.36 and 0.33), so \method-IA's weaker conditioning fidelity is a property of the interaction-sampling recipe rather than of one unlucky seed. At a matched epoch (1299) the second seed gives FID $3.320 \pm 0.139$, which shows that the two seeds reach their best marginal at different epochs and that per-seed checkpoint selection, not a fixed epoch, is the meaningful protocol.
+The cross-\emph{architecture} conclusions are unaffected — every \method seed remains well below the pooled baseline (5.620), and the Pooled baseline itself proved training-unstable (two additional Pooled seeds were still above FID 10.9 when stopped at roughly 2{,}400 epochs, about half the epoch at which the reported seed peaked, at around four times lower throughput), meaning all our comparisons use the baseline's \emph{best} seed and are conservative in the baseline's favor.
+Running the per-condition protocol on all three \method seeds sharpens the point considerably. While FID ranges over $3.392$--$4.803$ across those seeds, a relative spread of $33\%$, their trajectory error ranges only over $2.258$--$2.375$\,m ($5\%$) and their behavioural separation over $0.311$--$0.334$ ($7\%$). The per-condition instruments are several times more stable under reseeding than the metric the field reports, which is a further argument for reading conditioning off them. All three seeds beat the trained unconditional prior decisively and the pooled baseline significantly (paired bootstrap, $p \le 0.048$), so the per-condition ranking --- unlike the FID ranking --- does not depend on which seed we happened to report.
+\method-IA, in contrast, \emph{replicates}: a second seed trained with an identical recipe and selected by the same rule reaches FID $2.671 \pm 0.031$ (its best-validation checkpoint is epoch 899) against the reported seed's $2.880 \pm 0.084$, i.e.\ a seed mean of $2.78 \pm 0.15$ --- a spread far tighter than \method's. The per-condition picture replicates as well: the second seed reaches ADE 2.63 and behavioural separation 0.13 (reported seed: 2.66 and 0.16), both short of \method (2.36 and 0.33), so \method-IA's weaker conditioning fidelity is a property of the interaction-sampling recipe rather than of one unlucky seed. At a matched epoch (1299) the second seed gives FID $3.320 \pm 0.139$, which shows that the two seeds reach their best marginal at different epochs and that per-seed checkpoint selection, not a fixed epoch, is the meaningful protocol.
 
-\subsection{Encoder Freeze vs.\ Unfreeze (H6)}
+\subsection{Encoder Freeze vs.\ Unfreeze}
 
 The most important ablation is whether to freeze the ego encoder during diffusion training.
-H6 uses an identical architecture to H4 but with FREEZE\_EGO=False, allowing the encoder to co-adapt with the denoiser via backpropagation through the diffusion loss.
+Unfrozen uses an identical architecture to \method but with the ego encoder left trainable, allowing the encoder to co-adapt with the denoiser via backpropagation through the diffusion loss.
 
-Figure~\ref{fig:h6_training} shows the H6 training trajectory (FID and R@1 vs.\ epoch).
+Figure~\ref{fig:h6_training} shows the Unfrozen training trajectory (FID and R@1 vs.\ epoch).
 Two behaviors are notable:
 \begin{itemize}
   \item \textbf{FID/R@1 tradeoff}: As training progresses, R@1 improves (encoder specializes discriminatively) but FID degrades (generation quality decreases). The two optima do \emph{not} coincide: training-time FID is best at epoch 2099 (4.789), while R@1 continues rising long after FID has begun to deteriorate.
-  \item \textbf{R@1 saturation far below H4}: After epoch $\approx$3299, training-time R@1 saturates, oscillating in the 0.37--0.42 band through epoch 4999 (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3. Neither metric ever approaches H4's operating point (FID 3.392, R@1 0.548) at any point in 5000 epochs.
+  \item \textbf{R@1 saturation far below \method}: After epoch $\approx$3299, training-time R@1 saturates, oscillating in the 0.37--0.42 band through epoch 4999 (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3. Neither metric ever approaches \method's operating point (FID 3.392, R@1 0.548) at any point in 5000 epochs.
 \end{itemize}
 
 Definitive evaluations (3 replications, CFG~=~10) confirm the picture:
 
 \begin{table}[h]
   \centering
-  \caption{H6 definitive evaluation at three checkpoints. H4 reference included for comparison.}
+  \caption{Unfrozen definitive evaluation at three checkpoints. \method reference included for comparison.}
   \label{tab:h6}
   \vspace{4pt}
   \begin{tabular}{lcccc}
     \toprule
     System & FID $\downarrow$ & R@1 $\uparrow$ & MM $\uparrow$ & Diversity \\
     \midrule
-    H6 epoch=2099 (best train FID)      & 4.952 {\scriptsize $\pm$0.088} & 0.263 {\scriptsize $\pm$0.009} & 2.455 & 5.957 \\
-    H6 epoch=3299 (best seg-1 R@1)      & 5.311 {\scriptsize $\pm$0.060} & 0.348 {\scriptsize $\pm$0.004} & 2.581 & 6.034 \\
-    H6 epoch=3399 (matched to H4 best)  & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 & 6.064 \\
+    Unfrozen, epoch 2099 (best validation FID)      & 4.952 {\scriptsize $\pm$0.088} & 0.263 {\scriptsize $\pm$0.009} & 2.455 & 5.957 \\
+    Unfrozen, epoch 3299 (best R@1)      & 5.311 {\scriptsize $\pm$0.060} & 0.348 {\scriptsize $\pm$0.004} & 2.581 & 6.034 \\
+    Unfrozen, epoch 3399 (matched to \method)  & 5.079 {\scriptsize $\pm$0.034} & 0.352 {\scriptsize $\pm$0.009} & 2.618 & 6.064 \\
     \midrule
-    \textbf{H4 epoch=3399 (FREEZE=True)} & \textbf{3.392} {\scriptsize $\pm$0.179} & \textbf{0.548} {\scriptsize $\pm$0.002} & \textbf{3.956} & 5.794 \\
+    \textbf{\method, epoch 3399 (frozen encoder)} & \textbf{3.392} {\scriptsize $\pm$0.179} & \textbf{0.548} {\scriptsize $\pm$0.002} & \textbf{3.956} & 5.794 \\
     \bottomrule
   \end{tabular}
 \end{table}
 
-H6 is worse than H4 on FID, R-Precision and MultiModality at \emph{every} evaluated checkpoint (it is, however, slightly better on mean trajectory error; Sec.~\ref{sec:adefde}).
-Later checkpoints cannot change this conclusion: even H6's best training-time R@1 in the saturation band (0.417 at epoch 4599, with training-time FID 6.339) remains far below H4's definitive R@1 of 0.548 — and training-time metrics consistently \emph{overestimate} the definitive 3-replication values (\eg 0.398~$\to$~0.348 at epoch 3299).
-The MultiModality collapse is particularly striking: H6 MM $= 2.618$ vs.\ H4 MM $= 3.956$ (34\% lower).
+Unfrozen is worse than \method on FID, R-Precision and MultiModality at \emph{every} evaluated checkpoint (it is, however, slightly better on mean trajectory error; Sec.~\ref{sec:adefde}).
+Later checkpoints cannot change this conclusion: even Unfrozen's best training-time R@1 in the saturation band (0.417 at epoch 4599, with training-time FID 6.339) remains far below \method's definitive R@1 of 0.548 — and training-time metrics consistently \emph{overestimate} the definitive 3-replication values (\eg 0.398~$\to$~0.348 at epoch 3299).
+The MultiModality collapse is particularly striking: Unfrozen MM $= 2.618$ vs.\ \method MM $= 3.956$ (34\% lower).
 This indicates near-deterministic generation per condition — the ego encoder has learned highly discriminative features for each trajectory, collapsing the generated motion distribution to a narrow region.
 
 \paragraph{Mechanism.}
-When the encoder is frozen (H4), it maps ego trajectories to general-purpose representations aligned with the VAE latent space.
+When the encoder is frozen (\method), it maps ego trajectories to general-purpose representations aligned with the VAE latent space.
 The denoiser learns to query these fixed representations and generate diverse, plausible motions for each condition.
-When the encoder is unfrozen (H6), backpropagation through the denoising loss pushes the encoder toward representations that \emph{minimize the denoising loss} — essentially learning discriminative features that uniquely identify each trajectory.
+When the encoder is unfrozen (Unfrozen), backpropagation through the denoising loss pushes the encoder toward representations that \emph{minimize the denoising loss} — essentially learning discriminative features that uniquely identify each trajectory.
 This over-specialization constrains generation: the denoiser outputs similar samples for each unique ego representation, collapsing MultiModality.
 
 This pattern mirrors the frozen-encoder paradigm in image generation~\cite{rombach2022sd,ye2023ipadapter,zhang2023controlnet}: frozen conditioning encoders preserve general-purpose representations and allow the generative model to learn diverse ways to satisfy the conditioning signal.
@@ -659,13 +659,13 @@ This pattern mirrors the frozen-encoder paradigm in image generation~\cite{romba
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.9\linewidth]{figures/h6_training_curve.pdf}
-  \caption{H6 training trajectory (FREEZE\_EGO=False): training-time validation FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch, over the full 5000-epoch run. FID is best at epoch~2099 and degrades as R@1 rises; after epoch~$\approx$3299, R@1 saturates in the 0.37--0.42 band while FID oscillates between 5.1 and 6.3. Dashed reference lines show H4's best operating point (FID=3.392, R@1=0.548 at epoch=3399, CFG=10). H6 never approaches H4's performance on either metric.}
+  \caption{Unfrozen training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) vs.\ epoch, over the full 5000-epoch run. FID is best at epoch~2099 and degrades as R@1 rises; after epoch~$\approx$3299, R@1 saturates in the 0.37--0.42 band while FID oscillates between 5.1 and 6.3. Dashed reference lines show \method's best operating point (FID=3.392, R@1=0.548 at epoch 3399, CFG 10). Unfrozen never approaches \method's performance on either metric.}
   \label{fig:h6_training}
 \end{figure}
 
 \paragraph{Is the pretraining necessary?}
-Freezing alone is not sufficient: an H4 model trained with a \emph{randomly initialized} frozen ego encoder (identical otherwise) reaches only FID $= 4.968 \pm 0.171$ with R-Precision@1 exactly at chance — statistically indistinguishable from the ego-zeroed null branch (FID $5.18$, Table~\ref{tab:trivial}) --- though that branch is itself a weak reference, and a properly trained prior reaches 3.24, so the random-encoder model is worse than simply not conditioning at all.
-Together with H6, this brackets the design from both sides: the alignment pretraining is what \emph{injects} usable ego information, and freezing is what \emph{preserves} generative diversity while using it.
+Freezing alone is not sufficient: an \method model trained with a \emph{randomly initialized} frozen ego encoder (identical otherwise) reaches only FID $= 4.968 \pm 0.171$ with R-Precision@1 exactly at chance — statistically indistinguishable from the ego-zeroed null branch (FID $5.18$, Table~\ref{tab:trivial}) --- though that branch is itself a weak reference, and a properly trained prior reaches 3.24, so the random-encoder model is worse than simply not conditioning at all.
+Together with Unfrozen, this brackets the design from both sides: the alignment pretraining is what \emph{injects} usable ego information, and freezing is what \emph{preserves} generative diversity while using it.
 
 \subsection{Conditioning Mechanism: Self-Attention vs.\ Cross-Attention}
 \label{sec:xattn}
@@ -676,7 +676,7 @@ To test whether the specific mechanism matters, we train an otherwise-identical 
 
 \begin{table}[h]
   \centering
-  \caption{Conditioning-mechanism ablation. Both denoisers consume the full 196-token ego sequence and differ only in how they attend to it. Evaluated on the held-out test split (a scene-disjoint half of the validation set), CFG~=~10, mean~$\pm$~95\% CI over 3 replications, best checkpoint each. The two mechanisms are statistically comparable (overlapping FID intervals); cross-attention provides no advantage. The intervals here are over sampling replications at one training seed per arm, and H4's seed spread ($\pm0.79$, Sec.~\ref{sec:seeds}) is far wider, so this comparison can exclude a large effect but cannot resolve a small one.}
+  \caption{Conditioning-mechanism ablation. Both denoisers consume the full 196-token ego sequence and differ only in how they attend to it. Evaluated on the held-out test split (a scene-disjoint half of the validation set), CFG~=~10, mean~$\pm$~95\% CI over 3 replications, best checkpoint each. The two mechanisms are statistically comparable (overlapping FID intervals); cross-attention provides no advantage. The intervals here are over sampling replications at one training seed per arm, and \method's seed spread ($\pm0.79$, Sec.~\ref{sec:seeds}) is far wider, so this comparison can exclude a large effect but cannot resolve a small one.}
   \label{tab:xattn}
   \vspace{4pt}
   \small
@@ -698,14 +698,14 @@ We also observed that the cross-attention variant trained less stably, with a no
 \subsection{Checkpoint Selection}
 
 A non-obvious finding (relevant to practitioners) is that FID does not monotonically improve with training.
-H2's epoch trajectory shows FID $= 6.603$ at epoch 4399, FID $= 8.400$ at epoch 4599 (regression), and FID $= 7.510$ at epoch 4999 (partial recovery) — despite flat training loss throughout.
-H4 similarly peaks at epoch 3399 (definitive FID $= 3.392$) and degrades steadily thereafter (Fig.~\ref{fig:h4_training}).
+Pooled's epoch trajectory shows FID $= 6.603$ at epoch 4399, FID $= 8.400$ at epoch 4599 (regression), and FID $= 7.510$ at epoch 4999 (partial recovery) — despite flat training loss throughout.
+\method similarly peaks at epoch 3399 (definitive FID $= 3.392$) and degrades steadily thereafter (Fig.~\ref{fig:h4_training}).
 \textbf{Lesson}: the final checkpoint is not the best checkpoint. Periodic FID validation during training is essential; early stopping on FID is critical.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=0.9\linewidth]{figures/h4_training_curve.pdf}
-  \caption{H4 training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) across the late training segment. Epoch~3399 is the best checkpoint (highest R@1, FID within noise of epoch~3199, and best definitive 3-replication FID); both metrics then degrade steadily through epoch~4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.}
+  \caption{\method training trajectory: training-time validation FID (left axis, red) and R@1 (right axis, blue) across the late training segment. Epoch~3399 is the best checkpoint (highest R@1, FID within noise of epoch~3199, and best definitive 3-replication FID); both metrics then degrade steadily through epoch~4999. Training loss is flat across this range — sampling quality oscillates independently of training loss.}
   \label{fig:h4_training}
 \end{figure}
 
@@ -715,12 +715,12 @@ H4 similarly peaks at epoch 3399 (definitive FID $= 3.392$) and degrades steadil
 %----------------------------------------------------------------------
 
 \paragraph{Architecture recommendation.}
-The experimental evidence strongly favors the H4 architecture: frozen ego encoder + full-sequence conditioning denoiser (self-attention over the concatenated latent and ego sequence; cross-attention works equally well, Section~\ref{sec:xattn}).
+The experimental evidence strongly favors the \method architecture: frozen ego encoder + full-sequence conditioning denoiser (self-attention over the concatenated latent and ego sequence; cross-attention works equally well, Section~\ref{sec:xattn}).
 Future work seeking to improve conditioning fidelity should explore adapter-style approaches — fine-tuning a lightweight adapter on the frozen encoder while keeping the backbone fixed — rather than end-to-end unfreezing.
 
 \paragraph{R-Precision@1 and the conditioning-diversity tradeoff.}
-H4's R@1 (0.548) is lower than H2's (0.665) despite dramatically better FID.
-We caution against reading this as a conditioning deficit. R@1 is computed in the ego encoder's own alignment space, and each model is scored in the space its own encoder induces, so the measure is not comparable across models with differently trained encoders; the per-condition metrics of Secs.~\ref{sec:adefde} and \ref{sec:behavior}, which use no learned embedding, rank H4 above H2 on both axes.
+\method's R@1 (0.548) is lower than Pooled's (0.665) despite dramatically better FID.
+We caution against reading this as a conditioning deficit. R@1 is computed in the ego encoder's own alignment space, and each model is scored in the space its own encoder induces, so the measure is not comparable across models with differently trained encoders; the per-condition metrics of Secs.~\ref{sec:adefde} and \ref{sec:behavior}, which use no learned embedding, rank \method above Pooled on both axes.
 In AV simulation this is desirable: a single ego trajectory should plausibly lead to several pedestrian behaviours (crossing, waiting, accelerating).
 A genuine tradeoff is present too: full-sequence conditioning generates more diverse motions per condition, which spreads the embedding distribution and lowers retrieval accuracy.
 
@@ -728,7 +728,7 @@ A genuine tradeoff is present too: full-sequence conditioning generates more div
 \begin{itemize}
   \item \textbf{Body pose quality}: Pedestrian poses are estimated (not ground-truth 3D), and Sec.~\ref{sec:posequality} quantifies the cost: a single canonical skeleton for every pedestrian (no body-shape variation), a median foot-skate ratio of 0.97 with $94.6\%$ of moving sequences never planting a foot, and root-relative joint variability at $0.44\times$ real mocap. The root trajectories are reliable; the body is a lightly articulated template sliding along them. Direct 3D body annotation from datasets like JRDB-Pose or BEDLAM, or a physics-based refit of the existing labels, would address this, and we regard it as the single largest quality constraint on the benchmark.
   \item \textbf{Conditioning scope}: We condition only on 2D ego trajectory. Incorporating relative pedestrian-ego geometry, ego velocity profile, or map elements could improve fidelity.
-  \item \textbf{R-Precision is not cross-model comparable}: H4 scores 0.548 against H2's 0.665, but each model is evaluated in its own encoder's alignment space, so we do not treat this as evidence about conditioning; it is reported for completeness and the evaluator-independent metrics are used instead.
+  \item \textbf{R-Precision is not cross-model comparable}: \method scores 0.548 against Pooled's 0.665, but each model is evaluated in its own encoder's alignment space, so we do not treat this as evidence about conditioning; it is reported for completeness and the evaluator-independent metrics are used instead.
   \item \textbf{Physics}: Generated motions are not physically constrained (foot sliding, penetration). This is inherited as well as produced --- the training labels themselves slide (Sec.~\ref{sec:posequality}) --- so a model that reproduces the data faithfully will reproduce the sliding. Post-hoc physics cleanup, or a contact-aware loss, could improve realism for simulation deployment.
   \item \textbf{Evaluator domain shift}: FID and Diversity rely on motion-feature encoders pretrained on HumanML3D, whose motion distribution differs from in-the-wild pedestrian motion; absolute FID values should be compared only within our benchmark. The target distribution is also damped relative to mocap (Sec.~\ref{sec:posequality}), which makes the marginal easier to fit than pose realism alone would imply --- a second reason not to read FID as a realism score.
   \item \textbf{Single benchmark, no perceptual study}: All results are on our combined AVA/nuScenes/Waymo benchmark, and we do not yet report a human perceptual study of motion realism.
@@ -772,7 +772,7 @@ No projection head (we verified the 2-layer MLP projection head does not improve
 Pretraining: AdamW (lr $= 1\times10^{-4}$, weight decay $10^{-4}$), 200 epochs, batch size 64, linear warmup followed by cosine annealing, gradient clipping at max-norm 1.0.
 
 \paragraph{Diffusion model.}
-MLD denoiser, \texttt{trans\_enc} architecture (self-attention over the concatenated latent, timestep, and ego tokens): 9 layers, 4 attention heads, 256D token dimension, 1024D feed-forward, latent sequence length $L=4$. The cross-attention variant of Section~\ref{sec:xattn} uses the same hyperparameters in a \texttt{trans\_dec} configuration (latent tokens as queries, ego sequence as keys/values).
+MLD denoiser in the self-attention configuration (attending over the concatenated latent, timestep, and ego tokens): 9 layers, 4 attention heads, 256D token dimension, 1024D feed-forward, latent sequence length $L=4$. The cross-attention variant of Section~\ref{sec:xattn} uses the same hyperparameters in a cross-attention configuration (latent tokens as queries, ego sequence as keys/values).
 Diffusion: 1000 DDPM training steps (scaled-linear $\beta$ schedule), DDIM inference (50 steps, $\eta=0$).
 CFG dropout rate: 10\%.
 Optimizer: AdamW, lr $= 1\times10^{-4}$ (constant), 5000 total epochs.
@@ -781,21 +781,21 @@ Training hardware: NVIDIA H100 (80 GB) on an academic HPC cluster; training runs
 
 \paragraph{Checkpoint selection.}
 We select checkpoints based on validation FID (not training loss).
-For H4, epoch 3399 is best; we confirm this with the full training trajectory and definitive 3-replication evaluation.
-For H2, epoch 4399 is best despite continued training to epoch 5000.
+For \method, epoch 3399 is best; we confirm this with the full training trajectory and definitive 3-replication evaluation.
+For Pooled, epoch 4399 is best despite continued training to epoch 5000.
 
 \paragraph{Evaluation.}
-All evaluations use \texttt{TEST.REPLICATION\_TIMES=3} (3 independent generation passes),
-\texttt{DIVERSITY\_TIMES=300}, \texttt{MM\_NUM\_SAMPLES=100}, \texttt{MM\_NUM\_TIMES=10}.
+All evaluations use 3 independent generation passes,
+300 samples for Diversity, and 100 conditions $\times$ 10 repeats for MultiModality.
 Each replication regenerates the full test set with fresh sampling noise; the diffusion sampler is stochastic across replications while the data pipeline and evaluator are fixed (training uses seed 1234).
 Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval across replications).
 
-\section{H6 Training Trajectory Table}
+\section{Unfrozen-Encoder Training Trajectory}
 \label{app:h6_trajectory}
 
 \begin{table}[h]
   \centering
-  \caption{H6 (FREEZE\_EGO=False) training-time validation metrics at selected checkpoint evaluation points (validation runs every 100 epochs; full curve in Figure~\ref{fig:h6_training}).
+  \caption{Unfrozen: training-time validation metrics at selected checkpoint evaluation points (validation runs every 100 epochs; full curve in Figure~\ref{fig:h6_training}).
            Training-time FID is best at epoch 2099 (4.789); R@1 rises until epoch $\approx$3299, then saturates in the 0.37--0.42 band (maximum 0.417 at epoch 4599) while FID remains between 5.1 and 6.3.}
   \label{tab:h6_trajectory}
   \vspace{4pt}
@@ -825,7 +825,7 @@ Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval a
 
 \begin{enumerate}
   \item \textbf{Claims.} \emph{Do the main claims made in the abstract and introduction accurately reflect the paper's contributions and scope?}\\
-  Answer: [Yes]. Justification: The headline claims (40\% FID improvement from full-sequence conditioning under a unified evaluation pipeline; further gain from interaction-aware sampling; MultiModality collapse from unfreezing the ego encoder) are supported by replicated evaluations with confidence intervals in Tables~\ref{tab:main}, \ref{tab:pipeline2x2}, and~\ref{tab:h6}, seed-sensitivity reporting for both H4 and \method-IA in Section~\ref{sec:seeds}, and held-out/evaluator-independent verification in Sections~\ref{sec:eval} and~\ref{sec:adefde}.
+  Answer: [Yes]. Justification: The headline claims (40\% FID improvement from full-sequence conditioning under a unified evaluation pipeline; further gain from interaction-aware sampling; MultiModality collapse from unfreezing the ego encoder) are supported by replicated evaluations with confidence intervals in Tables~\ref{tab:main}, \ref{tab:pipeline2x2}, and~\ref{tab:h6}, seed-sensitivity reporting for both \method and \method-IA in Section~\ref{sec:seeds}, and held-out/evaluator-independent verification in Sections~\ref{sec:eval} and~\ref{sec:adefde}.
 
   \item \textbf{Limitations.} \emph{Does the paper discuss the limitations of the work?}\\
   Answer: [Yes]. Justification: Section~\ref{sec:discussion} lists estimated (not ground-truth) pose labels, restricted conditioning scope, the R@1 gap, lack of physical constraints, evaluator domain shift, and the absence of a perceptual study. Section~\ref{sec:posequality} additionally quantifies the pose-label limitation with a reference-free audit of the full 14{,}172-sequence extraction, and Sec.~\ref{sec:seeds} reports seed spread for both models.
