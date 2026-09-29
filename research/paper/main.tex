@@ -18,6 +18,9 @@
 \usepackage{microtype}
 \usepackage{url}
 \usepackage[hidelinks]{hyperref}
+\usepackage[scaled=0.92]{helvet} % sans font for figures/architecture.tex
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,calc,positioning,fit}
 
 % Custom macros
 \newcommand{\method}{EgoPed\xspace}
@@ -150,8 +153,8 @@ Every one of these critiques concerns how faithfully the score measures the \emp
 
 \begin{figure*}[t]
   \centering
-  \includegraphics[width=0.92\linewidth]{figures/architecture.png}
-  \caption{\method architecture. The ego trajectory is encoded by a \emph{frozen} transformer encoder into 196 per-timestep conditioning tokens. At every denoising step, the noisy latent $\mathbf{z}_t$ is concatenated with the full 196-token ego sequence (and the timestep embedding) and jointly processed by a self-attention transformer denoiser; the latent output tokens predict the noise. Diffusion runs in the latent space of a frozen HumanML3D VAE; only the denoiser is trained. Section~\ref{sec:xattn} ablates an alternative cross-attention denoiser.}
+  \resizebox{\linewidth}{!}{\input{figures/architecture.tex}}
+  \caption{\method architecture. \textbf{(a) Ego-encoder pretraining.} The ego encoder (1) is trained so that its mean-pooled output $\bar{\mathbf{c}}$ matches the mean-pooled posterior mean $\bar{\mathbf{z}}$ of the frozen motion VAE for the paired motion. \textbf{(b) Latent diffusion.} The ego encoder is \emph{frozen} and keeps all 196 per-timestep tokens; for classifier-free guidance the ego input is zeroed for 10\% of training samples. At every denoising step, the $L=4$ noisy latent tokens $\mathbf{z}_t$, the timestep embedding and the 196 ego tokens are concatenated into one 201-token sequence and processed by a self-attention transformer denoiser (2), whose first four output tokens predict the noise. Sampling runs 50 DDIM steps and decodes $\mathbf{z}_0$ with the frozen VAE decoder; only the denoiser is trained in (b). Section~\ref{sec:xattn} ablates an alternative cross-attention denoiser.}
   \label{fig:architecture}
 \end{figure*}
 
