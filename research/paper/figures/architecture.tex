@@ -75,7 +75,7 @@
 % =====================================================================
 % (b) Diffusion in the VAE latent space
 % =====================================================================
-\draw[ink!25,line width=0.4pt] (0,-3.35) -- (17.6,-3.35);
+\draw[ink!25,line width=0.4pt] (0,-3.35) -- (19.4,-3.35);
 \node[panel] at (0,-3.7) {(b) Ego-conditioned latent diffusion (training and DDIM sampling)};
 
 % ego row
@@ -132,16 +132,18 @@
 \node[op] (ddim) at (16.2,-5.75) {DDIM\\update};
 \draw[line] (eps.east) -- (ddim.west);
 \draw[line] (ddim.south) -- (16.2,-7.95) -| node[pos=0.25,below,lbl] {$\mathbf{z}_{t-1}$, repeated for 50 DDIM steps} (zB.south);
-\node[vae,minimum width=13mm,minimum height=8mm,inner sep=2pt] (dec) at (17.3,-6.75) {\textbf{VAE}\\\textbf{decoder}\\frozen};
-\draw[line] (ddim.east) -| node[pos=0.3,above,lbl] {$\mathbf{z}_0$} (dec.north);
-\grid{16.66}{-7.55}{8}{3}{motfill}{motOut}
+\node[vae,minimum width=13mm,minimum height=8mm,inner sep=2pt] (dec) at (18.0,-5.75) {\textbf{VAE}\\\textbf{decoder}\\frozen};
+\draw[line] (ddim.east) -- node[above,lbl] {$\mathbf{z}_0$} (dec.west);
+% generated motion, rendered (strip cropped from FINAL_fig1_architecture.png)
+\node[inner sep=0pt,anchor=north] (motOut) at ($(dec.south)+(0,-0.3)$)
+  {\includegraphics[width=28mm]{figures/architecture_motion.png}};
 \draw[line] (dec.south) -- (motOut.north);
-\node[lbl,below=1pt of motOut] {motion $\hat{\mathbf{x}}$};
+\node[lbl,below=1pt of motOut] {generated motion $\hat{\mathbf{x}}$};
 
 % =====================================================================
 % legend
 % =====================================================================
-\begin{scope}[shift={(0,-8.75)},font=\sffamily\scriptsize,
+\begin{scope}[shift={(0,-8.9)},font=\sffamily\scriptsize,
     sw/.style={minimum width=3.5mm,minimum height=2mm,inner sep=0pt,rounded corners=1.5pt,line width=0.5pt},
     tk/.style={minimum size=1.6mm,inner sep=0pt,draw=ink,line width=0.35pt},
     lt/.style={anchor=west,inner sep=1.5pt,text=ink}]
