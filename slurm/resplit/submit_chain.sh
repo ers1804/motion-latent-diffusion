@@ -18,20 +18,23 @@ enc_full=$(submit --dependency=afterany:"$vae" slurm/resplit/encoder.sh rs1_enc_
 enc_pool=$(submit --dependency=afterany:"$vae" slurm/resplit/encoder.sh rs1_enc_pooled "$POOLED" off)
 echo "encoders $enc_full $enc_pool"
 
-run() {  # name config encoder interaction [extra overrides]
-    local name=$1 cfg=$2 enc=$3 ia=$4; shift 4
+run() {  # name config encoder seed interaction [extra overrides]
+    local name=$1 cfg=$2 enc=$3 seed=$4 ia=$5; shift 5
     local dep=afterany:$enc_full:$enc_pool id
     for _ in 1 2 3; do
-        id=$(submit --job-name="$name" --dependency="$dep" slurm/resplit/diffusion.sh "$name" "$cfg" "$enc" 1234 "$ia" "$@")
+        id=$(submit --job-name="$name" --dependency="$dep" slurm/resplit/diffusion.sh "$name" "$cfg" "$enc" "$seed" "$ia" "$@")
         dep=afterany:$id
     done
     echo "$name last segment $id"
 }
 
-run rs1_egoped_s1234     "$EGOPED"   rs1_enc_fullseq False
-run rs1_egoped_ia_s1234  "$EGOPED"   rs1_enc_fullseq True
-run rs1_pooled_s1234     "$POOLED"   rs1_enc_pooled  False
-run rs1_pooled_ia_s1234  "$POOLED"   rs1_enc_pooled  True
-run rs1_unfrozen_s1234   "$UNFROZEN" rs1_enc_fullseq False
-run rs1_uncond_s1234     "$EGOPED"   rs1_enc_fullseq False "${UNCOND[@]}"
-run rs1_uncond_ia_s1234  "$EGOPED"   rs1_enc_fullseq True  "${UNCOND[@]}"
+# Three seeds per cell of the 2x2 (conditioning x recipe); the other models are single-seed references.
+for seed in 1234 2345 3456; do
+    run "rs1_egoped_s$seed"    "$EGOPED" rs1_enc_fullseq "$seed" False
+    run "rs1_egoped_ia_s$seed" "$EGOPED" rs1_enc_fullseq "$seed" True
+    run "rs1_pooled_s$seed"    "$POOLED" rs1_enc_pooled  "$seed" False
+    run "rs1_pooled_ia_s$seed" "$POOLED" rs1_enc_pooled  "$seed" True
+done
+run rs1_unfrozen_s1234  "$UNFROZEN" rs1_enc_fullseq 1234 False
+run rs1_uncond_s1234    "$EGOPED"   rs1_enc_fullseq 1234 False "${UNCOND[@]}"
+run rs1_uncond_ia_s1234 "$EGOPED"   rs1_enc_fullseq 1234 True  "${UNCOND[@]}"

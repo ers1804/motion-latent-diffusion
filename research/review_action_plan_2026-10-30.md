@@ -156,17 +156,45 @@ from the same 11,786 names as before.
 - Windows no longer depend on the machine, so cluster dumps stay aligned with the existing local dumps.
 
 **Jobs.** `slurm/resplit/`: VAE (latent 4, 6,000 epochs) then full-sequence and pooled encoders, then
-seven diffusion runs at seed 1234: EgoPed, EgoPed-IA, Pooled, Pooled-IA, Unfrozen, Uncond, Uncond-IA.
+diffusion: three seeds (1234, 2345, 3456) for each of EgoPed, EgoPed-IA, Pooled, Pooled-IA, and one seed
+each for Unfrozen, Uncond, Uncond-IA. Both encoders are trained without IA, so encoder recipe is not a
+confound. Selection stays validation FID, with validation ADE reported at the selected checkpoint.
 Outputs go to `models_resplit`; the old models are untouched. A one-epoch smoke job of every recipe
 runs first.
 
-**Steps 3 and 5, old-split scoring.** Pooled without IA (epoch 1199) and Pooled seeds B and C (epoch 99)
-are queued on Helma (1187279-81): ADE, stopping separation and definitive FID.
+**Step 3, Pooled without IA on the old split: full-sequence no longer wins on mean ADE (decision 3).**
+`research/src/matched_recipe.py`, log in `research/data/matched_recipe.log`; bootstrap clustered by the 430
+scenes. Deltas are EgoPed minus Pooled, positive when EgoPed is better; ** marks a 95% CI that excludes 0.
+
+| Recipe | Model | FID | ADE | minADE | Separation | Brier |
+|--------|-------|-----|-----|--------|------------|-------|
+| No IA | EgoPed, 3 seeds | 3.39 / 4.72 / 4.80 | 2.360 / 2.375 / 2.258 | 1.306 / 1.321 / 1.421 | 0.334 / 0.325 / 0.311 | 0.147 / 0.167 / 0.163 |
+| No IA | Pooled, 1 seed | 6.214 | 2.233 | 1.416 | 0.299 | 0.176 |
+| No IA | delta by EgoPed seed | | -0.126** / -0.142** / -0.025 | +0.110** / +0.095** / -0.005 | +0.035 / +0.026 / +0.012 | +0.029** / +0.009 / +0.014** |
+| IA | delta, best seed 1 checkpoint vs Pooled-IA | | -0.203** | -0.239** | -0.122** | -0.009 |
+
+- Mean ADE favours Pooled at both recipes. minADE and Brier lean to EgoPed without IA, not for every seed.
+  Separation is tied without IA and favours Pooled with IA.
+- With IA, Pooled wins for all four EgoPed-IA checkpoints on ADE. So "full-sequence conditions better" does
+  not hold as a general statement on this split. EgoPed's clear win is FID, which cannot see conditioning.
+- Robust: either trajectory encoder beats the trained ego-blind prior (ADE +0.78 and +0.65, separation
+  +0.25 and +0.29, all CIs exclude 0). The interaction recipe hurts mean ADE in both architectures
+  (+0.22 and +0.30 without it).
+- On the 202 twin-free samples the mean-ADE differences lose significance, while EgoPed's separation and
+  Brier lead without IA is significant for seeds 1 and C.
+- Only one Pooled seed exists without IA, on a leaky split. The contribution is rewritten after the retrained
+  2x2 with three seeds per cell, not now.
+
+**Step 5, "baseline's best seed".** Definitive FID at each seed's best epoch: Pooled-IA 5.620 (epoch 4399),
+8.618 and 8.813 (epoch 99, CFG 5, gt_Diversity 5.55). The claim holds with a caveat: seeds B and C were
+stopped near epoch 2,400 with FID still 10.9-12.1, so they did not get the same horizon. Their ADE is
+actually low (2.261, 2.211), another sign that FID and per-condition quality rank differently.
 
 **Step 6, PedGen.** Feasible but not like for like. Code and checkpoints are public
 (`pedgen_no_context`, `pedgen_with_context`); the repository declares no license. It generates 60 frames
 from an initial position, against our 196 frames with no initial pose, and it has no ego input. Full
-context needs depth and segmentation from images. Decision needed, see open questions.
+context needs depth and segmentation from images. Decided: `pedgen_no_context` as an ego-blind comparison on
+short-horizon root metrics only.
 
 **Step 7, orientation: no evidence, so the wording changes (decision 2).** Result of
 `research/src/orientation_test.py`, log in `research/data/orientation_test.log`.
@@ -185,4 +213,9 @@ context needs depth and segmentation from images. Decision needed, see open ques
   rule out a small real effect nearby, but these data cannot show one, and the model could not generate
   head turns from the current labels anyway. The paper therefore claims trajectory-level behaviour only.
   The retitling happens in Phase 2, together with the claims rewrite.
+
+### Decisions from Erik, 2026-10-30
+
+Encoder recipe, three seeds per 2x2 cell, selection rule and PedGen scope as recorded above. Erik ports repo
+changes to Overleaf himself. Affiliation and funding statement are in `main.tex`; biographies come later.
 

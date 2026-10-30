@@ -1,0 +1,14 @@
+== nuscenes frames 106210 | sanity: up +0.979, torso-vs-walking +0.755
+   head turn deg median 5.4 p95 22.4
+   near<15m       n= 56807 r(head turn, vehicle side)=+0.399 | cos(head,vehicle) +0.172 shuffled +0.000 | cos(torso,vehicle) +0.129
+   near standing  n= 19938 r(head turn, vehicle side)=+0.274 | cos(head,vehicle) +0.173 shuffled -0.015 | cos(torso,vehicle) +0.149
+   near walking   n= 33056 r(head turn, vehicle side)=+0.467 | cos(head,vehicle) +0.179 shuffled +0.004 | cos(torso,vehicle) +0.123
+   far>30m        n=  4393 r(head turn, vehicle side)=+0.509 | cos(head,vehicle) +0.307 shuffled +0.015 | cos(torso,vehicle) +0.261
+   far standing   n=   936 r(head turn, vehicle side)=+0.301 | cos(head,vehicle) +0.356 shuffled +0.016 | cos(torso,vehicle) +0.334
+== waymo frames 141872 | sanity: up +0.982, torso-vs-walking +0.749
+   head turn deg median 4.9 p95 18.7
+   near<15m       n= 53396 r(head turn, vehicle side)=+0.136 | cos(head,vehicle) +0.056 shuffled -0.025 | cos(torso,vehicle) +0.044
+   near standing  n= 15766 r(head turn, vehicle side)=+0.048 | cos(head,vehicle) +0.124 shuffled -0.032 | cos(torso,vehicle) +0.128
+   near walking   n= 34387 r(head turn, vehicle side)=+0.178 | cos(head,vehicle) +0.021 shuffled -0.021 | cos(torso,vehicle) +0.002
+   far>30m        n= 21331 r(head turn, vehicle side)=+0.410 | cos(head,vehicle) +0.190 shuffled +0.010 | cos(torso,vehicle) +0.158
+   far standing   n=  5632 r(head turn, vehicle side)=+0.509 | cos(head,vehicle) +0.315 shuffled +0.015 | cos(torso,vehicle) +0.270
