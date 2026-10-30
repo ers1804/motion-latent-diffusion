@@ -16,6 +16,7 @@ embedding space, so it is directly comparable across architectures.
 
 Usage:
   python research/src/eval_ade_fde.py --model h4 [--k 5] [--split val_test]
+  python research/src/eval_ade_fde.py --model rs1_egoped --cfg <yaml> --ckpt <ckpt> --guidance 10 --split scene_test
 """
 import argparse
 import os
@@ -27,10 +28,11 @@ import torch
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 
-NAS = "/home/erik/NAS/methods/diffusion_gen"
-HM = f"{NAS}/models/helma_models/models/mld"
+NAS = os.environ.get("EGOPED_NAS", "/home/erik/NAS/methods/diffusion_gen")  # $TMPDIR/.. on the cluster
+HM = os.environ.get("EGOPED_MODELS", f"{NAS}/models/helma_models/models/mld")
 VT = "research/data/heldout_split/val_test"
 FV = f"{NAS}/data/vae/mean_std_txt/ava_nuscenes_waymo"
+SCENE = "research/data/scene_split_v1"  # scene-disjoint split: select on val, report on test
 
 MODELS = {
     "h4": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
@@ -39,6 +41,15 @@ MODELS = {
     "h2": dict(cfg="configs/config_ego_motion_new_vae_stoch.yaml",
                ckpt=f"{HM}/ego_motion_diffusion_interaction_crop_weighted_1_helma/checkpoints/epoch=4399.ckpt",
                guidance=5),
+    "h2_nopipe": dict(cfg="configs/config_ego_motion_new_vae_stoch.yaml",
+                      ckpt=f"{HM}/ego_motion_diffusion_h2_nopipeline/checkpoints/epoch=1199.ckpt",
+                      guidance=5),
+    "h2_seedB": dict(cfg="configs/config_ego_motion_new_vae_stoch.yaml",
+                     ckpt=f"{HM}/ego_motion_diffusion_h2_seedB/checkpoints/epoch=99.ckpt",
+                     guidance=5),
+    "h2_seedC": dict(cfg="configs/config_ego_motion_new_vae_stoch.yaml",
+                     ckpt=f"{HM}/ego_motion_diffusion_h2_seedC/checkpoints/epoch=99.ckpt",
+                     guidance=5),
     "h6": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_h6_unfreeze_ego.yaml",
                ckpt=f"{HM}/ego_motion_diffusion_h6_unfreeze_ego/checkpoints/epoch=3399.ckpt",
                guidance=10),
@@ -100,15 +111,23 @@ MODELS = {
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--model", required=True, choices=list(MODELS))
+    ap.add_argument("--model", required=True, help="key of MODELS, or a free name with --cfg/--ckpt")
+    ap.add_argument("--cfg", help="ad-hoc model: config")
+    ap.add_argument("--ckpt", help="ad-hoc model: checkpoint")
+    ap.add_argument("--guidance", type=float, default=10)
+    ap.add_argument("--zero-ego", action="store_true")
     ap.add_argument("--k", type=int, default=5, help="samples per condition")
-    ap.add_argument("--split", default="val_test", choices=["val_test", "full_val"])
+    ap.add_argument("--split", default="val_test", choices=["val_test", "full_val", "scene_val", "scene_test"])
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--save-roots", action="store_true",
                     help="also save generated/GT root XZ trajectories (item 9 behavioral probe)")
     args = ap.parse_args()
-    spec = MODELS[args.model]
-    split_dir = VT if args.split == "val_test" else FV
+    if args.ckpt:
+        spec = dict(cfg=args.cfg, ckpt=args.ckpt, guidance=args.guidance, zero_ego=args.zero_ego)
+    else:
+        spec = MODELS[args.model]
+    scene = args.split.startswith("scene_")
+    split_dir = SCENE if scene else (VT if args.split == "val_test" else FV)
 
     overrides = [
         f"DATASET.EGOMOTION.ROOT=[{NAS}/data/diffusion/ava, {NAS}/data/diffusion/nuscenes, {NAS}/data/diffusion/waymo]",
@@ -122,10 +141,12 @@ def main():
         f"TEST.CHECKPOINTS={spec['ckpt']}",
         "METRIC.TYPE=['EgoMotionMetrics']",
         "TEST.REPLICATION_TIMES=1",
-        "TEST.SPLIT=val",
+        f"TEST.SPLIT={'test' if args.split == 'scene_test' else 'val'}",
         f"model.guidance_scale={spec['guidance']}",
         f"TEST.BATCH_SIZE={args.batch}",
     ]
+    if scene:
+        overrides.append("DATASET.EGOMOTION.SCENE_SPLIT=True")
     overrides += spec.get("extra", [])
     sys.argv = ["eval_ade_fde", "--cfg", spec["cfg"], "--nodebug", "--overrides"] + overrides
 
@@ -187,12 +208,14 @@ def main():
     print(f"ADE_mean  = {ades.mean():.4f}   FDE_mean  = {fdes.mean():.4f}")
     print(f"minADE_{args.k} = {ades.min(axis=1).mean():.4f}   minFDE_{args.k} = {fdes.min(axis=1).mean():.4f}")
     out = f"research/data/ade_fde_{args.model}_{args.split}_k{args.k}.npz"
+    # source/folder/name per row: scene-clustered bootstrap and alignment checks need the identity
+    paths = np.array(["/".join(Path(p).parts[-3:]) for p in datamodule.test_dataset.sample_paths])
     if args.save_roots:
-        np.savez(out, ades=ades, fdes=fdes,
+        np.savez(out, ades=ades, fdes=fdes, paths=paths,
                  roots_gen=np.concatenate(roots_gen), roots_gt=np.concatenate(roots_gt),
                  lengths=np.array(lens_all))
     else:
-        np.savez(out, ades=ades, fdes=fdes)
+        np.savez(out, ades=ades, fdes=fdes, paths=paths)
     print("saved", out)
 
 

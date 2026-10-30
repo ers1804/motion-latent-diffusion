@@ -66,10 +66,17 @@ class EgoMotionDataset(Dataset):
         interaction_crop: bool = False,
         deterministic_crop: bool = False,
         interaction_weighted_sampling: bool = False,
+        scene_split: bool = False,
         captions_path: Optional[str] = None,
         caption_vocab: str = "ego",
         **kwargs
     ):
+        # scene_split: lists are exact (no name fallback) and held-out partitions are scored on
+        # fixed uniform windows, so training recipes cannot change what selection or testing sees.
+        self.scene_split = scene_split
+        if scene_split:
+            deterministic_crop = split != "train"
+            interaction_crop = interaction_crop and split == "train"
         self.interaction_crop = interaction_crop
         self.deterministic_crop = deterministic_crop
         self.interaction_weighted_sampling = interaction_weighted_sampling
@@ -181,6 +188,28 @@ class EgoMotionDataset(Dataset):
         
         return sorted(all_paths)
 
+    def _resolve_exact(self, names: List[str]) -> List[str]:
+        """Scene-split lists: the prefix selects the source, membership comes only from the list.
+
+        Files stay in their original train/ and val/ folders, so both are searched. A name that
+        cannot be found is an error; the legacy resolver below instead fell back to a same-named
+        file of another source, which added foreign samples to a split.
+        """
+        source_of = {"A": "ava", "N": "nuscenes", "W": "waymo"}
+        roots = {}
+        for root in self.data_roots:
+            base = os.path.basename(os.path.normpath(root)).lower()
+            roots[base] = root
+        resolved = []
+        for name in names:
+            root = roots[source_of[name[0]]]
+            candidates = [pjoin(root, d, f"{name[1:]}.json") for d in ("train", "val")]
+            found = [c for c in candidates if os.path.exists(c)]
+            if len(found) != 1:
+                raise FileNotFoundError(f"{name}: expected one file, found {found}")
+            resolved.append(found[0])
+        return resolved
+
     def _load_paths_from_split_file(self, split_file: str) -> List[str]:
         """Resolve scenario names from split file to absolute paths.
 
@@ -191,6 +220,9 @@ class EgoMotionDataset(Dataset):
         """
         with open(split_file, "r") as f:
             names = [line.strip() for line in f.readlines() if line.strip()]
+
+        if self.scene_split:
+            return self._resolve_exact(names)
 
         # Infer dataset prefix for each configured root
         prefix_to_root = {}
@@ -522,7 +554,7 @@ class EgoMotionDataset(Dataset):
                     # model is scored on identical conditions. Drawing from the global RNG
                     # makes the window depend on how much randomness the config happened to
                     # consume first, which silently de-aligns models (observed 2026-09).
-                    h = int(hashlib.sha1(str(crop_key).encode()).hexdigest()[:8], 16)
+                    h = int(hashlib.sha1(_canonical_crop_key(crop_key).encode()).hexdigest()[:8], 16)
                     rng = np.random.default_rng(h)
                     start_idx = int(rng.integers(0, actual_length - max_length + 1))
                 else:
@@ -600,6 +632,16 @@ class EgoMotionDataset(Dataset):
         }
 
 
+def _canonical_crop_key(path) -> str:
+    """Machine-independent crop key: windows match wherever the data is unpacked.
+
+    Keeps the workstation path as the canonical form, so windows of existing dumps are unchanged.
+    """
+    p = str(path)
+    i = p.rfind("/diffusion/")
+    return p if i < 0 else "/home/erik/NAS/methods/diffusion_gen/data" + p[i:]
+
+
 class EgoMotionDataModule(pl.LightningDataModule):
     """
     PyTorch Lightning DataModule for EgoMotion dataset.
@@ -667,6 +709,7 @@ class EgoMotionDataModule(pl.LightningDataModule):
             interaction_crop=interaction_crop,
             deterministic_crop=getattr(self.cfg.DATASET.EGOMOTION, 'DETERMINISTIC_CROP', False),
             interaction_weighted_sampling=interaction_weighted,
+            scene_split=getattr(self.cfg.DATASET.EGOMOTION, 'SCENE_SPLIT', False),
             captions_path=getattr(self.cfg.DATASET.EGOMOTION, 'CAPTIONS_PATH', None),
             caption_vocab=getattr(self.cfg.DATASET.EGOMOTION, 'CAPTION_VOCAB', 'ego'),
         )

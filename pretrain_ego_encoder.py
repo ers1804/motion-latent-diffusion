@@ -85,6 +85,15 @@ def build_cfg(args):
         cfg.DATASET.EGOMOTION.MEAN_STD_PATH = args.mean_std_path
         cfg.DATASET.EGOMOTION.EGO_MEAN_STD_PATH = args.mean_std_path
 
+    if args.pretrained_vae is not None:
+        cfg.TRAIN.PRETRAINED_VAE = args.pretrained_vae
+    if args.scene_split:
+        cfg.DATASET.EGOMOTION.SCENE_SPLIT = True
+    if args.interaction is not None:
+        flag = args.interaction == "on"
+        cfg.DATASET.EGOMOTION.INTERACTION_CROP = flag
+        cfg.DATASET.EGOMOTION.INTERACTION_WEIGHTED_SAMPLING = flag
+
     return cfg
 
 
@@ -391,6 +400,9 @@ def main():
     parser = argparse.ArgumentParser(
         description="Pretrain ego encoder via VAE latent regression"
     )
+    parser.add_argument("--pretrained_vae", type=str, default=None)
+    parser.add_argument("--scene_split", action="store_true")
+    parser.add_argument("--interaction", choices=["on", "off"], default=None)
     parser.add_argument(
         "--cfg", type=str, default="./configs/config_ego_motion.yaml",
         help="Same config file used for diffusion training",

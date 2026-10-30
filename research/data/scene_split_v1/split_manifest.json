@@ -1,0 +1,47 @@
+{
+ "seed": 20261030,
+ "files": {
+  "train": 9410,
+  "val": 1194,
+  "test": 1182
+ },
+ "scenes": {
+  "train": 796,
+  "val": 107,
+  "test": 91
+ },
+ "files_by_source": {
+  "train": {
+   "ava": 22,
+   "nuscenes": 3594,
+   "waymo": 5794
+  },
+  "val": {
+   "ava": 6,
+   "nuscenes": 472,
+   "waymo": 716
+  },
+  "test": {
+   "ava": 6,
+   "nuscenes": 448,
+   "waymo": 728
+  }
+ },
+ "scenes_by_source": {
+  "train": {
+   "nuscenes": 445,
+   "waymo": 340,
+   "ava": 11
+  },
+  "val": {
+   "nuscenes": 60,
+   "waymo": 44,
+   "ava": 3
+  },
+  "test": {
+   "waymo": 39,
+   "nuscenes": 49,
+   "ava": 3
+  }
+ }
+}
