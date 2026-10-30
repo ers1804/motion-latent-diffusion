@@ -1,10 +1,11 @@
-\documentclass[journal]{IEEEtran}
+\documentclass{ieeeoj}
 
-% ---- IEEE Transactions on Intelligent Transportation Systems ----
+% ---- IEEE Open Journal of Intelligent Transportation Systems (official template: ieeeoj.cls) ----
 \usepackage[T1]{fontenc}
 \usepackage[utf8]{inputenc}
 \usepackage{cite}
-\usepackage{graphicx}
+\usepackage{graphicx,color}
+\usepackage{textcomp}
 \usepackage{amsmath}
 \usepackage{amsfonts}
 \usepackage{amssymb}
@@ -22,6 +23,12 @@
 \usepackage{tikz}
 \usetikzlibrary{arrows.meta,calc,positioning,fit}
 
+% ieeeoj.cls numbers subsections A, B, ...; keep cross-references unambiguous (IV-G)
+\makeatletter\def\p@subsection{\thesection-}\makeatother
+
+\AtBeginDocument{\definecolor{ojcolor}{cmyk}{0.93,0.59,0.15,0.02}}
+\def\OJlogo{\vspace{-14pt}\includegraphics[height=28pt]{ojits.png}}
+
 % Custom macros
 \newcommand{\method}{EgoPed\xspace}
 \newcommand{\eg}{e.g.,\xspace}
@@ -32,18 +39,20 @@
 \newcommand{\TODO}[1]{{\textcolor{red}{{#1}}}} % TODOs in red
 
 \begin{document}
+\receiveddate{XX Month, XXXX}
+\reviseddate{XX Month, XXXX}
+\accepteddate{XX Month, XXXX}
+\publisheddate{XX Month, XXXX}
+\currentdate{XX Month, XXXX}
+\doiinfo{OJITS.2026.XXXXXXX}
 
 \title{EgoPed: Ego-Conditioned Pedestrian Body Motion Generation\\via Latent Diffusion with Full-Sequence Ego Conditioning}
 
-\author{Erik Sch\"utz, Mohan Ramesh, Fabian B. Flohr% 
-\thanks{\TODO{Affiliations, e-mail addresses, and funding acknowledgement.}}%
-\thanks{\TODO{Manuscript received Month DD, YYYY; revised Month DD, YYYY.}}}
-
-\markboth{IEEE Transactions on Intelligent Transportation Systems}%
-{Sch\"utz \MakeLowercase{\textit{et al.}}: EgoPed: Ego-Conditioned Pedestrian Body Motion Generation via Latent Diffusion}
-
-\maketitle
-
+\author{ERIK SCH\"UTZ\authorrefmark{1}, MOHAN RAMESH\authorrefmark{1}, AND FABIAN B. FLOHR\authorrefmark{1}}
+\affil{\TODO{Affiliation, City, Postal code, Country}}
+\corresp{CORRESPONDING AUTHOR: \TODO{Name (e-mail: address).}}
+\authornote{\TODO{Funding statement.}}
+\markboth{EgoPed: Ego-Conditioned Pedestrian Body Motion Generation via Latent Diffusion}{Sch\"utz \textit{et al.}}
 
 \begin{abstract}
 We introduce \method, a system that generates 3D full-body pedestrian motion conditioned on vehicle ego trajectories from autonomous driving data.
@@ -60,8 +69,10 @@ Finally, a reference-free audit of the pose labels which uses one canonical skel
 Pedestrian behaviour modelling, human motion synthesis, denoising diffusion models, autonomous driving, vehicle--pedestrian interaction, generative model evaluation, motion capture data quality.
 \end{IEEEkeywords}
 
+\maketitle
+
 %----------------------------------------------------------------------
-\section{Introduction}
+\section{INTRODUCTION}
 %----------------------------------------------------------------------
 
 \IEEEPARstart{G}{enerating} realistic pedestrian body motion is a critical capability for autonomous vehicle (AV) simulation.
@@ -104,50 +115,50 @@ Our contributions are:
 \end{enumerate}
 
 %----------------------------------------------------------------------
-\section{Related Work}
+\section{RELATED WORK}
 \label{sec:related}
 %----------------------------------------------------------------------
 
-\subsection{Pedestrian Behaviour Modelling for Automated Driving}
+\subsection{PEDESTRIAN BEHAVIOUR MODELLING FOR AUTOMATED DRIVING}
 
 Modelling how pedestrians behave around vehicles is a long-standing concern in intelligent transportation. Camara \etal survey the area in two parts, separating low-level sensing, detection and tracking~\cite{camara2021pedmodels1} from high-level models of pedestrian decision-making and vehicle--pedestrian interaction~\cite{camara2021pedmodels2}. The dominant experimental paradigm is video-based and predicts discrete events. JAAD~\cite{rasouli2017jaad} annotates crossing behaviour together with its situational context while PIE~\cite{rasouli2019pie} adds large-scale intention labels alongside ego-vehicle sensor readings, making the vehicle state an explicit input. Kotseruba \etal~\cite{kotseruba2021benchmark} re-evaluate pedestrian action prediction under a common protocol and find that reported gains are strongly sensitive to evaluation design and to the base rate of the predicted event.
 
 We share the domain but change the output. Rather than classifying whether a pedestrian will cross, we synthesise the full articulated body motion conditioned on the vehicle trajectory. The protocol lesson of~\cite{kotseruba2021benchmark} transfers directly, and is one motivation for the per-condition controls in Sections~\ref{sec:adefde} and~\ref{sec:behavior}: a metric that looks decisive can be insensitive to exactly the effect it is being used to argue for.
 
-\subsection{Pedestrian and Agent Trajectory Prediction}
+\subsection{PEDESTRIAN AND AGENT TRAJECTORY PREDICTION}
 
 A large part of the literature predicts pedestrians as points on the ground plane. Social LSTM~\cite{alahi2016sociallstm} introduced neural social pooling, Social GAN~\cite{gupta2018socialgan} made the prediction explicitly multi-modal, and Social-STGCNN~\cite{mohamed2020stgcnn} replaced recurrence with a spatio-temporal graph. Trajectron++~\cite{salzmann2020trajectron} incorporates heterogeneous agents and dynamic feasibility, and AgentFormer~\cite{yuan2021agentformer} models social and temporal dimensions jointly with attention. Goal-conditioned formulations predict an endpoint first and the path second~\cite{mangalam2020pecnet,mangalam2021ynet}. Diffusion has since become a standard generator in this space, with MID~\cite{gu2022mid} treating prediction as progressive denoising of indeterminacy and LED~\cite{mao2023led} accelerating sampling through a learned initialiser. On the vehicle side, MTR~\cite{shi2022mtr} couples global intention localisation with local refinement, and UniTraj~\cite{feng2024unitraj} studies cross-dataset generalisation across nuScenes, Argoverse~2 and Waymo Open Motion. Rudenko \etal~\cite{rudenko2020survey} and Karle \etal~\cite{karle2021survey} survey the human and vehicle branches respectively.
 
 All of these predict root position. Our root-trajectory evaluation in Section~\ref{sec:adefde} deliberately makes use of  their metrics (average and final displacement error, reported as min-of-$K$) so that the conditioning question can be asked on the axis this literature has already validated. The difference is that our model must additionally produce body articulation, and, as Section~\ref{sec:posequality} shows, the two components of the output are not of equal quality.
 
-\subsection{Human Motion Synthesis and Latent Diffusion}
+\subsection{HUMAN MOTION SYNTHESIS AND LATENT DIFFUSION}
 
 Generating 3D human motion from a high-level specification progressed from action labels~\cite{petrovich2021actor} to free-form language~\cite{petrovich2022temos}, supported by the HumanML3D corpus and its 263-dimensional redundant motion representation~\cite{guo2022humanml3d}, which we adopt. Denoising diffusion~\cite{ho2020ddpm}, with deterministic DDIM sampling~\cite{song2021ddim} and classifier-free guidance~\cite{ho2022cfg}, now dominates the area: MDM~\cite{tevet2023mdm} and MotionDiffuse~\cite{zhang2022motiondiffuse} denoise raw motion, while MLD~\cite{chen2023mld} moves the process into the latent space of a motion VAE~\cite{kingma2014vae}, following latent diffusion in images~\cite{rombach2022sd}. MLD is our backbone: we retain its VAE architecture (retrained on our data and frozen thereafter), transformer denoiser~\cite{vaswani2017attention} and sampler, and replace the text condition with vehicle ego odometry. Alternative generators include discrete token prediction~\cite{zhang2023t2mgpt}, generative masked modelling~\cite{guo2024momask}, motion-as-language formulations~\cite{jiang2023motiongpt}, retrieval augmentation~\cite{zhang2023remodiffuse}, and the reuse of a pretrained motion diffusion model as a generative prior for downstream tasks~\cite{shafir2024priormdm}.
 
 Closest in spirit to our conditioning problem is spatially controlled motion generation. GMD~\cite{karunratanakul2023gmd} guides generation with ground-plane trajectory constraints, and OmniControl~\cite{xie2024omnicontrol} controls any joint at any time through a combination of spatial guidance and a learned control branch. These methods constrain the generated human directly: the control signal specifies where that person's own body should be. Our condition differs in kind. The ego trajectory belongs to a \emph{different} agent, and never determines the output since it only shapes a distribution over plausible reactions. This distinction is what makes conditioning so difficult to verify here, and is the reason a distributional score alone cannot establish it.
 
-\subsection{Interaction- and Scene-Conditioned Motion}
+\subsection{INTERACTION- AND SCENE-CONDITIONED MOTION}
 
 Motion conditioned on external context is usually conditioned on static geometry. PROX~\cite{hassan2019prox} resolves pose ambiguity using scene constraints, SAMP~\cite{hassan2021samp} generates stochastic scene-aware movement and interaction, HUMANISE~\cite{wang2022humanise} pairs language with 3D scenes, and TRUMANS~\cite{jiang2024trumans} scales dynamic human--scene interaction data and modelling. For multi-agent settings, InterGen~\cite{liang2024intergen} generates two interacting people with mutual attention. Our setting sits between these: the conditioning agent is dynamic rather than static geometry, but unlike two-person interaction it is observed and fixed, which permits a simpler asymmetric design in which the ego trajectory enters the denoiser as a fixed token sequence.
 
-\subsection{Frozen Encoders in Conditional Generative Models}
+\subsection{FROZEN ENCODERS IN CONDITIONAL GENERATIVE MODELS}
 
 A recurring pattern in conditional image generation is that frozen conditioning encoders preserve generative diversity better than jointly fine-tuned ones. Stable Diffusion~\cite{rombach2022sd} keeps its text encoder frozen and IP-Adapter~\cite{ye2023ipadapter} and ControlNet~\cite{zhang2023controlnet} attach conditioning adapters to a frozen generative backbone. Conversely, methods that fine-tune the generative stack for condition fidelity, such as DreamBooth~\cite{ruiz2023dreambooth}, are known to trade away diversity and require explicit prior-preservation regularization to recover it. Our freeze-versus-unfreeze ablation (Section~\ref{sec:h6}) supplies direct evidence for the same phenomenon in motion generation, and further shows that the degradation is not uniform across metrics: unfreezing improves mean trajectory error while collapsing per-condition diversity.
 
-\subsection{Pseudo-Ground-Truth Motion Labels}
+\subsection{PSEUDO-GROUND-TRUTH MOTION LABELS}
 
 Large-scale driving datasets~\cite{caesar2020nuscenes,sun2020waymo,wilson2021argoverse2} provide vehicle odometry and 3D pedestrian boxes, but usually no body pose. JRDB~\cite{martinmartin2023jrdb} adds human-centric annotation in a robotics setting, and OmniRe~\cite{chen2025omnire} reconstructs dynamic urban scenes including human actors. Body labels for driving data must therefore be estimated, typically by fitting the SMPL body model~\cite{SMPL:2015} to images~\cite{bogo2016smplify} and video~\cite{kocabas2020vibe,li2021hybrik,goel2023hmr2}, with world-grounded variants disentangling camera and human motion~\cite{ye2023slahmr,shin2024wham}. Mocap corpora such as AMASS~\cite{mahmood2019amass} supply the real-motion statistics against which such estimates are usually compared.
 
 Estimated motion is known to be physically imperfect, and foot sliding is the canonical symptom. Rempe \etal~\cite{rempe2020contact} recover contact and dynamics from monocular video, Xie \etal~\cite{xie2021physics} and Zhang \etal~\cite{zhang2021motionpriors} impose physical and learned motion priors, PhysDiff~\cite{yuan2023physdiff} projects diffusion samples through a physics simulator, and UnderPressure~\cite{mourot2022underpressure} detects contact and cleans footskate from pressure-derived supervision. This literature treats sliding as a property of a \emph{model} to be corrected at generation time. Section~\ref{sec:posequality} reports the less comfortable case in which the sliding is a property of the \emph{labels}, so that no generator trained on them can be penalized for reproducing it, and Section~\ref{sec:posequality} accordingly locates the fix in relabeling rather than in an added loss.
 
-\subsection{Evaluating Conditional Generative Models}
+\subsection{EVALUATING CONDITIONAL GENERATIVE MODELS}
 
 Fréchet-distance scores compare a set of generated samples to a set of real ones through the statistics of a pretrained feature extractor~\cite{heusel2017fid}, and the motion literature adopts this wholesale, substituting a motion encoder for the image one. The known failure modes of such scores are well cataloged: sensitivity to sample size and estimator bias~\cite{chong2020unbiasedfid}, to image resizing and preprocessing~\cite{parmar2022cleanfid}, and to the feature extractor's own class structure~\cite{kynkaanniemi2023imagenetfid}. Alternatives replace the Gaussian assumption with kernel distances~\cite{binkowski2018mmdgan}, richer embeddings~\cite{jayasumana2024cmmd}, or explicit precision and recall~\cite{kynkaanniemi2019precisionrecall}. Related critiques target the Inception Score~\cite{barratt2018inception} and its video analogue~\cite{unterthiner2018fvd}.
 
 Every one of these critiques concerns how faithfully the score measures the \emph{marginal} distribution. The problem we document is orthogonal and, to our knowledge, has not been made explicit for conditional motion generation: a score can measure the marginal perfectly and still be silent about whether the condition was used at all. We show this is not a hypothetical since on our benchmark a separately trained unconditional model matches the conditional one, and under interaction-aware sampling beats every conditional model in the paper, while remaining at chance on every conditioning measure (Sections~\ref{sec:main} and~\ref{sec:adefde}).
 
 %----------------------------------------------------------------------
-\section{Method}
+\section{METHOD}
 %----------------------------------------------------------------------
 
 \begin{figure*}[t]
@@ -157,19 +168,19 @@ Every one of these critiques concerns how faithfully the score measures the \emp
   \label{fig:architecture}
 \end{figure*}
 
-\subsection{Problem Formulation}
+\subsection{PROBLEM FORMULATION}
 
 Given a vehicle ego trajectory $\mathbf{e} \in \mathbb{R}^{T \times 2}$ (2D position over $T=196$ timesteps), we aim to generate a plausible 3D pedestrian body motion $\mathbf{x} \in \mathbb{R}^{T \times 263}$ in the HumanML3D representation~\cite{guo2022humanml3d}.
 The 263D representation encodes root velocity, root angular velocity, joint positions, velocities, and foot contact labels, fully parameterizing a SMPL-like body in motion.
 
 We model the conditional distribution $p(\mathbf{x} \mid \mathbf{e})$ using a latent diffusion model that denoises within a pre-trained VAE's latent space.
 
-\subsection{Motion VAE}
+\subsection{MOTION VAE}
 
 We use the MLD VAE~\cite{chen2023mld}, a Transformer encoder-decoder that compresses $T \times 263$ motion to a latent $\mathbf{z} \in \mathbb{R}^{L \times 256}$ with $L = 4$ latent tokens ($L$ is a hyperparameter, we find $L=4$ significantly outperforms $L=8$, see Section~\ref{sec:ablation}).
 Rather than reusing the released HumanML3D checkpoint, we train the VAE from scratch on the pedestrian motions of our training split (AVA, nuScenes and Waymo, see Sec.~\ref{sec:experiments}) for 6{,}000 epochs, with motion features normalized by the mean and standard deviation of these three sources. HumanML3D itself is not part of its training data. The VAE is then held fixed throughout ego-encoder pretraining and diffusion training.
 
-\subsection{Ego Encoder}
+\subsection{EGO ENCODER}
 
 The ego trajectory $\mathbf{e} \in \mathbb{R}^{196 \times 2}$ is encoded by a lightweight transformer encoder:
 \begin{equation}
@@ -194,7 +205,7 @@ We ablate this choice in Section~\ref{sec:ablation}.
 
 The overall architecture is shown in Figure~\ref{fig:architecture}.
 
-\subsection{Diffusion Denoiser}
+\subsection{DIFFUSION DENOISER}
 
 We use the MLD denoiser as a self-attention transformer that operates over a single concatenated token sequence.
 At each denoising step, the $L=4$ noisy latent tokens $\mathbf{z}_t$, the timestep embedding $\mathbf{t}_{\mathrm{emb}}$, and the full $T=196$-token ego conditioning sequence $\mathbf{c}$ are concatenated into one sequence of length $L + 1 + T = 201$ and processed by the transformer; the first $L$ output tokens are read out as the predicted noise:
@@ -209,7 +220,7 @@ The added cost over the pooled baseline is modest at this scale: self-attention 
 A natural alternative is a \emph{cross-attention} denoiser, in which the $L$ latent tokens act as queries and the ego sequence as keys/values, reducing the attention cost to $\mathcal{O}(L \times T)$ rather than $\mathcal{O}((L+T)^2)$.
 We evaluate this variant in Section~\ref{sec:ablation} and find it performs \emph{comparably}, indicating that the benefit comes from exposing the denoiser to the full ego sequence, not from the specific attention mechanism used to inject it.
 
-\subsection{Classifier-Free Guidance}
+\subsection{CLASSIFIER-FREE GUIDANCE}
 
 We train with classifier-free guidance~\cite{ho2022cfg}: for 10\% of training samples, the input ego trajectory is zeroed before encoding, so the encoder's response to the all-zero trajectory serves as the unconditional embedding (the same construction is used for the unconditional branch at inference).
 At inference, the guided score is:
@@ -219,7 +230,7 @@ At inference, the guided score is:
 with guidance scale $w$.
 We find $w = 10$ optimal for \method (Section~\ref{sec:experiments}).
 
-\subsection{Training Objective}
+\subsection{TRAINING OBJECTIVE}
 
 The denoiser is trained with the standard DDPM noise-prediction objective:
 \begin{equation}
@@ -228,11 +239,11 @@ The denoiser is trained with the standard DDPM noise-prediction objective:
 We use DDIM~\cite{song2021ddim} for fast inference with 50 denoising steps.
 
 %----------------------------------------------------------------------
-\section{Experiments}
+\section{EXPERIMENTS}
 \label{sec:experiments}
 %----------------------------------------------------------------------
 
-\subsection{Dataset}
+\subsection{DATASET}
 
 As there are no datasets available for the problem investigated in this work, we generated a dataset for ego-conditioned motion generation from two complementary sources: existing large-scale autonomous driving datasets (nuScenes~\cite{caesar2020nuscenes}, Waymo~\cite{sun2020waymo}), which supply scale and behavioral diversity, and a small, deliberately \emph{staged} set of high-interaction scenes recorded with our sensor-equipped research vehicle AVA, which targets the close-range vehicle--pedestrian encounters that are rare in the public datasets. The vehicle is equipped with seven 128-layer LiDARs and eight RGB cameras for full 360° sensor coverage around the vehicle. To obtain scenes with meaningful interaction between the vehicle and a pedestrian, we staged 17 highly interactive scenarios which we mirror yielding 34 scenarios in total. The recorded data is brought into nuScenes format and objects in the scene are annotated with 3D bounding boxes and orientation labels using MS3D \cite{tsai2024ms3d++, tsai2023ms3d}.
 Fig.~\ref{fig:ava} shows the vehicle, a Mercedes-Benz S-Class built up by the research group. Most sensors sit on a roof-mounted aluminum rack: LiDARs (Ouster OS0, OS1, and OS2) at the rack corners and on a raised center mast, RGB camera clusters facing forward, to the sides, and the back (Basler ACE2), and a GNSS receiver with a dual antenna setup (Novatel OEM7) for localization. Further LiDARs are mounted at the front and back bumper. The ego odometry used as conditioning signal is taken from the vehicle's localization. The interaction scenarios were recorded in Munich by the authors who were asked to perform interactive scenes, e.g. crossing in front of the vehicle, stopping at the kerb, hesitating, turning around while the vehicle approaches, breaked, or turned.
@@ -295,7 +306,7 @@ The pipeline supports drawing training samples with a weighted random sampler wh
 \paragraph{Interaction-aware cropping.}
 To bound the generation problem to a fixed horizon, we crop each scenario to $T=196$ timesteps ($\approx$40\% of sequences are longer). The pipeline supports centering the crop on the \emph{closest-approach frame} $t^\star = \arg\min_t \lVert \mathbf{g}_t - \mathbf{r}_t \rVert_2$, with uniform jitter of $\pm 25\%$ of the window length so the moment of closest approach is not memorized at a fixed position (the window is clamped to lie within the sequence). The VAE, Pooled, and \method-IA use interaction-centered crops; the \method reference model uses random windows (ablated in Section~\ref{sec:pipeline2x2}). In both modes, ego and motion streams are cropped with a shared index so they stay temporally aligned, and scenarios shorter than 196 frames are zero-padded at the end with their true length recorded for masking.
 
-\subsection{Pseudo-Ground-Truth Pose Quality}
+\subsection{PSEUDO-GROUND-TRUTH POSE QUALITY}
 \label{sec:posequality}
 Our pose labels are OmniRe estimates rather than measured 3D ground truth, and no reference source (mocap or manual annotation) exists for these scenes. We therefore audit what can be checked without a reference by relying on internal physical consistency over all 14{,}172 extracted sequence files (13{,}958 of them long enough to score). The audit script is released with the code. This population is deliberately the full extraction, a superset of the 11{,}954 samples the benchmark splits retain (Table~\ref{tab:dataset}), so the audit characterizes the label pipeline rather than only the sequences we train on. Table~\ref{tab:posequality} reports the result, and it materially qualifies how our metrics should be read.
 
@@ -355,7 +366,7 @@ The picture is a lightly articulated canonical body translating along a well-tra
   \end{tabular}
 \end{table}
 
-\subsection{Evaluation Protocol}
+\subsection{EVALUATION PROTOCOL}
 \label{sec:eval}
 
 We report four metrics, following the HumanML3D evaluation protocol~\cite{guo2022humanml3d}:
@@ -376,7 +387,7 @@ Our best system reproduces its headline result on this held-out split (FID $= 3.
 Note that FID and Diversity use a fixed, pretrained evaluator shared by all systems, so they are directly comparable across architectures.
 R-Precision, in contrast, retrieves with each model's \emph{own} ego encoder embedding. Cross-architecture R@1 comparisons (\eg pooled vs.\ full-sequence encoders) should therefore be read as indicative rather than exact, as the retrieval space itself differs.
 
-\subsection{Implementation Details}
+\subsection{IMPLEMENTATION DETAILS}
 \label{app:impl}
 
 \paragraph{Ego encoder.}
@@ -404,7 +415,7 @@ All evaluations use 3 independent generation passes,
 Each replication regenerates the full test set with fresh sampling noise. The diffusion sampler is stochastic across replications while the data pipeline and evaluator are fixed (training uses seed 1234).
 Confidence intervals are reported as $\pm$~CI (half-width of the 95\% interval across replications).
 
-\subsection{Baselines}
+\subsection{BASELINES}
 
 \begin{itemize}
   \item \textbf{Pooled (our baseline)}: pooled ego encoder (transformer + mean-pool $\to$ single 256D token), self-attention denoiser (concatenated self-attention over $[\mathbf{z}, \mathbf{c}_\mathrm{pool}, \mathbf{t}]$). Best at epoch 4399, CFG~=~5.
@@ -473,7 +484,7 @@ To separate \emph{that} a condition helps from \emph{how much} information it mu
 
 \end{table*}
 
-\subsection{Main Results}
+\subsection{MAIN RESULTS}
 \label{sec:main}
 
 Table~\ref{tab:main} shows the definitive evaluation results.
@@ -510,7 +521,7 @@ Three factors make cross-model R@1 comparisons unreliable:
 (3) R@1 retrieves with each model's \emph{own} ego encoder (Section~\ref{sec:eval}), so the pooled and full-sequence encoders define retrieval tasks of different intrinsic difficulty.
 The next section settles the question with an evaluator-independent metric: on actual trajectory-following, \method conditions \emph{better} than Pooled, not worse.
 
-\subsection{Evaluator-Independent Conditioning: Trajectory ADE/FDE}
+\subsection{EVALUATOR-INDEPENDENT CONDITIONING: TRAJECTORY ADE/FDE}
 \label{sec:adefde}
 
 To measure conditioning fidelity without any learned evaluator or model-specific embedding, we compute root-trajectory displacement errors: for each held-out test condition we generate $K{=}5$ motions, recover the pelvis ground-plane trajectory, and compare with the ground truth over the true sequence length (ADE/FDE in meters, min-of-$K$ is standard for stochastic predictors).
@@ -553,7 +564,7 @@ Figure~\ref{fig:qualitatives} shows generated samples for three held-out ego con
 
 \paragraph{Significance.} Every model is scored on an identical 196-frame window per condition: the evaluation crop is derived deterministically from the sample identity rather than drawn from the global random stream, which otherwise makes the window depend on how much randomness a particular configuration happens to consume first. Marginal intervals in Table~\ref{tab:adefde} are percentile bootstraps and several of them overlap, but because the conditions are shared the appropriate test is a paired bootstrap on the per-condition difference. All comparisons that matter are significant at the 95\% level: full-sequence beats pooled by $0.097$\,m ($[0.017, 0.175]$, $p = 0.017$), and does so for all three training seeds ($p = 0.048$ and $p < 10^{-4}$ for the other two). Both trained priors are worse than \method by $0.650$\,m and $0.656$\,m ($p < 10^{-4}$), which is the conditioning effect and is roughly seven times the pooled-vs-full-sequence gap. \method-IA is worse than \method by $0.299$\,m at its own best checkpoint and $0.274$\,m at its second seed ($p < 10^{-4}$), so its per-condition deficit is not a sampling artifact. Vehicle-only text is worse than \method by $0.123$\,m ($p = 0.019$) while the oracle beats \method by $0.478$\,m ($p < 10^{-4}$). The one comparison that cuts against our recommendation is Unfrozen, which beats \method by $0.098$\,m ($[0.019, 0.178]$, $p = 0.015$). We return to it below, since Unfrozen buys that accuracy with a $34\%$ collapse in per-condition diversity.
 
-\subsection{Behavioral Validity: Intention Distributions}
+\subsection{BEHAVIORAL VALIDITY: INTENTION DISTRIBUTIONS}
 \label{sec:behavior}
 
 Beyond kinematic fidelity, we probe whether generated motion couples to the ego context at the level of \emph{behavioral decisions}.
@@ -593,7 +604,7 @@ We report the \emph{separation} (mean $\hat{p}$ on ground-truth-stopping conditi
 
 Path-crossing labels (pedestrian/ego polyline intersection) occur at only a $\sim$2\% base rate in our windows and are omitted from the primary analysis.
 
-\subsection{CFG Scale Analysis}
+\subsection{CFG SCALE ANALYSIS}
 
 We sweep CFG $\in \{5, 10, 15\}$ for \method at epoch 3399 (Table~\ref{tab:cfg}).
 \method's FID varies non-monotonically with guidance and has a clear optimum at CFG~$=10$ (3.842~$\to$~3.392~$\to$~3.547), whereas Pooled degrades monotonically as guidance rises (6.603~$\to$~6.963~$\to$~7.400).
@@ -627,11 +638,11 @@ This indicates that full-sequence conditioning naturally provides a rich, overde
 \end{figure*}
 
 %----------------------------------------------------------------------
-\section{Ablation Study}
+\section{ABLATION STUDY}
 \label{sec:ablation}
 %----------------------------------------------------------------------
 
-\subsection{Latent Dimension: 4 vs.\ 8}
+\subsection{LATENT DIMENSION: 4 VS.\ 8}
 
 To test whether a larger VAE latent space improves generation quality, we train a latent-8 VAE and ego-conditioned diffusion model (Latent-8).
 As shown in Table~\ref{tab:main}, Latent-8 achieves FID $= 6.677$ which is \textbf{19\% worse} than Pooled's 5.620 at the same epoch and CFG (unified evaluation).
@@ -640,7 +651,7 @@ R-Precision is essentially unchanged (Latent-8: 0.663 vs.\ Pooled: 0.665), confi
 The mechanism: the fixed-capacity denoiser must now model an 8D latent distribution instead of 4D, a strictly harder task, without any additional denoiser parameters.
 The marginal diversity improvement (Diversity: 5.887 vs.\ 5.819, $+1.2\%$) does not compensate.
 
-\subsection{Interaction-Aware Sampling: a Training-Data 2$\times$2}
+\subsection{INTERACTION-AWARE SAMPLING: A TRAINING-DATA 2$\times$2}
 \label{sec:pipeline2x2}
 
 The interaction-aware pipeline of Section~4.1 (score-weighted sampling + closest-approach cropping) is a training-\emph{data} intervention, orthogonal to the conditioning architecture.
@@ -666,7 +677,7 @@ First, the conditioning-granularity gap ($\approx$2.7--2.8 FID in both columns) 
 Second, the two interventions are approximately additive: interaction-aware sampling contributes a similar absolute gain to both architectures ($-$0.59 pooled, $-$0.51 full-sequence), and for the full-sequence model the best checkpoint additionally arrives at $1/3$ the epochs.
 The $+$pipeline full-sequence cell (\method-IA) has the best marginal of the four while \method remains the best-conditioned configuration (Sec.~\ref{sec:adefde}).
 
-\subsection{Training-Seed Sensitivity}
+\subsection{TRAINING-SEED SENSITIVITY}
 \label{sec:seeds}
 
 We retrain \method from two additional seeds under its original recipe and select each seed's best checkpoint by training-time validation FID (the same protocol as the main results).
@@ -675,7 +686,7 @@ The cross-\emph{architecture} conclusions are unaffected since every \method see
 Running the per-condition protocol on all three \method seeds sharpens the point considerably. While FID ranges over $3.392$--$4.803$ across those seeds, a relative spread of $33\%$, their trajectory error ranges only over $2.258$--$2.375$\,m ($5\%$) and their behavioral separation over $0.311$--$0.334$ ($7\%$). The per-condition instruments are several times more stable under reseeding than the metric the field reports, which is a further argument for reading conditioning off them. All three seeds beat the trained unconditional prior decisively and the pooled baseline significantly (paired bootstrap, $p \le 0.048$), so the per-condition ranking does not depend on which seed we happened to report.
 \method-IA, in contrast, \emph{replicates}: a second seed trained with an identical recipe and selected by the same rule reaches FID $2.671 \pm 0.031$ (its best-validation checkpoint is epoch 899) against the reported seed's $2.880 \pm 0.084$, i.e.\ a seed mean of $2.78 \pm 0.15$ which is a far tighter spread than \method's. The per-condition picture replicates as well: the second seed reaches ADE 2.63 and behavioral separation 0.13 (reported seed: 2.66 and 0.16), both short of \method (2.36 and 0.33), so \method-IA's weaker conditioning fidelity is a property of the interaction-sampling recipe rather than of one unlucky seed. At a matched epoch (1299) the second seed gives FID $3.320 \pm 0.139$, which shows that the two seeds reach their best marginal at different epochs and that per-seed checkpoint selection, not a fixed epoch, is the meaningful protocol.
 
-\subsection{Encoder Freeze vs.\ Unfreeze}
+\subsection{ENCODER FREEZE VS.\ UNFREEZE}
 \label{sec:h6}
 
 The most important ablation is whether to freeze the ego encoder during diffusion training.
@@ -732,7 +743,7 @@ This pattern mirrors the frozen-encoder paradigm in image generation~\cite{romba
 Freezing alone is not sufficient: an \method model trained with a \emph{randomly initialized} frozen ego encoder (identical otherwise) reaches only FID $= 4.968 \pm 0.171$ with R-Precision@1 exactly at chance, which is statistically indistinguishable from the ego-zeroed null branch (FID $5.18$, Table~\ref{tab:trivial}), though that branch is itself a weak reference, and a properly trained prior reaches 3.24, so the random-encoder model is worse than simply not conditioning at all.
 Together with Unfrozen, this brackets the design from both sides: the alignment pretraining is what \emph{injects} usable ego information, and freezing is what \emph{preserves} generative diversity while using it.
 
-\subsection{Conditioning Mechanism: Self-Attention vs.\ Cross-Attention}
+\subsection{CONDITIONING MECHANISM: SELF-ATTENTION VS.\ CROSS-ATTENTION}
 \label{sec:xattn}
 
 Our denoiser injects the ego sequence by concatenating it with the latent tokens and applying self-attention over the joint sequence (Section~\ref{sec:experiments}).
@@ -759,7 +770,7 @@ As shown in Table~\ref{tab:xattn}, the self-attention and cross-attention denois
 Note that the comparison is, if anything, generous to the cross-attention variant: its best checkpoint was selected on the held-out split itself, whereas the self-attention model's checkpoint was fixed in advance from training-time validation.
 We also observed that the cross-attention variant trained less stably, with a noisier FID-vs-epoch trajectory.
 
-\subsection{Checkpoint Selection}
+\subsection{CHECKPOINT SELECTION}
 
 A non-obvious finding is that FID does not monotonically improve with training.
 Pooled's epoch trajectory shows FID $= 6.603$ at epoch 4399, FID $= 8.400$ at epoch 4599 (regression), and FID $= 7.510$ at epoch 4999 (partial recovery) while displaying flat training loss throughout.
@@ -773,7 +784,7 @@ Pooled's epoch trajectory shows FID $= 6.603$ at epoch 4399, FID $= 8.400$ at ep
 \end{figure}
 
 %----------------------------------------------------------------------
-\section{Discussion}
+\section{DISCUSSION}
 \label{sec:discussion}
 %----------------------------------------------------------------------
 
@@ -796,7 +807,7 @@ Generated motion data is synthetic and contains no personally identifiable infor
 
 
 %----------------------------------------------------------------------
-\section{Limitations and Future Work}
+\section{LIMITATIONS AND FUTURE WORK}
 \label{sec:limitations}
 %----------------------------------------------------------------------
 
@@ -813,7 +824,7 @@ Generated motion data is synthetic and contains no personally identifiable infor
 The pose audit of Section~\ref{sec:posequality} defines the most consequential next step. Our de-sliding pilot shows that contact-corrected labels are representable by the motion autoencoder after fine-tuning, which scopes the remedy as a relabelling and retraining effort rather than an additional generation-time loss. Carrying it out would invalidate every distributional number reported here, since it changes the target distribution itself, and we therefore treat it as a separate undertaking rather than a revision of these results. Beyond the labels, three extensions follow directly from our findings. Richer conditioning like relative pedestrian--vehicle geometry, ego velocity profile, or map topology is a natural way to raise the information content of the condition beyond the $196\times2$ trajectory. A human perceptual study would supply the realism judgement that no distributional score on these labels can provide. Finally, the dissociation we document motivates a per-condition benchmark protocol for conditional motion generation in general: our trajectory-error and behavioral-coupling probes are a minimum, and more discriminating conditioning tests are an open problem.
 
 %----------------------------------------------------------------------
-\section{Conclusion}
+\section{CONCLUSION}
 %----------------------------------------------------------------------
 
 We introduced \method, an ego-conditioned pedestrian body motion generation system based on latent diffusion with full-sequence ego conditioning.
@@ -825,6 +836,9 @@ pretrain the ego encoder to regress frozen VAE latents, then freeze it during di
 This recipe is the best-conditioned configuration we found across AVA, nuScenes, and Waymo, and provides a foundation for scalable, behavior-consistent pedestrian simulation.
 
 %----------------------------------------------------------------------
+\section*{ACKNOWLEDGMENT}
+\TODO{Acknowledgments and funding details.}
+
 \bibliographystyle{IEEEtran}
 \bibliography{refs}
 %----------------------------------------------------------------------
@@ -833,7 +847,7 @@ This recipe is the best-conditioned configuration we found across AVA, nuScenes,
 \appendices
 %----------------------------------------------------------------------
 
-\section{Unfrozen-Encoder Training Trajectory}
+\section{UNFROZEN-ENCODER TRAINING TRAJECTORY}
 \label{app:h6_trajectory}
 
 Table~\ref{tab:h6_trajectory} lists the training-time validation metrics behind Figure~\ref{fig:h6_training}, at the checkpoint evaluation points referenced in Section~\ref{sec:h6}.
@@ -865,5 +879,11 @@ Table~\ref{tab:h6_trajectory} lists the training-time validation metrics behind 
     \bottomrule
   \end{tabular}
 \end{table}
+
+\begin{IEEEbiography}{ERIK SCH\"UTZ}\TODO{Biography and photo.}\end{IEEEbiography}
+
+\begin{IEEEbiography}{MOHAN RAMESH}\TODO{Biography and photo.}\end{IEEEbiography}
+
+\begin{IEEEbiography}{FABIAN B. FLOHR}\TODO{Biography and photo.}\end{IEEEbiography}
 
 \end{document}

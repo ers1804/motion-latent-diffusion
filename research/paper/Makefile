@@ -4,7 +4,7 @@ BIBTEX = bibtex
 
 all: $(MAIN).pdf
 
-$(MAIN).pdf: $(MAIN).tex refs.bib
+$(MAIN).pdf: $(MAIN).tex refs.bib ieeeoj.cls
 	$(LATEX) -interaction=nonstopmode $(MAIN)
 	$(BIBTEX) $(MAIN)
 	$(LATEX) -interaction=nonstopmode $(MAIN)
