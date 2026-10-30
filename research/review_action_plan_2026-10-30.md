@@ -260,8 +260,33 @@ Submitted 2026-10-30 (jobs 1187329-1187379, 51 jobs); the VAE is training. The o
 its dumped configs differ from the old runs only as intended. Its validation gave gt_Diversity 5.42 on the new
 validation partition, the first value of the new comparability fingerprint.
 
+### Decisions from Erik, 2026-10-31
+
+The metric is the Ego-Coupling Score (ECS), applied in `main.tex`. The dataset keeps its working name until Erik
+gives one. The teaser is ours to propose and should show what the method does.
+
+### Teaser (action 17): proposal in the paper, data to be replaced
+
+`figures/teaser.pdf` sits on the first page, in the title block below the index terms, because a `figure*` cannot
+float onto page 1. One model and one noise seed run under two ego trajectories: a vehicle driving past
+(generated pedestrian stays, 0.2-1.0 m over 8 seeds) and a vehicle slowing to a stop (generated pedestrian walks,
+11.8-17.8 m over 8 seeds). No street is drawn because the data has no map. Caption says the pair was chosen for
+illustration.
+
+The motions come from the old model (`h4`, old split, rows 137 and 333 of `val_test`). After the retrain, regenerate
+from `rs1_egoped` on `scene_val`, so the test split stays untouched:
+
+1. `teaser_generate.py --scan --split scene_val --dump <K=5 dump>`, then pick a pair with full length, ground truth
+   agreeing, all 5 samples agreeing and the vehicle within about 8 m.
+2. `teaser_generate.py --rows A B --seeds 8`; keep the pair only if all 8 seeds agree.
+3. `render_teaser.py` once per row, then `make_teaser.py`. The footer overlap depends on title and abstract length,
+   so check page 1 after the rewrite (the crop in `make_teaser.py` can relax if there is room).
+
+No simple vehicle rule predicts stopping on the old split: generated stop rate against ego mean, start and end speed
+correlates at r = -0.05, -0.09, -0.01 (ground truth -0.07, -0.11, -0.03). Do not write "the vehicle brakes, so the
+pedestrian walks" anywhere; ECS is the supported claim.
+
 ### Still open
 
-Waiting on results: actions 8, 9, 12, 15, 16, 18, 23 and the title. Waiting on people: 13 (metric name), 17 and
-20 (dataset name, teaser page), biographies.
-
+Waiting on results: actions 8, 9, 12, 15, 16, 18, 23, the title, and regenerating the teaser. Waiting on people: 20
+(dataset name, teaser page), biographies.
