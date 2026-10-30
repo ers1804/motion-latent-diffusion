@@ -196,6 +196,22 @@ from an initial position, against our 196 frames with no initial pose, and it ha
 context needs depth and segmentation from images. Decided: `pedgen_no_context` as an ego-blind comparison on
 short-horizon root metrics only.
 
+Result on the old held-out split, first 1.95 s (40 frames at 20 fps), 5 samples per condition, 15,000-sample
+bank; `research/src/pedgen_baseline.py`, `research/src/short_horizon.py`, log in
+`research/data/short_horizon_val_test.log`.
+
+| Model | ADE | FDE | minADE | minFDE |
+|-------|-----|-----|--------|--------|
+| EgoPed, 3 seeds | 0.588 / 0.582 / 0.568 | 1.171 / 1.159 / 1.129 | 0.316 / 0.323 / 0.350 | 0.617 / 0.630 / 0.687 |
+| Pooled | 0.550 | 1.090 | 0.333 | 0.655 |
+| Trained prior, ours | 0.749 | 1.497 | 0.284 | 0.554 |
+| PedGen no-context | 0.809 | 1.592 | 0.437 | 0.829 |
+
+Every model here beats PedGen on ADE, FDE and minADE (95% CIs exclude 0). Treat this as a reference, not a
+ranking: PedGen was trained on other data and walks more slowly (median 0.65 m/s against 1.28 m/s in our
+labels), which alone explains part of the gap. The trained prior beating it shows the data matters, not only
+the ego input. To be rerun on the new test split.
+
 **Step 7, orientation: no evidence, so the wording changes (decision 2).** Result of
 `research/src/orientation_test.py`, log in `research/data/orientation_test.log`.
 
@@ -218,4 +234,12 @@ short-horizon root metrics only.
 
 Encoder recipe, three seeds per 2x2 cell, selection rule and PedGen scope as recorded above. Erik ports repo
 changes to Overleaf himself. Affiliation and funding statement are in `main.tex`; biographies come later.
+
+### Text fixes done (2026-10-30)
+
+Actions 21 (photo copyright), 22 (typos), 24 (dimensions, now linking the 3D record to the 2D input), 25
+(references in IEEE abbreviated form, extra arXiv notes removed from published entries), 26 (funding) and 27
+(abstract wording) are done. Action 10: "first" now reads "to our knowledge" after reading ControlPed in full.
+Action 11: new Related Work subsection on Trace and Pace, PedGen and ControlPed, references harvested from
+Crossref and arXiv. Fabian's "first rev" is taken to mean the first reference (Erik does not know either).
 
