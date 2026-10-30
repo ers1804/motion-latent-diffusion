@@ -44,10 +44,10 @@ ax_r1.plot(epochs, r1s, color=c_r1, marker="s", markersize=3.5, label="R@1")
 best_idx = 1  # epoch=3399
 ax_fid.axvline(epochs[best_idx], color="gray", linestyle=":", linewidth=0.9, alpha=0.7)
 ax_fid.annotate(
-    f"best ckpt\nep={epochs[best_idx]}",
+    f"best checkpoint\n(epoch {epochs[best_idx]})",
     xy=(epochs[best_idx], fids[best_idx]),
-    xytext=(epochs[best_idx] + 250, fids[best_idx] - 0.15),
-    fontsize=7, color="black",
+    xytext=(epochs[best_idx] + 90, fids[best_idx] + 0.26),
+    fontsize=8, color="black",
     arrowprops=dict(arrowstyle="->", color="gray", lw=0.5),
 )
 
@@ -65,11 +65,11 @@ ax_r1.spines["top"].set_visible(False)
 ax_fid.grid(True, axis="y", alpha=0.25, linewidth=0.5)
 ax_fid.set_xlim(min(epochs) - 50, max(epochs) + 50)
 
-# Combined legend in upper-right
+# Legend above the axes: the R@1 peak fills the top of the plot
 lines_fid, _ = ax_fid.get_legend_handles_labels()
 lines_r1,  _ = ax_r1.get_legend_handles_labels()
 ax_fid.legend(lines_fid + lines_r1, ["FID", "R@1"],
-              loc="upper left", ncol=2, frameon=False, fontsize=8)
+              loc="lower center", bbox_to_anchor=(0.5, 1.0), ncol=2, frameon=False, fontsize=8)
 
 out = "/home/erik/ssd2/gitprojects/motion-latent-diffusion/research/paper/figures/h4_training_curve.pdf"
 plt.savefig(out)

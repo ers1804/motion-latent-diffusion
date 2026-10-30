@@ -243,3 +243,25 @@ Actions 21 (photo copyright), 22 (typos), 24 (dimensions, now linking the 3D rec
 Action 11: new Related Work subsection on Trace and Pace, PedGen and ControlPed, references harvested from
 Crossref and arXiv. Fabian's "first rev" is taken to mean the first reference (Erik does not know either).
 
+Action 14: robotics spill-over added to the introduction and the discussion, labelled as untested outlook.
+Action 19: legend and best-checkpoint note in the EgoPed training-curve figure no longer overlap the data or
+the axis; the data in `make_h4_curve.py` still has to be replaced by the retrained run.
+
+### Prepared for after training
+
+- Selection rule, fixed now: lowest training-time validation FID among saved checkpoints
+  (`research/src/select_resplit.py`, reproduces epochs 3099 and 1799 on the old seeds B and C). Unconditional
+  runs are selected offline.
+- `slurm/resplit/eval.sh`: definitive FID and K=5 root dump for one checkpoint, guidance and partition.
+
+### Chain status
+
+Submitted 2026-10-30 (jobs 1187329-1187379, 51 jobs); the VAE is training. The one-epoch smoke job passed, and
+its dumped configs differ from the old runs only as intended. Its validation gave gt_Diversity 5.42 on the new
+validation partition, the first value of the new comparability fingerprint.
+
+### Still open
+
+Waiting on results: actions 8, 9, 12, 15, 16, 18, 23 and the title. Waiting on people: 13 (metric name), 17 and
+20 (dataset name, teaser page), biographies.
+

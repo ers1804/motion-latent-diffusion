@@ -77,6 +77,7 @@ Pedestrian behaviour modelling, human motion synthesis, denoising diffusion mode
 \IEEEPARstart{G}{enerating} realistic pedestrian body motion is a critical capability for autonomous vehicle (AV) simulation.
 Simulation pipelines require diverse, plausible pedestrian behaviour to stress-test perception and planning before deployment, and especially for the long tail of close-range encounters that are unsafe or impractical to collect on the road.
 The intelligent-transportation literature has long established that this behaviour is coupled to the vehicle: the ego vehicle's speed, trajectory and proximity all influence whether a pedestrian crosses, waits, accelerates or turns~\cite{camara2021pedmodels2}, and benchmarks such as JAAD~\cite{rasouli2017jaad} and PIE~\cite{rasouli2019pie} annotate exactly that dependence.
+The same coupling is not limited to cars: mobile robots that share space with people also influence them through their own motion, so a generator conditioned on another agent's trajectory is potentially of use there too, a point we return to in Section~\ref{sec:discussion}.
 Those benchmarks, however, predict discrete events, like a crossing intention, and the models built on them output a label or a ground-plane trajectory~\cite{alahi2016sociallstm,salzmann2020trajectron,gu2022mid}, not an articulated body.
 
 Full-body human motion synthesis has meanwhile advanced rapidly, driven by text-conditioned diffusion models~\cite{chen2023mld,tevet2023mdm,zhang2022motiondiffuse,guo2024momask}.
@@ -800,6 +801,9 @@ Future work seeking to improve conditioning fidelity should explore adapter-styl
 We caution against reading this as a conditioning deficit. R@1 is computed in the ego encoder's own alignment space, and each model is scored in the space its own encoder induces, so the measure is not comparable across models with differently trained encoders. The per-condition metrics of Secs.~\ref{sec:adefde} and \ref{sec:behavior}, which use no learned embedding, rank \method above Pooled on both axes.
 In AV simulation this is desirable: a single ego trajectory should plausibly lead to several pedestrian behaviors (crossing, waiting, accelerating).
 A genuine tradeoff is present too as the full-sequence conditioning generates more diverse motions per condition, which spreads the embedding distribution and lowers retrieval accuracy.
+
+\paragraph{Outlook: spill-over to robotics.}
+Nothing in the model is specific to cars: its input is the 2D trajectory of a moving agent in the pedestrian's frame. This suggests a use beyond driving, for example simulating how people respond to delivery or service robots, where datasets recorded from mobile platforms such as JRDB~\cite{martinmartin2023jrdb} exist. This remains untested. We have no robot data, and robots differ from cars in size, speed and how people read them, so we expect adaptation or retraining on such data to be necessary.
 
 \paragraph{Broader impact.}
 The primary intended use of ego-conditioned pedestrian motion generation is autonomous-driving simulation. Synthesizing realistic, ego-aware pedestrian behaviors enables larger-scale safety testing without exposing real pedestrians to risk, and is particularly valuable for the long tail of rare or safety-critical interactions that are unsafe or impractical to collect.
