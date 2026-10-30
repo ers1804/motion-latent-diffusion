@@ -127,3 +127,62 @@ Flohr's leak comment also goes further than he has seen:
 
 ## Progress log
 
+### Phase 0: done (2026-10-30)
+
+Overleaf text taken as master (6096ae5). Paper moved to the official OJ-ITS template (5448f1a): compiles
+with no errors, 21 pages before any cutting. Affiliations, funding and biographies are still red TODOs.
+
+### Phase 1: in progress
+
+**Step 4, scene split.** `research/data/scene_split_v1` is built by `research/src/make_scene_split.py`
+from the same 11,786 names as before.
+
+| Partition | Files | Scenes | nuScenes | Waymo | AVA |
+|-----------|-------|--------|----------|-------|-----|
+| train     | 9,410 | 796    | 3,594    | 5,794 | 22  |
+| val (selection) | 1,194 | 107 | 472 | 716   | 6   |
+| test (reporting) | 1,182 | 91 | 448 | 728  | 6   |
+
+- No scene or mirrored pair crosses a partition; checked through the real dataset class by
+  `research/src/test_scene_split.py`.
+- Statistics are computed on train only. The same formula on the old list reproduces the old files
+  (mean within 0.024, std within 4.8%). Ego x mean is now exactly 0, as expected when both mirror
+  images of every sample stay together; the old value was 0.04.
+- `SCENE_SPLIT=True` resolves names exactly and fails on a miss. Held-out partitions always use fixed
+  uniform windows and never interaction cropping, so a training recipe cannot change what selection
+  or testing sees.
+- Old loader bug, now bypassed: a listed name missing from the split folder fell back to a same-named
+  file of another source. This is why the old split loaded 9,540/2,414 samples against 9,456/2,330 files.
+- Windows no longer depend on the machine, so cluster dumps stay aligned with the existing local dumps.
+
+**Jobs.** `slurm/resplit/`: VAE (latent 4, 6,000 epochs) then full-sequence and pooled encoders, then
+seven diffusion runs at seed 1234: EgoPed, EgoPed-IA, Pooled, Pooled-IA, Unfrozen, Uncond, Uncond-IA.
+Outputs go to `models_resplit`; the old models are untouched. A one-epoch smoke job of every recipe
+runs first.
+
+**Steps 3 and 5, old-split scoring.** Pooled without IA (epoch 1199) and Pooled seeds B and C (epoch 99)
+are queued on Helma (1187279-81): ADE, stopping separation and definitive FID.
+
+**Step 6, PedGen.** Feasible but not like for like. Code and checkpoints are public
+(`pedgen_no_context`, `pedgen_with_context`); the repository declares no license. It generates 60 frames
+from an initial position, against our 196 frames with no initial pose, and it has no ego input. Full
+context needs depth and segmentation from images. Decision needed, see open questions.
+
+**Step 7, orientation: no evidence, so the wording changes (decision 2).** Result of
+`research/src/orientation_test.py`, log in `research/data/orientation_test.log`.
+
+- Training labels: facing and walking direction agree (cos 0.984), torso twist is 3.3 deg median, and the
+  22-joint labels hold no head yaw. Standing within 15 m, facing the vehicle is 0.175 against 0.159 shuffled.
+- Raw SMPL fits do hold head rotation and pass the sanity checks (body up 0.98 on both datasets). The link
+  to the vehicle gets stronger with distance, the opposite of attention:
+
+| Dataset | r(head turn, vehicle side), <15 m / >30 m | cos(head, vehicle) standing, <15 m / >30 m |
+|---------|------------------------------------------|--------------------------------------------|
+| nuScenes | +0.399 / +0.509 | +0.173 / +0.356 |
+| Waymo    | +0.136 / +0.410 | +0.124 / +0.315 |
+
+  This fits a camera-facing bias of the monocular fits, since the camera is on the vehicle. It does not
+  rule out a small real effect nearby, but these data cannot show one, and the model could not generate
+  head turns from the current labels anyway. The paper therefore claims trajectory-level behaviour only.
+  The retitling happens in Phase 2, together with the claims rewrite.
+
