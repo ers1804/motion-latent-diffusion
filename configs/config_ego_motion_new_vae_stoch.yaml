@@ -18,7 +18,7 @@ TRAIN:
   # Train diffusion (VAE should be pre-trained)
   STAGE: diffusion
   DATASETS: ['egomotion']
-  NUM_WORKERS: 4
+  NUM_WORKERS: 8
   BATCH_SIZE: 64
   END_EPOCH: 5000
 
