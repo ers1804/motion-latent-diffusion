@@ -48,6 +48,15 @@ data_overrides() {
 resume_or_finish() {
     local name=$1 end=$2
     local dir=$MODELS/mld/$name
+    # A save that hit a full filesystem leaves an empty or truncated file; resuming would load it and crash.
+    local max f
+    max=$(stat -c %s "$dir"/checkpoints/epoch=*.ckpt 2>/dev/null | sort -n | tail -1)
+    for f in "$dir"/checkpoints/epoch=*.ckpt; do
+        [[ -f "$f" ]] || continue
+        if (( $(stat -c %s "$f") < max * 99 / 100 )); then
+            mkdir -p "$dir/failed_saves"; mv "$f" "$dir/failed_saves/"; echo "moved aside truncated $f"
+        fi
+    done
     if [[ -f "$dir/checkpoints/epoch=$((end - 1)).ckpt" ]]; then echo "$name already complete"; exit 0; fi
     # Always explicit: configs carry stale RESUME paths that would load an unrelated model.
     RESUME=("TRAIN.RESUME=")
