@@ -252,7 +252,22 @@ the axis; the data in `make_h4_curve.py` still has to be replaced by the retrain
 - Selection rule, fixed now: lowest training-time validation FID among saved checkpoints
   (`research/src/select_resplit.py`, reproduces epochs 3099 and 1799 on the old seeds B and C). Unconditional
   runs are selected offline.
-- `slurm/resplit/eval.sh`: definitive FID and K=5 root dump for one checkpoint, guidance and partition.
+- `slurm/resplit/eval.sh`: definitive FID and K=5 root dump for one checkpoint, guidance and partition. Ran end to
+  end on early checkpoints of three runs (val only, 5-7 min per job); the zero-ego model scores ECS 0.02, as an
+  ego-blind model should.
+- Unconditional selection: `slurm/resplit/select_uncond.sh` scores every saved checkpoint with the ego zeroed. Queued
+  to start after each unconditional run's last segment (jobs 1199192, 1199193).
+- Guidance: one value per cell, lowest validation FID averaged over its seeds, from {5, 10, 15}.
+
+Steps once the training queue is empty (from the repository root on Helma; check every run reached epoch 4999 first,
+and queue another segment for any that did not):
+
+1. `python3 research/src/select_resplit.py --out research/data/resplit_epochs.json`
+2. `bash slurm/resplit/submit_evals.sh sweep research/data/resplit_epochs.json`
+3. `python3 research/src/select_resplit.py --guidance research/data/resplit_epochs.json --out research/data/resplit_selection.json`
+4. `python research/src/compare_resplit.py --split scene_val --selection research/data/resplit_selection.json`
+   (validation only; take this to Erik before the test pass)
+5. `bash slurm/resplit/submit_evals.sh test research/data/resplit_selection.json`, then step 4 with `--split scene_test`.
 
 ### Chain status
 
