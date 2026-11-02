@@ -256,9 +256,23 @@ the axis; the data in `make_h4_curve.py` still has to be replaced by the retrain
 
 ### Chain status
 
-Submitted 2026-10-30 (jobs 1187329-1187379, 51 jobs); the VAE is training. The one-epoch smoke job passed, and
-its dumped configs differ from the old runs only as intended. Its validation gave gt_Diversity 5.42 on the new
-validation partition, the first value of the new comparability fingerprint.
+Submitted 2026-10-30 (jobs 1187329-1187379, 51 jobs). VAE finished at epoch 5999; encoders finished with best val
+MSE 1.915 (full-sequence) and 1.904 (pooled). All 15 diffusion runs started 2026-11-02 around 02:05 CET. Their
+dumped configs differ only as intended, and gt_Diversity at the first validation is 5.29-5.95 on the new partition
+(the smoke job gave 5.42), so normalization is correct.
+
+Pace after the first validation: EgoPed 143 ep/h, EgoPed-IA 96, Pooled 78, Pooled-IA 52. Pooled ran with 4 data
+workers against 8, and at 52 ep/h three segments would end near epoch 3,700. The config now sets 8 (117e79a), which
+later segments read at start, so every run should reach epoch 5000 within its three segments. Expected end is
+about 2026-11-04 evening, queue permitting.
+
+### Comparison rule, fixed before any test result
+
+`research/src/compare_resplit.py` scores the 2x2 from the K=5 dumps. Seeds of one cell are averaged and the
+bootstrap resamples scenes. A model beats another only if the 95% CI excludes 0 and all seed pairs agree in sign,
+because the bootstrap alone does not capture seed variance. The primary contrast is EgoPed vs Pooled without IA on
+mean ADE; every other contrast is secondary. Any other outcome is reported as no measurable difference. What that
+means for the contribution goes to Erik before the claims change.
 
 ### Decisions from Erik, 2026-10-31
 
