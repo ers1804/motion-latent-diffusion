@@ -1,6 +1,6 @@
 #!/bin/bash
-# Queues further segments for runs of submit_chain.sh that stopped early. Each segment resumes from the newest
-# intact checkpoint and exits at once when the run is complete. Run from the repository root on the cluster.
+# Queues segments for runs by name: new runs start, runs of submit_chain.sh that stopped early resume from the
+# newest intact checkpoint, and complete runs exit at once. Run from the repository root on the cluster.
 # usage: resume_runs.sh <segments> <run name>...
 set -e
 SEGMENTS=$1; shift
@@ -16,6 +16,9 @@ for name in "$@"; do
         rs1_egoped_ia_s*) args=("$EGOPED" rs1_enc_fullseq "$seed" True) ;;
         rs1_egoped_s*) args=("$EGOPED" rs1_enc_fullseq "$seed" False) ;;
         rs1_pooled_ia_s*) args=("$POOLED" rs1_enc_pooled "$seed" True) ;;
+        # ablations of the method (Pooled): encoder trainable, and trainable without pretraining
+        rs1_pooled_unfrozen_s*) args=("$POOLED" rs1_enc_pooled "$seed" False); extra=("TRAIN.FREEZE_EGO=False") ;;
+        rs1_pooled_scratch_s*) args=("$POOLED" rs1_enc_pooled "$seed" False); extra=("TRAIN.FREEZE_EGO=False" "TRAIN.PRETRAINED_EGO=") ;;
         rs1_pooled_s*) args=("$POOLED" rs1_enc_pooled "$seed" False) ;;
         rs1_unfrozen_s*) args=("$UNFROZEN" rs1_enc_fullseq "$seed" False) ;;
         rs1_uncond_ia_s*) args=("$EGOPED" rs1_enc_fullseq "$seed" True); extra=("${UNCOND[@]}") ;;
