@@ -1,0 +1,21 @@
+== scene_val: per source, cell mean over seeds at the selected guidance
+  ava       N=   6  pooled ADE 3.23 ECS +nan | egoped ADE 3.36 ECS +nan | uncond ADE 3.49 ECS +nan |
+  nuscenes  N= 472  pooled ADE 2.36 ECS +0.44 | egoped ADE 2.76 ECS +0.35 | uncond ADE 3.37 ECS +0.02 |
+  waymo     N= 716  pooled ADE 2.20 ECS +0.18 | egoped ADE 2.55 ECS +0.15 | uncond ADE 2.86 ECS +0.03 |
+== scene_test: per source, cell mean over seeds at the selected guidance
+  ava       N=   6  pooled ADE 4.28 ECS +nan | egoped ADE 4.14 ECS +nan | uncond ADE 4.97 ECS +nan |
+  nuscenes  N= 448  pooled ADE 2.44 ECS +0.32 | egoped ADE 2.58 ECS +0.34 | uncond ADE 3.19 ECS -0.01 |
+  waymo     N= 728  pooled ADE 2.41 ECS +0.26 | egoped ADE 2.75 ECS +0.17 | uncond ADE 3.04 ECS +0.04 |
+== guidance on validation: cell means at each run's selected checkpoint
+  pooled     cfg  5: ADE 2.237  minADE 1.223  ECS 0.365
+  pooled     cfg 10: ADE 2.249  minADE 1.358  ECS 0.374
+  pooled     cfg 15: ADE 2.270  minADE 1.431  ECS 0.363
+  egoped     cfg  5: ADE 2.455  minADE 1.229  ECS 0.296
+  egoped     cfg 10: ADE 2.550  minADE 1.333  ECS 0.297
+  egoped     cfg 15: ADE 2.639  minADE 1.382  ECS 0.298
+  pooled_ia  cfg  5: ADE 2.671  minADE 1.826  ECS 0.234
+  pooled_ia  cfg 10: ADE 2.963  minADE 2.178  ECS 0.247
+  pooled_ia  cfg 15: ADE 3.214  minADE 2.433  ECS 0.227
+  egoped_ia  cfg  5: ADE 2.651  minADE 1.760  ECS 0.177
+  egoped_ia  cfg 10: ADE 2.682  minADE 1.778  ECS 0.164
+  egoped_ia  cfg 15: ADE 2.716  minADE 1.740  ECS 0.137
