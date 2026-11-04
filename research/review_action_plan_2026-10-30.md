@@ -316,6 +316,30 @@ coupling. FID ranks the cells almost exactly opposite to the per-condition metri
 Erik, 2026-11-04: run the test pass with the selection as committed; Pooled becomes the method (EgoPed = ego-trajectory
 conditioning with a pooled encoder) and full-sequence an ablation.
 
+### Test result (2026-11-04, run once; raw output in `research/data/resplit_test_report.txt`)
+
+Test N=1182 conditions, 91 scenes, GT stopping rate 0.240.
+
+| Contrast | ADE (m) | minADE (m) | ECS |
+|---|---|---|---|
+| EgoPed vs Pooled (primary) | -0.259 [-0.334,-0.174] * | +0.112 [+0.053,+0.176] * | -0.038 [-0.078,+0.001] |
+| EgoPed-IA vs Pooled-IA | -0.076 (n.s.) | -0.033 (n.s.) | -0.114 [-0.178,-0.052] * |
+| EgoPed vs EgoPed-IA | +0.313 (one seed pair disagrees) | +0.534 * | +0.170 * |
+| Pooled vs Pooled-IA | +0.496 * | +0.389 * | +0.094 * |
+| EgoPed / Pooled vs prior | +0.417 * / +0.676 * | prior better | +0.255 * / +0.293 * |
+| EgoPed-IA / Pooled-IA vs IA prior | -0.008 / +0.068 (n.s.) | prior better | +0.092 * / +0.206 * |
+| EgoPed vs Unfrozen | -0.022 (n.s.) | +0.150 * for Unfrozen | +0.230 * |
+
+Cell means (ADE / minADE / ECS / test FID): Pooled 2.43 / 1.65 / 0.31 / 5.67; EgoPed 2.69 / 1.54 / 0.27 / 4.16;
+Pooled-IA 2.93 / 2.04 / 0.21 / 4.84; EgoPed-IA 3.01 / 2.07 / 0.10 / 3.24; prior 3.11 / 1.31 / 0.02 / 4.67;
+IA prior 3.00 / 1.52 / 0.01 / 3.29; Unfrozen 2.67 / 1.39 / 0.04 / 6.54.
+
+Primary contrast confirmed: Pooled beats EgoPed on mean ADE on test. New on test: EgoPed has the better minADE (more
+spread among its 5 samples), and the ECS lead of Pooled without IA no longer meets the rule (p 0.06). With IA the
+ECS lead of Pooled does. The IA recipe hurts every per-condition metric and its models are no better than the IA
+prior on mean ADE, only on ECS, yet EgoPed-IA has the best test FID (3.24), level with the ego-blind IA prior (3.29).
+First 1.95 s against PedGen no-context (ADE 0.794): Pooled 0.561-0.589, EgoPed 0.590-0.697, trained prior 0.750.
+
 ### Decisions from Erik, 2026-10-31
 
 The metric is the Ego-Coupling Score (ECS), applied in `main.tex`. The dataset keeps its working name until Erik
