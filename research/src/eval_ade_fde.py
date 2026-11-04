@@ -33,6 +33,7 @@ HM = os.environ.get("EGOPED_MODELS", f"{NAS}/models/helma_models/models/mld")
 VT = "research/data/heldout_split/val_test"
 FV = f"{NAS}/data/vae/mean_std_txt/ava_nuscenes_waymo"
 SCENE = "research/data/scene_split_v1"  # scene-disjoint split: select on val, report on test
+FPS = 20
 
 MODELS = {
     "h4": dict(cfg="configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml",
@@ -109,6 +110,55 @@ MODELS = {
 }
 
 
+def ego_editor(args, dataset):
+    """f(ego, first row of the batch, ego lengths) -> the edited ego input of the two ego controls.
+
+    --ego-swap: every row gets the ego input of a row from another scene, of the closest length (wrong vehicle).
+    --ego-horizon S: the model sees the first S seconds of the ego trajectory; later frames continue at the
+    velocity of the last 0.5 s (S=0: the vehicle stands at its start). Edited in metres, then normalised again.
+    """
+    sys.path.insert(0, str(Path(__file__).resolve().parent))
+    from make_scene_split import scene_of
+
+    items = [dataset[i] for i in range(len(dataset))]
+    if args.ego_swap:
+        egos = np.stack([it["ego"] for it in items]).astype("float32")
+        lens = np.array([it["length"] for it in items])
+        letter = {"ava": "A", "nuscenes": "N", "waymo": "W"}
+        scenes = [scene_of(letter[Path(p).parts[-3]] + Path(p).stem) for p in dataset.sample_paths]
+        rng = np.random.default_rng(0)
+        donor = np.empty(len(items), dtype=int)
+        for i in range(len(items)):
+            other = np.array([j for j in range(len(items)) if scenes[j] != scenes[i]])
+            gap = np.abs(lens[other] - lens[i])
+            donor[i] = rng.choice(other[gap == gap.min()])
+        return lambda ego, start, ego_len: torch.as_tensor(egos[donor[start:start + len(ego)]], device=ego.device)
+
+    cut = int(round(args.ego_horizon * FPS))
+
+    def to_raw(e):
+        if dataset.ego_mean is not None and dataset.ego_std is not None:
+            return e * (dataset.ego_std + 1e-8) + dataset.ego_mean
+        return e * dataset.ego_scale
+
+    def edit(ego, start, ego_len):
+        out = ego.detach().cpu().numpy().copy()
+        for b, L in enumerate(ego_len):
+            L = int(L)
+            if cut >= L:
+                continue
+            raw = to_raw(out[b, :L])
+            if cut == 0:
+                raw[:] = raw[0]
+            else:
+                first = max(cut - 1 - FPS // 2, 0)
+                v = (raw[cut - 1] - raw[first]) / max(cut - 1 - first, 1)
+                raw[cut:] = raw[cut - 1] + v * np.arange(1, L - cut + 1)[:, None]
+            out[b, :L] = dataset._normalize_ego(raw)
+        return torch.as_tensor(out, device=ego.device)
+    return edit
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True, help="key of MODELS, or a free name with --cfg/--ckpt")
@@ -116,6 +166,8 @@ def main():
     ap.add_argument("--ckpt", help="ad-hoc model: checkpoint")
     ap.add_argument("--guidance", type=float, default=10)
     ap.add_argument("--zero-ego", action="store_true")
+    ap.add_argument("--ego-swap", action="store_true", help="wrong-vehicle control, see ego_editor")
+    ap.add_argument("--ego-horizon", type=float, help="seconds of ego trajectory shown, see ego_editor")
     ap.add_argument("--k", type=int, default=5, help="samples per condition")
     ap.add_argument("--split", default="val_test", choices=["val_test", "full_val", "scene_val", "scene_test"])
     ap.add_argument("--batch", type=int, default=32)
@@ -169,6 +221,7 @@ def main():
 
     datamodule.setup(stage="test")
     loader = datamodule.test_dataloader()
+    edit = ego_editor(args, datamodule.test_dataset) if args.ego_swap or args.ego_horizon is not None else None
 
     ade_all, fde_all = [], []           # per condition, per k
     roots_gen, roots_gt, lens_all = [], [], []   # optional dumps (--save-roots)
@@ -179,6 +232,8 @@ def main():
             lengths = batch["length"]
             if spec.get("zero_ego"):
                 batch["ego"] = torch.zeros_like(batch["ego"])
+            if edit is not None:
+                batch["ego"] = edit(batch["ego"], n_cond, batch["ego_length"])
             # GT root trajectory (denorm via datamodule.feats2joints)
             joints_ref = datamodule.feats2joints(batch["motion"].detach().cpu())
             gt_root = joints_ref[:, :, 0, [0, 2]].numpy()  # (B, T, 2)
