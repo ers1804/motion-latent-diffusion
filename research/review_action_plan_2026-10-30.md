@@ -311,7 +311,10 @@ Unfrozen: R@1 at chance for the entire run and val FID 5.4-17, so the rule picks
 
 Reading: conditioning on the ego trajectory works, the pooled summary is at least as good as full-sequence
 attention on every per-condition metric and better on ECS in both recipes, and the IA recipe buys FID with ego
-coupling. FID ranks the cells almost exactly opposite to the per-condition metrics. The test pass waits for Erik.
+coupling. FID ranks the cells almost exactly opposite to the per-condition metrics.
+
+Erik, 2026-11-04: run the test pass with the selection as committed; Pooled becomes the method (EgoPed = ego-trajectory
+conditioning with a pooled encoder) and full-sequence an ablation.
 
 ### Decisions from Erik, 2026-10-31
 
