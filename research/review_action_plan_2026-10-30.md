@@ -289,6 +289,30 @@ because the bootstrap alone does not capture seed variance. The primary contrast
 mean ADE; every other contrast is secondary. Any other outcome is reported as no measurable difference. What that
 means for the contribution goes to Erik before the claims change.
 
+### Validation result of the 2x2 (2026-11-04)
+
+All 15 runs reached epoch 5000. Seven died on 2026-11-02 when /hnvme filled up and resumed from their last intact
+checkpoint (5a38ad4). Selection per the rules above: `research/data/resplit_epochs.json` (checkpoints) and
+`research/data/resplit_selection.json` (guidance: EgoPed 15, EgoPed-IA 10, Pooled 15, Pooled-IA 5, Unfrozen 5,
+unconditional 1). Val N=1194 conditions, 107 scenes. Delta > 0 means the first cell is better; * meets the rule.
+
+| Contrast | ADE (m) | minADE (m) | ECS |
+|---|---|---|---|
+| EgoPed vs Pooled | -0.370 [-0.494,-0.246] * | +0.049 (n.s.) | -0.065 [-0.103,-0.025] * |
+| EgoPed-IA vs Pooled-IA | -0.012 (n.s.) | +0.048 (n.s.) | -0.069 [-0.136,-0.009] * |
+| EgoPed vs EgoPed-IA | +0.043 (n.s.) | +0.395 * | +0.134 * |
+| Pooled vs Pooled-IA | +0.401 * | +0.395 * | +0.129 * |
+| each conditioned cell vs its unconditional prior | +0.25 to +0.80 * | prior better (diversity) | +0.15 to +0.34 * |
+
+Cell means: Pooled ADE 2.27 / ECS 0.36; EgoPed 2.64 / 0.30; Pooled-IA 2.67 / 0.23; EgoPed-IA 2.68 / 0.16; unconditional
+prior 3.07 / 0.02. Val FID (mean over seeds at the chosen guidance) runs the other way: EgoPed-IA 2.20, EgoPed 2.74,
+Pooled-IA 3.87, Pooled 3.90. Pooled also wins at matched guidance 5 and 10 (ADE -0.22, -0.30; ECS -0.07, -0.08).
+Unfrozen: R@1 at chance for the entire run and val FID 5.4-17, so the rule picks epoch 99; ECS 0.05.
+
+Reading: conditioning on the ego trajectory works, the pooled summary is at least as good as full-sequence
+attention on every per-condition metric and better on ECS in both recipes, and the IA recipe buys FID with ego
+coupling. FID ranks the cells almost exactly opposite to the per-condition metrics. The test pass waits for Erik.
+
 ### Decisions from Erik, 2026-10-31
 
 The metric is the Ego-Coupling Score (ECS), applied in `main.tex`. The dataset keeps its working name until Erik
