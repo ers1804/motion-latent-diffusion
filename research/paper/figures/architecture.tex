@@ -1,7 +1,8 @@
 % EgoPed architecture figure (TikZ). Grounded in:
 %   mld/models/architectures/ego_encoder.py   (EgoEncoder: Linear 2->256, sin. PE, 4x TransformerEncoderLayer, 4 heads, LayerNorm)
-%   pretrain_ego_encoder.py                   (mean-pooled ego tokens vs. mean-pooled VAE posterior mean; MSE + 0.1 (1 - cos))
-%   mld/models/architectures/mld_denoiser.py  (arch=trans_enc via configs/modules/denoiser.yaml: [z_t | t_emb | c] -> learned PE
+%   pretrain_ego_encoder.py                   (mean-pooled, projected ego tokens vs. mean-pooled VAE posterior mean; MSE + 0.1 (1 - cos))
+%   EgoEncoderPooled                          (masked mean-pool + 2-layer projection head -> one 256-D token)
+%   mld/models/architectures/mld_denoiser.py  (arch=trans_enc via configs/modules/denoiser.yaml: [z_t | t_emb | c_bar] -> learned PE
 %                                              -> 9-layer SkipTransformerEncoder, 4 heads -> first L=4 tokens)
 %   mld/models/modeltype/mld.py               (frozen ego encoder; CFG by zeroing the ego input w.p. 0.1; frozen VAE decode)
 % Requires: \usepackage{tikz} \usetikzlibrary{arrows.meta,calc,positioning,fit}
@@ -49,7 +50,7 @@
 \node[num] at (encA.north west) {1};
 \tokrow{6.25}{-0.72}{8}{egotok}{cA}
 \node[lbl,below=1pt of cA] {$\mathbf{c}\in\mathbb{R}^{196\times256}$};
-\node[op] (poolA) at (8.85,-0.72) {mean-pool};
+\node[op] (poolA) at (8.85,-0.72) {mean-pool\\$+$ projection};
 \draw[line] (egoA.east) -- (encA.west);
 \draw[line] (encA.east) -- (cA.west);
 \draw[line] (cA.east) -- (poolA.west);
@@ -81,10 +82,10 @@
 % ego row
 \grid{0.15}{-4.35}{8}{2}{white}{egoB}
 \node[lbl,below=1pt of egoB] {ego trajectory $\mathbf{e}$\\zeroed w.p.\ 0.1 (CFG)};
-\node[enc,minimum width=33mm] (encB) at (4.05,-4.52) {\textbf{Ego encoder}\\frozen, weights from (a)\\no pooling: all 196 tokens};
+\node[enc,minimum width=33mm] (encB) at (4.05,-4.52) {\textbf{Ego encoder}\\frozen, weights from (a)\\mean-pool $+$ projection};
 \node[num] at (encB.north west) {1};
-\tokrow{6.25}{-4.52}{8}{egotok}{cB}
-\node[lbl,above=1pt of cB] {$\mathbf{c}$: 196 tokens};
+\tokrow{6.25}{-4.52}{1}{egotok}{cB}
+\node[lbl,above=1pt of cB] {$\bar{\mathbf{c}}$: 1 token};
 \draw[line] (egoB.east) -- (encB.west);
 \draw[line] (encB.east) -- (cB.west);
 
@@ -104,22 +105,21 @@
    sampling: $\mathbf{z}_T\sim\mathcal{N}(\mathbf{0},\mathbf{I})$};
 \draw[line] (zsrc.east) -- (zB.west);
 
-% concatenated sequence  [ z_t (4) | t_emb (1) | c (196) ]
+% concatenated sequence  [ z_t (4) | t_emb (1) | c_bar (1) ]
 \tokrow{8.15}{-5.75}{4}{lattok}{sZ}
 \tokrow{8.95}{-5.75}{1}{timetok}{sT}
-\tokrow{9.15}{-5.75}{5}{egotok}{sC}
-\node[font=\sffamily\tiny,text=ink] at ($(sC.east)+(0.17,0)$) {\dots};
+\tokrow{9.15}{-5.75}{1}{egotok}{sC}
 \node[lbl,above=1pt of sZ] {concatenate};
-\node[lbl,below=2pt of sC] {201 tokens\\$+$ learned PE};
-\draw[line] (cB.east) -| ($(sC.north)+(0.3,0)$);
+\node[lbl,below=2pt of sC] {6 tokens\\$+$ learned PE};
+\draw[line] (cB.east) -| (sC.north);
 \draw[line] (tB.east) ++(0.7,0) -- (sZ.west);
 \draw[line] (zB.east) -| (sZ.south);
 
 % denoiser
 \node[den,minimum width=29mm,minimum height=17mm] (den) at (12.55,-5.75)
-  {\textbf{Transformer denoiser} $\boldsymbol{\epsilon}_\theta$\\9 layers, 4 heads\\self-attention over\\all 201 tokens, long skips};
+  {\textbf{Transformer denoiser} $\boldsymbol{\epsilon}_\theta$\\9 layers, 4 heads\\self-attention over\\all 6 tokens, long skips};
 \node[num] at (den.north west) {2};
-\draw[line] ($(sC.east)+(0.35,0)$) -- (den.west);
+\draw[line] (sC.east) -- (den.west);
 
 % read-out
 \tokrow{14.55}{-5.75}{4}{lattok}{eps}
