@@ -377,7 +377,22 @@ No simple vehicle rule predicts stopping on the old split: generated stop rate a
 correlates at r = -0.05, -0.09, -0.01 (ground truth -0.07, -0.11, -0.03). Do not write "the vehicle brakes, so the
 pedestrian walks" anywhere; ECS is the supported claim.
 
+### Paper rewrite (2026-11-04, dedcf3b)
+
+`main.tex` rewritten on the scene split with Pooled as the method (Erik's decision): title without "full-sequence",
+three contributions (action 8), abstract led by per-condition results and FID shown blind (9), Unfrozen framed as a
+failure mode with a single seed (12), 11 pages with references (15), the unsupported claims gone (16). Old-split
+tables and the side ablations (cross-attention, latent 8, text ladder, regressor, raw space, curves) are removed.
+New figure `figures/fid_vs_conditioning.pdf` (test FID against ADE and ECS per run). The architecture figure shows
+the single pooled token. The teaser comes from Pooled on `scene_val`.
+
+Ablations added at Erik's request (2026-11-04): Pooled with a trainable pretrained encoder and with a trainable
+encoder from scratch, three seeds each (`resume_runs.sh`, started 21:35); ego controls for the three Pooled seeds
+(`eval_controls.sh`: zero, other-scene vehicle, ego known for 0/1/2/4 s; scored by `ego_controls.py`). Also in the
+paper from existing dumps: guidance trade-off and per-source breakdown (`resplit_breakdown.py`).
+
 ### Still open
 
-Waiting on results: actions 8, 9, 12, 15, 16, 18, 23, the title, and regenerating the teaser. Waiting on people: 20
-(dataset name, teaser page), biographies.
+Waiting on results: encoder ablations (Table `tab:design`), ego controls (Table `tab:controls`). Waiting on people:
+qualitative figure from Pooled on the test split (18, Mohan's CARLA pipeline), dataset name and teaser page (20),
+biographies. Action 23 (stale ladder numbers) is moot: the ladder is no longer in the paper.
