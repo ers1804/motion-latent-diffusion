@@ -58,8 +58,8 @@ def main():
     print("\nfull input minus control; delta>0 = full input better [95% CI] (seed pair range); * = rule met")
     for suffix, name in CONTROLS:
         r = compare(full, controls[suffix], clusters)
-        print(f"{name:30s}" + "  ".join(f"{k} {v[0]:+.3f} [{v[1]:+.3f},{v[2]:+.3f}]{'*' if beats(v) else ' '}"
-                                       for k, v in r.items() if k in ("ADE", "ECS")))
+        print(f"{name:30s}" + "  ".join(f"{k} {v[0]:+.3f} [{v[1]:+.3f},{v[2]:+.3f}] ({v[4]:+.3f},{v[5]:+.3f})"
+                                       f"{'*' if beats(v) else ' '}" for k, v in r.items() if k in ("ADE", "ECS")))
 
 
 if __name__ == "__main__":

@@ -1,0 +1,38 @@
+scene_test: pooled seeds ['rs1_pooled_s1234', 'rs1_pooled_s2345', 'rs1_pooled_s3456']; N=1182 scenes=91
+input                              ADE  minADE     ECS   Brier
+full ego trajectory              2.434   1.649   0.308   0.191
+ego known for 4 s                2.495   1.719   0.322   0.191
+ego known for 2 s                2.522   1.738   0.331   0.194
+ego known for 1 s                2.603   1.814   0.307   0.205
+vehicle frozen at start          3.039   2.065   0.056   0.239
+wrong vehicle (other scene)      3.090   2.314  -0.003   0.312
+ego zeroed                       3.027   1.310   0.025   0.210
+trained prior (uncond)           3.110   1.307   0.015   0.214
+
+full input minus control; delta>0 = full input better [95% CI] (seed pair range); * = rule met
+ego known for 4 s             ADE +0.061 [+0.002,+0.125] (-0.013,+0.161)   ECS -0.014 [-0.048,+0.023] (-0.049,+0.030) 
+ego known for 2 s             ADE +0.088 [-0.007,+0.183] (+0.002,+0.186)   ECS -0.023 [-0.061,+0.017] (-0.054,+0.016) 
+ego known for 1 s             ADE +0.169 [+0.056,+0.288] (+0.082,+0.255)*  ECS +0.001 [-0.058,+0.053] (-0.035,+0.043) 
+vehicle frozen at start       ADE +0.605 [+0.302,+0.960] (+0.506,+0.709)*  ECS +0.252 [+0.121,+0.380] (+0.230,+0.282)*
+wrong vehicle (other scene)   ADE +0.656 [+0.455,+0.861] (+0.589,+0.750)*  ECS +0.311 [+0.187,+0.416] (+0.287,+0.341)*
+ego zeroed                    ADE +0.593 [+0.417,+0.765] (+0.450,+0.730)*  ECS +0.283 [+0.167,+0.387] (+0.257,+0.319)*
+
+scene_val: pooled seeds ['rs1_pooled_s1234', 'rs1_pooled_s2345', 'rs1_pooled_s3456']; N=1194 scenes=107
+input                              ADE  minADE     ECS   Brier
+full ego trajectory              2.270   1.431   0.363   0.167
+ego known for 4 s                2.399   1.528   0.343   0.175
+ego known for 2 s                2.510   1.618   0.319   0.182
+ego known for 1 s                2.586   1.672   0.303   0.187
+vehicle frozen at start          2.845   1.768   0.133   0.210
+wrong vehicle (other scene)      3.080   2.192   0.004   0.290
+ego zeroed                       2.939   1.172   0.028   0.203
+trained prior (uncond)           3.066   1.216   0.024   0.205
+
+full input minus control; delta>0 = full input better [95% CI] (seed pair range); * = rule met
+ego known for 4 s             ADE +0.129 [+0.060,+0.213] (+0.033,+0.233)*  ECS +0.020 [-0.019,+0.063] (-0.012,+0.054) 
+ego known for 2 s             ADE +0.240 [+0.149,+0.341] (+0.158,+0.308)*  ECS +0.044 [-0.007,+0.100] (+0.016,+0.068) 
+ego known for 1 s             ADE +0.316 [+0.203,+0.434] (+0.228,+0.383)*  ECS +0.060 [-0.010,+0.134] (+0.033,+0.094) 
+vehicle frozen at start       ADE +0.576 [+0.365,+0.855] (+0.437,+0.686)*  ECS +0.230 [+0.108,+0.360] (+0.193,+0.259)*
+wrong vehicle (other scene)   ADE +0.811 [+0.588,+1.027] (+0.711,+0.896)*  ECS +0.359 [+0.235,+0.492] (+0.321,+0.398)*
+ego zeroed                    ADE +0.669 [+0.485,+0.847] (+0.523,+0.802)*  ECS +0.335 [+0.221,+0.451] (+0.315,+0.354)*
+

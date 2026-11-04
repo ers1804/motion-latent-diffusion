@@ -56,7 +56,7 @@
 \begin{abstract}
 Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion responds to the vehicle, yet existing motion generators condition on text, waypoints, goals or the static scene.
 We present \method, a latent diffusion model that generates 3D full-body pedestrian motion directly from the ego vehicle's trajectory, encoded by a pretrained, frozen trajectory encoder into a single pooled token.
-On 11{,}786 paired sequences from nuScenes, Waymo and staged recordings of our own vehicle, split by scene, \method follows the vehicle where a separately trained unconditional prior cannot: across three training seeds it lowers the root displacement error from 3.11 to 2.43\,m and lifts the coupling between generated stopping decisions and the ground truth (Ego-Coupling Score) from 0.02 to 0.31.
+On 11{,}786 paired sequences from nuScenes, Waymo and staged recordings of our own vehicle, split by scene, \method follows the vehicle where a separately trained unconditional prior cannot: across three training seeds it lowers the root displacement error from 3.11 to 2.43\,m and lifts the coupling between generated stopping decisions and the ground truth (Ego-Coupling Score) from 0.02 to 0.31; given another scene's vehicle, it falls back to the prior's level.
 The same experiments show that the Fréchet distance is blind to this coupling. It ranks our models almost in reverse of their per-condition accuracy, an ego-blind prior matches the best conditional model (3.29 vs.\ 3.24), and the two design choices it favours, full-sequence ego attention and interaction-weighted training data, both lower per-condition accuracy under a significance rule fixed before the test split was used.
 We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across training seeds, as the evaluation for this task.
 A reference-free audit of the pseudo-ground-truth poses shows that root trajectories are reliable while the body is a lightly articulated template, which bounds what any pose-level metric can mean on this data.
@@ -352,7 +352,7 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
 Table~\ref{tab:main} gives the test results and Table~\ref{tab:contrasts} the contrasts.
 Against a prior trained on the same data without the ego trajectory, \method lowers mean ADE by 0.68\,m (3.11 to 2.43\,m) and FDE by 1.27\,m, and raises the Ego-Coupling Score from 0.02 to 0.31, with every seed pair agreeing.
 The prior is better on minADE, as any sampler that spreads its five samples widely must be; minADE alone is no test of conditioning, and the prior's ECS of 0.02 shows it ignores the vehicle, as it was built to.
-The coupling is the same on validation (ECS 0.36 against 0.02) and holds on both large sources: on the nuScenes and Waymo test sequences \method reaches ECS 0.32 and 0.26, the prior $-$0.01 and 0.04.
+The coupling is the same on validation (ECS 0.36 against 0.02) and holds on both large sources: on the nuScenes and Waymo test sequences \method reaches ECS 0.32 and 0.26, the prior $-$0.01 and 0.04. It is specific to the vehicle in the scene: given another scene's vehicle, \method falls to the prior's level (Section~\ref{sec:controls}).
 
 \subsection{FID DOES NOT SEE THE CONDITIONING}
 \label{sec:fid}
@@ -396,26 +396,30 @@ Letting the denoiser attend to all 196 encoder tokens instead of one pooled toke
 \subsection{WHICH PART OF THE TRAJECTORY IS USED}
 \label{sec:controls}
 
-\TODO{Pending (evaluation running). Table~\ref{tab:controls}: \method's three seeds with the ego input replaced by the trajectory of a vehicle from another scene, zeroed, or known only for the first 0, 1, 2 or 4\,s and continued at constant velocity.}
+Table~\ref{tab:controls} feeds \method's three seeds manipulated ego input, without retraining.
+Given the trajectory of a vehicle from another scene, \method is no better than the trained prior (ADE 3.09 against 3.11\,m) and its coupling vanishes (ECS 0.00); its Brier score (0.31) is far worse than the prior's, because it reacts confidently to the wrong vehicle. Zeroing the input gives the prior's numbers too. A vehicle that stays at its start position removes most of the coupling as well (ECS 0.06), so the model reacts to how the vehicle moves, not only to where it is.
+Showing only the first second and continuing it at constant velocity keeps the coupling (ECS 0.31; 0.30 against 0.36 on validation, not a difference under our rule) and most of the gain in ADE (2.60\,m, between 2.43 with the full trajectory and 3.04 with a stationary vehicle). The stop decision is thus carried by the vehicle's early motion, and its later trajectory refines the path: the ADE cost of the 1\,s horizon meets our rule on both partitions. All differences between the full input and the stationary, foreign or zeroed vehicle meet it as well.
 
 \begin{table}[t]
   \centering
-  \caption{Ego controls for \method on the test partition (three seeds, selected checkpoints, no retraining). \TODO{Numbers pending.}}
+  \caption{Ego controls for \method on the test partition (three seeds at their selected checkpoints, no retraining). Horizon rows show the first $S$ seconds of the ego trajectory and continue it at the velocity of the last 0.5\,s. The prior row is the separately trained model for reference.}
   \label{tab:controls}
-  \vspace{4pt}
+  \vspace{3pt}
   \footnotesize
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{lccc}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{lcccc}
     \toprule
-    Ego input & ADE $\downarrow$ & minADE $\downarrow$ & ECS $\uparrow$ \\
+    Ego input & ADE $\downarrow$ & minADE $\downarrow$ & ECS $\uparrow$ & Brier $\downarrow$ \\
     \midrule
-    Full trajectory & 2.43 & 1.65 & 0.31 \\
-    Known for 4\,s, then constant velocity & \TODO{--} & \TODO{--} & \TODO{--} \\[-1pt]
-    Known for 2\,s & \TODO{--} & \TODO{--} & \TODO{--} \\
-    Known for 1\,s & \TODO{--} & \TODO{--} & \TODO{--} \\
-    Vehicle frozen at its start & \TODO{--} & \TODO{--} & \TODO{--} \\
-    Vehicle from another scene & \TODO{--} & \TODO{--} & \TODO{--} \\
-    Zeroed (unconditional branch) & \TODO{--} & \TODO{--} & \TODO{--} \\
+    Full trajectory (9.8\,s) & 2.43 & 1.65 & 0.31 & 0.191 \\
+    First 4\,s, then constant velocity & 2.50 & 1.72 & 0.32 & 0.191 \\
+    First 2\,s, then constant velocity & 2.52 & 1.74 & 0.33 & 0.194 \\
+    First 1\,s, then constant velocity & 2.60 & 1.81 & 0.31 & 0.205 \\
+    Vehicle stationary at its start & 3.04 & 2.07 & 0.06 & 0.239 \\
+    Vehicle from another scene & 3.09 & 2.31 & 0.00 & 0.312 \\
+    Zeroed (unconditional branch) & 3.03 & 1.31 & 0.03 & 0.210 \\
+    \midrule
+    Trained prior (no ego) & 3.11 & 1.31 & 0.02 & 0.214 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -505,7 +509,7 @@ The intended use is simulation-based safety testing, which avoids exposing real 
 
 \begin{itemize}
   \item \textbf{Body pose quality.} The labels are estimated: one canonical skeleton, feet that do not plant and damped articulation (Section~\ref{sec:posequality}). Root trajectories are reliable, the body is not. Relabelling, for instance with the contact correction we piloted, and retraining is the largest open item.
-  \item \textbf{Known future.} \method sees the vehicle's whole 9.8\,s trajectory, which suits simulation, where the ego plan is given, but not online prediction. Section~\ref{sec:controls} measures how much of that future the model uses.
+  \item \textbf{Known future.} \method is trained on the vehicle's whole 9.8\,s trajectory, which suits simulation, where the ego plan is given, but not online prediction. Its stop decisions survive when only the first second is shown and continued at constant velocity (Section~\ref{sec:controls}), but a model trained on past ego motion only is untested.
   \item \textbf{Condition and coverage.} The condition is the ego trajectory only, without map, other agents or traffic control. Held-out results rest on nuScenes and Waymo, since the staged AVA scenes contribute six held-out sequences per partition.
   \item \textbf{Metrics.} ECS covers one decision, stopping; crossing is too rare in our windows to score. FID uses an evaluator trained on mocap, so absolute values compare only within this benchmark, and we report no perceptual study.
 \end{itemize}
