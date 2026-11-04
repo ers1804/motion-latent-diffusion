@@ -348,19 +348,30 @@ gives one. The teaser is ours to propose and should show what the method does.
 ### Teaser (action 17): proposal in the paper, data to be replaced
 
 `figures/teaser.pdf` sits on the first page, in the title block below the index terms, because a `figure*` cannot
-float onto page 1. One model and one noise seed run under two ego trajectories: a vehicle driving past
-(generated pedestrian stays, 0.2-1.0 m over 8 seeds) and a vehicle slowing to a stop (generated pedestrian walks,
-11.8-17.8 m over 8 seeds). No street is drawn because the data has no map. Caption says the pair was chosen for
-illustration.
+float onto page 1. One model and one noise seed run under two ego trajectories. No street is drawn because the data
+has no map. Caption says the pair was chosen for illustration.
 
-The motions come from the old model (`h4`, old split, rows 137 and 333 of `val_test`). After the retrain, regenerate
-from `rs1_egoped` on `scene_val`, so the test split stays untouched:
+Regenerated 2026-11-04 from the method, `rs1_pooled_s1234` (epoch 1399, guidance 15), on `scene_val` so the test split
+stays untouched. Rows 39 (`nuscenes/train/146_11`: vehicle passes 2.8 m away while speeding up from 2.6 to 5.1 m/s;
+generated pedestrian stays, 0.2-0.6 m over 8 seeds) and 523 (`waymo/train/093_60`: vehicle comes from behind and
+slows from 3.6 to 0.3 m/s ahead of the pedestrian; generated pedestrian walks, 16.4-17.7 m over 8 seeds). Ground
+truth, all 5 dump samples and all 8 seeds agree on both rows. The file paths name the physical directory; both rows
+are in the scene-split validation partition.
 
-1. `teaser_generate.py --scan --split scene_val --dump <K=5 dump>`, then pick a pair with full length, ground truth
-   agreeing, all 5 samples agreeing and the vehicle within about 8 m.
-2. `teaser_generate.py --rows A B --seeds 8`; keep the pair only if all 8 seeds agree.
-3. `render_teaser.py` once per row, then `make_teaser.py`. The footer overlap depends on title and abstract length,
-   so check page 1 after the rewrite (the crop in `make_teaser.py` can relax if there is room).
+    CKPT=<models_resplit>/mld/rs1_pooled_s1234/checkpoints/epoch=1399.ckpt; CFG=configs/config_ego_motion_new_vae_stoch.yaml
+    python research/src/teaser_generate.py --model rs1_pooled --split scene_val --scan \
+        --dump research/data/ade_fde_rs1_pooled_s1234_ep1399_cfg15_scene_val_k5.npz --cfg $CFG --ckpt $CKPT --guidance 15
+    python research/src/teaser_generate.py --model rs1_pooled --split scene_val --rows 39 523 --seeds 8 \
+        --cfg $CFG --ckpt $CKPT --guidance 15
+    N=research/data/teaser_rs1_pooled_scene_val.npz   # then, in research/paper/figures:
+    blender -b -P render_teaser.py -- --npz $N --row 39 --out hi/t39.png --res 2200 880 --samples 96 \
+        --cam 0 22 16 --target 0 -3.5 0 --lens 26
+    blender -b -P render_teaser.py -- --npz $N --row 523 --out hi/t523.png --res 2200 880 --samples 96 \
+        --cam -21 -2 20 --target 3 -2 0 --lens 28
+    python make_teaser.py --npz $N --renders hi --rows 39 523 --out teaser.pdf
+
+The footer overlap depends on title and abstract length, so check page 1 after the rewrite (the crop in
+`make_teaser.py` can relax if there is room).
 
 No simple vehicle rule predicts stopping on the old split: generated stop rate against ego mean, start and end speed
 correlates at r = -0.05, -0.09, -0.01 (ground truth -0.07, -0.11, -0.03). Do not write "the vehicle brakes, so the

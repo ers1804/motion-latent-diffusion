@@ -65,6 +65,8 @@ def raw_ego(dataset, row):
 def scan(args, dataset):
     dump = np.load(args.dump or OUT / f"ade_fde_{args.model}_{args.split}_k5.npz")
     gen, gt, lens = dump["roots_gen"], dump["roots_gt"], dump["lengths"]
+    if "paths" in dump:  # dumps written on another machine must list the same rows in the same order
+        assert list(dump["paths"]) == ["/".join(Path(p).parts[-3:]) for p in dataset.sample_paths]
     rows = []
     for i in range(len(lens)):
         L = int(lens[i])
