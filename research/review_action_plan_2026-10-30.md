@@ -391,8 +391,17 @@ encoder from scratch, three seeds each (`resume_runs.sh`, started 21:35); ego co
 (`eval_controls.sh`: zero, other-scene vehicle, ego known for 0/1/2/4 s; scored by `ego_controls.py`). Also in the
 paper from existing dumps: guidance trade-off and per-source breakdown (`resplit_breakdown.py`).
 
+Encoder ablation plan, fixed 2026-11-05 before any of its eval results: the primary rows use the same rule as the
+2x2 (lowest training-time val FID checkpoint, guidance per cell by mean val FID from {5, 10, 15}); contrasts are
+Pooled vs trainable pretrained (freezing) and trainable pretrained vs scratch (pretraining), committed in a2c2605.
+Secondary row: the last checkpoint (ep4999) of each run at the cell's selected guidance. Reason: at epoch 2699 the
+training-time val R@1 of the trainable encoders is still rising (unfrozen 0.65-0.87, scratch 0.64-0.77, from chance
+at ep99; frozen Pooled is flat at 0.70-0.74), while their val FID is lowest around ep999-2699. FID selection may
+pick a checkpoint where the encoder is still learning, which would bias the ablation against trainable encoders.
+Unlike the single-seed full-sequence trainable run, the pooled trainable encoders do not stay at chance.
+
 ### Still open
 
-Waiting on results: encoder ablations (Table `tab:design`), ego controls (Table `tab:controls`). Waiting on people:
+Waiting on results: encoder ablations (Table `tab:design`). Ego controls are done (623d433). Waiting on people:
 qualitative figure from Pooled on the test split (18, Mohan's CARLA pipeline), dataset name and teaser page (20),
 biographies. Action 23 (stale ladder numbers) is moot: the ladder is no longer in the paper.
