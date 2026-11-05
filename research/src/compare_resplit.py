@@ -27,7 +27,9 @@ CONTRASTS = [("egoped", "pooled"), ("egoped_ia", "pooled_ia"),  # encoder at mat
              ("egoped", "egoped_ia"), ("pooled", "pooled_ia"),  # recipe per encoder
              ("egoped", "uncond"), ("pooled", "uncond"),  # against the ego-blind prior of that recipe
              ("egoped_ia", "uncond_ia"), ("pooled_ia", "uncond_ia"),
-             ("egoped", "unfrozen")]
+             ("egoped", "unfrozen"),
+             ("pooled", "pooled_unfrozen"),  # freezing the pretrained encoder
+             ("pooled_unfrozen", "pooled_scratch")]  # pretraining, with the encoder trainable in both
 
 
 def cell_of(run):
