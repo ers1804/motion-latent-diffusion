@@ -1,5 +1,10 @@
 # Reproducing the Paper Qualitatives (Fig. 4) — Weights, Configs, and the CARLA Port Contract
 
+> **Superseded for the paper (2026-11-06):** the figure must now come from EgoPed (pooled, frozen encoder) on
+> scene-split test conditions. Handoff with 28 conditions x 8 samples, model, stats and README:
+> `/home/erik/NAS/methods/diffusion_gen/qualitatives/egoped_scene_test_2026-11-06/` (made by
+> `research/src/select_qualitatives.py` and `export_qualitatives.py`). The I/O contract below still holds.
+
 *Written 2026-08-03 for handoff. The figure shows the H4 model (epoch 3399, CFG = 10) on three
 staged AVA validation scenes. Everything below is pinned; the "Traps" section is not optional
 reading — three of the four have already bitten this project.*

@@ -431,6 +431,11 @@ and the "Freezing and pretraining" paragraph.
 
 ### Still open
 
+Qualitative handoff for Mohan (2026-11-06): 28 test conditions chosen by rule (`select_qualitatives.py`), 8
+samples each from `rs1_pooled_s1234` ep1399 cfg15, joints per sample as .npy plus README, overview sheet, checkpoint
+and scene-split stats at `/home/erik/NAS/methods/diffusion_gen/qualitatives/egoped_scene_test_2026-11-06/`.
+Folder 27 (Waymo M509_23) is a label error, not a model failure.
+
 No results pending: encoder ablations and ego controls are in the paper. Waiting on people:
 qualitative figure from Pooled on the test split (18, Mohan's CARLA pipeline), dataset name and teaser page (20),
 biographies. Action 23 (stale ladder numbers) is moot: the ladder is no longer in the paper.
