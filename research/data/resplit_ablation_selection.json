@@ -1,0 +1,26 @@
+{
+ "rs1_pooled_scratch_s1234": {
+  "epoch": 999,
+  "guidance": 10
+ },
+ "rs1_pooled_scratch_s2345": {
+  "epoch": 3199,
+  "guidance": 10
+ },
+ "rs1_pooled_scratch_s3456": {
+  "epoch": 999,
+  "guidance": 10
+ },
+ "rs1_pooled_unfrozen_s1234": {
+  "epoch": 1099,
+  "guidance": 15
+ },
+ "rs1_pooled_unfrozen_s2345": {
+  "epoch": 2499,
+  "guidance": 15
+ },
+ "rs1_pooled_unfrozen_s3456": {
+  "epoch": 999,
+  "guidance": 15
+ }
+}

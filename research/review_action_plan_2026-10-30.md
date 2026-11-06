@@ -400,6 +400,19 @@ at ep99; frozen Pooled is flat at 0.70-0.74), while their val FID is lowest arou
 pick a checkpoint where the encoder is still learning, which would bias the ablation against trainable encoders.
 Unlike the single-seed full-sequence trainable run, the pooled trainable encoders do not stay at chance.
 
+Encoder ablations, selection and validation (2026-11-06, before any test result). All six runs reached ep4999 with
+50 intact checkpoints. Checkpoints by val FID (`resplit_ablation_epochs.json`): scratch 999/3199/999, trainable
+pretrained 1099/2499/999. Guidance by mean val FID (`resplit_ablation_selection.json`): scratch 10, trainable 15.
+Val gt_Diversity 5.537, same as the 2x2. Validation, scene bootstrap, delta > 0 = first better, * = rule met:
+
+| Contrast | ADE | minADE | ECS | Brier |
+|---|---|---|---|---|
+| frozen vs trainable (pretrained) | +0.048 [-0.043,+0.152] | +0.214* | +0.078* [+0.026,+0.134] | +0.023* |
+| trainable pretrained vs scratch | -0.048 [-0.108,+0.008] | -0.033 | -0.009 | +0.003 |
+
+Val cell means: frozen ADE 2.27 / ECS 0.36, trainable 2.32 / 0.29, scratch 2.27 / 0.30. Test pass and the ep4999
+row (`resplit_ablation_last.json`, val and test) submitted 2026-11-06 09:40.
+
 ### Still open
 
 Waiting on results: encoder ablations (Table `tab:design`). Ego controls are done (623d433). Waiting on people:
