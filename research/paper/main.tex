@@ -373,22 +373,31 @@ Read by FID, Table~\ref{tab:main} tells a different story. The best FID belongs 
 Letting the denoiser attend to all 196 encoder tokens instead of one pooled token makes per-condition predictions worse on average: \fullseq trails \method by 0.26\,m in mean ADE (Table~\ref{tab:contrasts}), the pre-specified primary contrast, and did so on validation as well (0.37\,m). The trade-off is spread: \fullseq's samples cover more outcomes (MM 3.92 vs.\ 3.10, better minADE by 0.11\,m), and its FID is lower. On coupling the two encoders are close without IA (ECS 0.27 vs.\ 0.31, below our rule on test, met on validation), and \method couples clearly better with IA (0.21 vs.\ 0.10). We attribute part of the gap to pretraining: the alignment objective supervises only the pooled token, so the pooled encoder hands the denoiser exactly the representation it was trained to produce, whereas the 196 per-frame tokens were never aligned individually.
 
 \paragraph{Freezing and pretraining.}
-\TODO{Pending: \method with a trainable encoder initialised from pretraining, and with a trainable encoder trained from scratch, three seeds each (Table~\ref{tab:design}).} A single-seed run of \fullseq with a trainable encoder already shows the failure mode: its retrieval alignment stays at chance through all 5{,}000 epochs, its validation FID is best at the first validation (epoch 99), and the selected model is close to ego-blind (ECS 0.04 against 0.27 for the frozen \fullseq, Table~\ref{tab:main}).
+Table~\ref{tab:design} trains \method's encoder together with the denoiser, initialised once from pretraining and once from scratch, with three seeds each and the same selection as every other model.
+Freezing matters: the frozen encoder beats the trainable pretrained one on all four per-condition metrics under our rule (ADE by 0.09\,m, minADE by 0.25\,m, ECS by 0.07, Brier by 0.025), as it did on validation for all but ADE. FID does not separate the two (5.67 vs.\ 5.65).
+Pretraining by itself does not help: once the encoder is trainable, starting from the pretrained weights gives the same result as starting from scratch on every metric and on both partitions. The pretrained representation thus helps only as long as diffusion training cannot change it.
+The trainable encoders also concentrate their samples (MM 2.0--2.1 against 3.10), which costs them minADE without improving the mean.
+Validation FID selected early checkpoints for four of the six trainable runs (epochs 999--1099). Because their encoders might still have been learning, we decided before the test pass to also report each run's last checkpoint; it shows the same picture with worse FID, and the ADE gap to the frozen encoder (0.07\,m) no longer meets the rule.
+The pooled encoders learn the coupling even when trainable; a single-seed run of \fullseq with a trainable encoder did not: its alignment between encoder output and motion latent stays at chance through all 5{,}000 epochs, and the selected model is close to ego-blind (ECS 0.04 against 0.27 for the frozen \fullseq, Table~\ref{tab:main}).
 
 \begin{table}[t]
   \centering
-  \caption{Encoder ablations of \method on the test partition, three seeds each. \TODO{Rows pending (training).}}
+  \caption{Encoder ablations of \method on the test partition, means over three seeds. Upper rows: checkpoint and guidance selected on validation like every other model (guidance 15, 15, 10). Lower rows: the last checkpoint of the same runs at the same guidance, reported as decided before the test pass.}
   \label{tab:design}
   \vspace{4pt}
   \footnotesize
-  \setlength{\tabcolsep}{4pt}
-  \begin{tabular}{lcccc}
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{lccccc}
     \toprule
-    Encoder & FID $\downarrow$ & ADE $\downarrow$ & minADE $\downarrow$ & ECS $\uparrow$ \\
+    Encoder & FID $\downarrow$ & MM & ADE $\downarrow$ & minADE $\downarrow$ & ECS $\uparrow$ \\
     \midrule
-    Pretrained, frozen (\method) & 5.67 & 2.43 & 1.65 & 0.31 \\
-    Pretrained, trainable & \TODO{--} & \TODO{--} & \TODO{--} & \TODO{--} \\
-    From scratch, trainable & \TODO{--} & \TODO{--} & \TODO{--} & \TODO{--} \\
+    Pretrained, frozen (\method) & 5.67 & 3.10 & 2.43 & 1.65 & 0.31 \\
+    Pretrained, trainable & 5.65 & 2.15 & 2.53 & 1.90 & 0.23 \\
+    From scratch, trainable & 5.77 & 2.03 & 2.50 & 1.87 & 0.24 \\
+    \midrule
+    \multicolumn{6}{l}{\textit{Last checkpoint (epoch 4{,}999)}} \\
+    Pretrained, trainable & 6.78 & 1.65 & 2.51 & 2.01 & 0.23 \\
+    From scratch, trainable & 7.03 & 1.74 & 2.50 & 1.97 & 0.23 \\
     \bottomrule
   \end{tabular}
 \end{table}

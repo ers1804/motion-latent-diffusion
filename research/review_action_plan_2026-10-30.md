@@ -411,10 +411,26 @@ Val gt_Diversity 5.537, same as the 2x2. Validation, scene bootstrap, delta > 0 
 | trainable pretrained vs scratch | -0.048 [-0.108,+0.008] | -0.033 | -0.009 | +0.003 |
 
 Val cell means: frozen ADE 2.27 / ECS 0.36, trainable 2.32 / 0.29, scratch 2.27 / 0.30. Test pass and the ep4999
-row (`resplit_ablation_last.json`, val and test) submitted 2026-11-06 09:40.
+row (`resplit_ablation_last.json`, val and test) submitted 2026-11-06.
+
+Test (run once, 2026-11-06; raw output in `research/data/resplit_ablation_test_report.txt`, test gt_Diversity 5.402
+as for the Pooled cells):
+
+| Contrast (test) | ADE | minADE | ECS | Brier |
+|---|---|---|---|---|
+| frozen vs trainable, selected | +0.093* [+0.005,+0.181] | +0.253* | +0.073* [+0.027,+0.119] | +0.025* |
+| trainable vs scratch, selected | -0.026 | -0.032 | -0.009 | +0.003 |
+| frozen vs trainable, ep4999 | +0.073 [-0.016,+0.160] | +0.363* | +0.080* | +0.038* |
+| trainable vs scratch, ep4999 | -0.011 | -0.040 | +0.001 | +0.001 |
+
+Test cell means (FID / MM / ADE / minADE / ECS): frozen 5.67 / 3.10 / 2.43 / 1.65 / 0.31; trainable 5.65 / 2.15 /
+2.53 / 1.90 / 0.23; scratch 5.77 / 2.03 / 2.50 / 1.87 / 0.24; at ep4999 trainable 6.78 / 1.65 / 2.51 / 2.01 / 0.23,
+scratch 7.03 / 1.74 / 2.50 / 1.97 / 0.23. Freezing matters, pretraining by itself does not; FID does not separate
+frozen from trainable. The early-checkpoint worry does not change the conclusion. In the paper: Table `tab:design`
+and the "Freezing and pretraining" paragraph.
 
 ### Still open
 
-Waiting on results: encoder ablations (Table `tab:design`). Ego controls are done (623d433). Waiting on people:
+No results pending: encoder ablations and ego controls are in the paper. Waiting on people:
 qualitative figure from Pooled on the test split (18, Mohan's CARLA pipeline), dataset name and teaser page (20),
 biographies. Action 23 (stale ladder numbers) is moot: the ladder is no longer in the paper.

@@ -1,0 +1,91 @@
+# Encoder ablations, scene-split test pass, 2026-11-06 (run once)
+# selected: research/data/resplit_ablation_selection.json; last checkpoint: research/data/resplit_ablation_last.json
+
+## FID (eval_test / eval_val, 3 replications): run, FID mean, Diversity, gt_Diversity, MultiModality
+eval_test_rs1_pooled_scratch_s1234_ep999_cfg10 6.033 5.293 5.402 2.153
+eval_test_rs1_pooled_scratch_s2345_ep3199_cfg10 5.708 5.671 5.402 1.818
+eval_test_rs1_pooled_scratch_s3456_ep999_cfg10 5.568 5.473 5.402 2.118
+eval_test_rs1_pooled_unfrozen_s1234_ep1099_cfg15 5.725 5.492 5.402 1.911
+eval_test_rs1_pooled_unfrozen_s2345_ep2499_cfg15 6.127 5.627 5.402 2.083
+eval_test_rs1_pooled_unfrozen_s3456_ep999_cfg15 5.094 5.462 5.402 2.451
+eval_test_rs1_pooled_scratch_s1234_ep4999_cfg10 6.555 5.642 5.402 1.671
+eval_test_rs1_pooled_scratch_s2345_ep4999_cfg10 6.655 5.551 5.402 1.872
+eval_test_rs1_pooled_scratch_s3456_ep4999_cfg10 7.891 5.804 5.402 1.673
+eval_test_rs1_pooled_unfrozen_s1234_ep4999_cfg15 6.882 5.896 5.402 1.635
+eval_test_rs1_pooled_unfrozen_s2345_ep4999_cfg15 6.528 5.893 5.402 1.532
+eval_test_rs1_pooled_unfrozen_s3456_ep4999_cfg15 6.934 5.859 5.402 1.767
+eval_val_rs1_pooled_scratch_s1234_ep4999_cfg10 5.692 6.225 5.537 1.739
+eval_val_rs1_pooled_scratch_s2345_ep4999_cfg10 6.008 5.866 5.537 1.96
+eval_val_rs1_pooled_scratch_s3456_ep4999_cfg10 6.597 5.924 5.537 1.766
+eval_val_rs1_pooled_unfrozen_s1234_ep4999_cfg15 5.922 6.194 5.537 1.741
+eval_val_rs1_pooled_unfrozen_s2345_ep4999_cfg15 5.557 5.99 5.537 1.629
+eval_val_rs1_pooled_unfrozen_s3456_ep4999_cfg15 5.307 6.293 5.537 1.964
+
+## compare_resplit.py (abl_scene_test_selection): Pooled runs and ablation contrasts
+split=scene_test N=1182 scenes=91 stopping rate=0.240
+run                           ADE  minADE    ECS  Brier  gen stop
+rs1_pooled_s1234            2.382   1.745  0.335  0.185     0.185
+rs1_pooled_s2345            2.476   1.594  0.299  0.195     0.215
+rs1_pooled_s3456            2.445   1.608  0.290  0.193     0.216
+rs1_pooled_scratch_s1234    2.513   1.855  0.239  0.223     0.214
+rs1_pooled_scratch_s2345    2.496   1.909  0.247  0.230     0.239
+rs1_pooled_scratch_s3456    2.494   1.844  0.245  0.205     0.172
+rs1_pooled_unfrozen_s1234   2.513   1.960  0.249  0.214     0.180
+rs1_pooled_unfrozen_s2345   2.512   1.935  0.245  0.220     0.203
+rs1_pooled_unfrozen_s3456   2.556   1.811  0.210  0.214     0.182
+pooled vs pooled_unfrozen
+  ADE    +0.093 [+0.005,+0.181] p=0.035 (+0.036,+0.174) *
+  minADE +0.253 [+0.185,+0.323] p=0.000 (+0.066,+0.366) *
+  ECS    +0.073 [+0.027,+0.119] p=0.005 (+0.041,+0.125) *
+  Brier  +0.025 [+0.010,+0.040] p=0.001 (+0.019,+0.035) *
+pooled_unfrozen vs pooled_scratch
+  ADE    -0.026 [-0.083,+0.032] p=0.364 (-0.062,+0.001)
+  minADE -0.032 [-0.079,+0.013] p=0.168 (-0.116,+0.099)
+  ECS    -0.009 [-0.040,+0.025] p=0.579 (-0.036,+0.010)
+  Brier  +0.003 [-0.009,+0.016] p=0.608 (-0.015,+0.016)
+
+## compare_resplit.py (abl_scene_test_last): Pooled runs and ablation contrasts
+split=scene_test N=1182 scenes=91 stopping rate=0.240
+run                           ADE  minADE    ECS  Brier  gen stop
+rs1_pooled_s1234            2.382   1.745  0.335  0.185     0.185
+rs1_pooled_s2345            2.476   1.594  0.299  0.195     0.215
+rs1_pooled_s3456            2.445   1.608  0.290  0.193     0.216
+rs1_pooled_scratch_s1234    2.534   2.065  0.255  0.246     0.249
+rs1_pooled_scratch_s2345    2.501   1.929  0.198  0.226     0.201
+rs1_pooled_scratch_s3456    2.452   1.922  0.227  0.220     0.182
+rs1_pooled_unfrozen_s1234   2.488   2.018  0.202  0.230     0.179
+rs1_pooled_unfrozen_s2345   2.481   2.001  0.257  0.228     0.221
+rs1_pooled_unfrozen_s3456   2.552   2.017  0.224  0.229     0.197
+pooled vs pooled_unfrozen
+  ADE    +0.073 [-0.016,+0.160] p=0.110 (+0.005,+0.170)
+  minADE +0.363 [+0.271,+0.445] p=0.000 (+0.256,+0.423) *
+  ECS    +0.080 [+0.029,+0.126] p=0.003 (+0.033,+0.133) *
+  Brier  +0.038 [+0.022,+0.055] p=0.000 (+0.032,+0.045) *
+pooled_unfrozen vs pooled_scratch
+  ADE    -0.011 [-0.062,+0.041] p=0.683 (-0.100,+0.053)
+  minADE -0.040 [-0.091,+0.013] p=0.149 (-0.096,+0.064)
+  ECS    +0.001 [-0.032,+0.038] p=0.949 (-0.053,+0.059)
+  Brier  +0.001 [-0.012,+0.016] p=0.847 (-0.011,+0.018)
+
+## compare_resplit.py (abl_scene_val_last): Pooled runs and ablation contrasts
+split=scene_val N=1194 scenes=107 stopping rate=0.228
+run                           ADE  minADE    ECS  Brier  gen stop
+rs1_pooled_s1234            2.218   1.532  0.368  0.168     0.180
+rs1_pooled_s2345            2.331   1.390  0.347  0.167     0.194
+rs1_pooled_s3456            2.261   1.372  0.374  0.165     0.217
+rs1_pooled_scratch_s1234    2.273   1.708  0.352  0.198     0.240
+rs1_pooled_scratch_s2345    2.182   1.625  0.287  0.184     0.180
+rs1_pooled_scratch_s3456    2.306   1.766  0.286  0.192     0.181
+rs1_pooled_unfrozen_s1234   2.344   1.853  0.299  0.192     0.173
+rs1_pooled_unfrozen_s2345   2.261   1.757  0.306  0.200     0.198
+rs1_pooled_unfrozen_s3456   2.262   1.702  0.303  0.194     0.193
+pooled vs pooled_unfrozen
+  ADE    +0.019 [-0.086,+0.138] p=0.738 (-0.069,+0.126)
+  minADE +0.340 [+0.243,+0.446] p=0.000 (+0.170,+0.481) *
+  ECS    +0.061 [+0.008,+0.116] p=0.024 (+0.041,+0.076) *
+  Brier  +0.029 [+0.010,+0.051] p=0.006 (+0.024,+0.035) *
+pooled_unfrozen vs pooled_scratch
+  ADE    -0.035 [-0.090,+0.023] p=0.230 (-0.161,+0.045)
+  minADE -0.071 [-0.128,-0.008] p=0.028 (-0.227,+0.064)
+  ECS    -0.006 [-0.044,+0.036] p=0.808 (-0.053,+0.020)
+  Brier  -0.004 [-0.016,+0.008] p=0.531 (-0.016,+0.006)
