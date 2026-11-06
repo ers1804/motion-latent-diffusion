@@ -7,7 +7,8 @@ result is seen: a model beats another only if the CI excludes 0 and all seed pai
 contrast: egoped vs pooled, mean ADE. Delta > 0 means the first cell is better.
 
 Selection file: {"rs1_egoped_s1234": {"epoch": 2999, "guidance": 10}, ...}
-Usage: python research/src/compare_resplit.py --split scene_val --selection <json> [--data research/data]
+Usage: python research/src/compare_resplit.py --split scene_val --selection <json> [<json> ...] [--data research/data]
+Several selection files are merged, e.g. the 2x2 and the encoder ablations.
 """
 import argparse
 import json
@@ -91,11 +92,13 @@ def beats(result):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--split", required=True, choices=["scene_val", "scene_test"])
-    ap.add_argument("--selection", required=True)
+    ap.add_argument("--selection", required=True, nargs="+")
     ap.add_argument("--data", default=str(Path(__file__).resolve().parent.parent / "data"))
     args = ap.parse_args()
 
-    selection = json.load(open(args.selection))
+    selection = {}
+    for f in args.selection:
+        selection.update(json.load(open(f)))
     cells, ref = {}, None
     for run, s in sorted(selection.items()):
         f = Path(args.data) / f"ade_fde_{run}_ep{s['epoch']}_cfg{s['guidance']}_{args.split}_k5.npz"
