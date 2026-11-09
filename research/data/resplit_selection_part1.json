@@ -1,0 +1,34 @@
+{
+ "rs1_egoped_s1234": {
+  "epoch": 1799,
+  "guidance": 15
+ },
+ "rs1_egoped_s2345": {
+  "epoch": 2699,
+  "guidance": 15
+ },
+ "rs1_egoped_s3456": {
+  "epoch": 2399,
+  "guidance": 15
+ },
+ "rs1_pooled_s1234": {
+  "epoch": 1399,
+  "guidance": 15
+ },
+ "rs1_pooled_s2345": {
+  "epoch": 4299,
+  "guidance": 15
+ },
+ "rs1_pooled_s3456": {
+  "epoch": 2799,
+  "guidance": 15
+ },
+ "rs1_uncond_s1234": {
+  "epoch": 3299,
+  "guidance": 1
+ },
+ "rs1_unfrozen_s1234": {
+  "epoch": 99,
+  "guidance": 5
+ }
+}
