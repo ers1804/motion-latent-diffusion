@@ -1,0 +1,11 @@
+# Validation FID of the guidance sweep (scene_val, 3 replications, HumanML3D evaluator), read 2026-11-09 from
+# helma results/mld/eval_val_<run>_ep<epoch>_cfg<w>/metrics_*.json at each seed's selected checkpoint
+# (research/data/resplit_epochs.json). Paper names: pooled = EgoPed, egoped = Full-seq. Used in RA-L Sec. VI-E.
+cell     w   s1234   s2345   s3456   mean
+pooled   5   4.888   4.604   4.326   4.606
+pooled  10   4.322   3.909   3.983   4.071
+pooled  15   4.170   3.617   3.904   3.897
+egoped   5   3.430   2.538   3.907   3.292
+egoped  10   3.022   1.949   3.436   2.802
+egoped  15   2.975   1.976   3.270   2.740
+# checkpoints: pooled s1234 ep1399, s2345 ep4299, s3456 ep2799; egoped s1234 ep1799, s2345 ep2699, s3456 ep2399
