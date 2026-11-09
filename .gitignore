@@ -233,3 +233,11 @@ graphify-out/
 *.synctex.gz
 *.nav
 *.snm
+
+# Per-condition evaluation dumps of the scene-split runs (1.4 GB). Kept on the NAS:
+# /home/erik/NAS/methods/diffusion_gen/evaluation/diffusion/quantitative/scene_split_v1_dumps/
+research/data/ade_fde_rs1_*.npz
+research/data/teaser_rs1_pooled_qual_scene_test.npz
+
+# Locally installed third-party Claude skills (own git repositories)
+.claude/skills/
