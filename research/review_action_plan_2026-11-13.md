@@ -33,6 +33,7 @@ IEEE RA-L, `research/paper_ral/`, 8 pages including references.
 Questions to the authors:
 
 - Share of stops that stand throughout, ECS for those who move and stop: A1.
+- The trainable Full-seq run stays a single seed, labelled as such. It is a side remark, not a contrast.
 - Rankings under selection by validation ADE: not planned. The guidance section and the last-checkpoint rows
   already show the ranking under two other selections. Revisit only if a reviewer insists.
 - Root accuracy: never checked against a reference. The text must stop calling the root "reliable" and say
@@ -169,6 +170,18 @@ Neither changes a reported number. Both change what the paper may say.
 - D2. Optional root check against the annotated box tracks, in the extraction repository.
 - D3. Neutral dataset name.
 
+## Next steps, in order
+
+1. When C2 to C4 finish: write `research/src/review_controls.py` (braking shift overall and for vehicles
+   faster than 2 m/s after the first second, body statistics generated against labels, regressor against
+   EgoPed under the rule), run it on validation, commit, then read the test dumps once.
+2. When C1 finishes (about 2.5 days): `select_uncond.sh` for the four runs, selection with
+   `select_resplit.py` as for seed 1234, one test pass (`eval.sh ... test zero`), then Tables II and III,
+   the per-model correlation and the seeds sentence.
+3. Re-render panel (b) of the teaser with the vehicle in the window frame.
+4. Decide with Erik: Brier column of Table II as pre-specified or noise-corrected, and whether to retrain
+   with the ego re-anchored at the window start (not before submission unless time allows).
+
 ## Protocol
 
 New subsets, baselines and edits are defined on validation, committed, and then applied to test once. The
@@ -178,12 +191,12 @@ test partition is never used to choose a threshold or a model.
 
 | Item | State |
 |---|---|
-| C1 prior seeds | queued on Helma 2026-11-13 |
+| C1 prior seeds | running on Helma since 2026-11-13 13:35 (jobs 1319359 to 1319370, three chained segments each) |
 | A1 breakdown | done on validation and test, written into the paper as Section VI-E |
 | A2 correlation per model | done in the text (-0.75, p = 0.02, nine models). Recompute after C1 |
 | B1 to B4 text | done. Paper at 8 pages, 39 references, abstract 1,199 characters |
 | Qualitative export | regenerated with the vehicle in the joints' frame: 16 of 28 `ego.npy` files were wrong by up to 12.6 m and 111 degrees. Mohan needs the new folder |
 | Teaser, Fig. 1 | panel (b) (validation row 523) draws the vehicle 1.9 m and 7 degrees off. To be re-rendered |
-| C2 regressor | scene-split mode and job script written, one-epoch smoke test passed on CPU |
-| C3, C4 | editor and statistics written and tested on CPU, job script written |
+| C2 regressor | queued on Helma, seeds 1234, 2345, 3456 (jobs 1319608 to 1319610). Smoke test on CPU passed (train and validation scoring) |
+| C3, C4 | queued on Helma for the three EgoPed seeds (jobs 1319611 to 1319613). Smoke test on CPU passed end to end |
 | Everything else | open |
