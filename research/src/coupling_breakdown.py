@@ -54,7 +54,7 @@ def load_cells(data, selection, split):
     return cells, ref
 
 
-def load_geometry(split, paths, lens, gt):
+def load_geometry(split, paths, lens, gt, dataset=None):
     """Per condition the vehicle path in the window frame of the dumps, plus the offset of the frame the model sees.
 
     Mirrors EgoMotionDataset.__getitem__: a track of at least 196 frames is cut at a start frame hashed from its
@@ -66,10 +66,11 @@ def load_geometry(split, paths, lens, gt):
     from mld.data.EgoMotion import _canonical_crop_key
     from mld.data.humanml.common.quaternion import qrot
     from mld.data.humanml.scripts.motion_process import recover_root_rot_pos
-    from teaser_generate import build
+    ds = dataset
+    if ds is None:
+        from teaser_generate import build
 
-    _, datamodule, _ = build(dict(cfg=CFG, ckpt="unused", guidance=15), split)
-    ds = datamodule.test_dataset
+        ds = build(dict(cfg=CFG, ckpt="unused", guidance=15), split)[1].test_dataset
     index = {"/".join(Path(q).parts[-3:]): i for i, q in enumerate(ds.sample_paths)}
     egos, offset, yaw, replaced = [], np.zeros(len(paths)), np.zeros(len(paths)), np.zeros(len(paths), dtype=bool)
     for row, (listed, n) in enumerate(zip(paths, lens)):

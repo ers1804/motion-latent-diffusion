@@ -24,6 +24,7 @@ python pretrain_ego_encoder.py \
     --output_dir "$OUTPUT_DIR" \
     --pretrained_vae "$VAE_CKPT" \
     --scene_split \
+    "${WF_PRETRAIN[@]}" \
     --interaction "$INTERACTION" \
     --mean_std_path "$SPLIT" \
     --data_roots \

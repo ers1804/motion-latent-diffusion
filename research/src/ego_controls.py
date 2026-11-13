@@ -44,10 +44,10 @@ def main():
 
     def row(name, models):
         r = [metrics(m, every) for m in models]
-        print(f"{name:30s}" + "".join(f"{np.mean([x[k] for x in r]):8.3f}" for k in ("ADE", "minADE", "ECS", "Brier")))
+        print(f"{name:30s}" + "".join(f"{np.mean([x[k] for x in r]):8.3f}" for k in ("ADE", "minADE", "ECS", "Brier", "BrierC")))
 
     print(f"{args.split}: {args.cell} seeds {runs}; N={len(every)} scenes={len(clusters)}")
-    print(f"{'input':30s}{'ADE':>8s}{'minADE':>8s}{'ECS':>8s}{'Brier':>8s}")
+    print(f"{'input':30s}{'ADE':>8s}{'minADE':>8s}{'ECS':>8s}{'Brier':>8s}{'BrierC':>8s}")
     row("full ego trajectory", full)
     controls = {}
     for suffix, name in CONTROLS:
@@ -59,7 +59,7 @@ def main():
     for suffix, name in CONTROLS:
         r = compare(full, controls[suffix], clusters)
         print(f"{name:30s}" + "  ".join(f"{k} {v[0]:+.3f} [{v[1]:+.3f},{v[2]:+.3f}] ({v[4]:+.3f},{v[5]:+.3f})"
-                                       f"{'*' if beats(v) else ' '}" for k, v in r.items() if k in ("ADE", "ECS")))
+                                       f"{'*' if beats(v) else ' '}" for k, v in r.items() if k in ("ADE", "ECS", "BrierC")))
 
 
 if __name__ == "__main__":

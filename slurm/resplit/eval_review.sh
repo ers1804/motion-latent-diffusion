@@ -26,7 +26,7 @@ TAG=${NAME}_ep${EPOCH}_cfg${GUIDANCE}
 run() {  # tag suffix, split, extra flags
     local suffix=$1 split=$2; shift 2
     python research/src/eval_ade_fde.py --model "${TAG}_$suffix" --cfg "$CFG" --ckpt "$CKPT" --guidance "$GUIDANCE" \
-        --k 5 --split "scene_$split" --save-roots "$@"
+        --k 5 --split "scene_$split" --save-roots "${WF_FLAG[@]}" "$@"
 }
 for SPLIT_NAME in val test; do
     run hor1brake2 "$SPLIT_NAME" --ego-horizon 1 --ego-brake 2

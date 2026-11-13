@@ -43,6 +43,8 @@ def build(spec, split):
     ]
     if scene:
         overrides.append("DATASET.EGOMOTION.SCENE_SPLIT=True")
+    if spec.get("window_frame"):  # models trained with the ego re-anchored at the window start (rs2_*)
+        overrides.append("DATASET.EGOMOTION.EGO_WINDOW_FRAME=True")
     sys.argv = ["teaser", "--cfg", spec["cfg"], "--nodebug", "--overrides"] + overrides
 
     from mld.config import parse_args
@@ -114,12 +116,48 @@ def generate(args, cfg, datamodule, get_model, spec):
         result[f"ego_{row}"] = ego.astype("float32")
         result[f"len_{row}"] = np.array(L)
         result[f"path_{row}"] = np.array("/".join(Path(dataset.sample_paths[row]).parts[-3:]))
+    result["rows"] = np.array(args.rows)
+    to_joint_frame(result, args.split, dataset)
     out = OUT / f"teaser_{args.model}_{args.split}.npz"
-    np.savez(out, rows=np.array(args.rows), **result)
+    np.savez(out, **result)
     print("saved", out)
 
 
+def to_joint_frame(d, split, dataset=None):
+    """ego_<row> into the frame of the joints, for drawing; the ego as the model saw it moves to ego_model_<row>.
+
+    The dataset hands a windowed track its ego in the frame of the track's first pose (coupling_breakdown.py).
+    """
+    from coupling_breakdown import load_geometry
+
+    rows = [int(r) for r in d["rows"]]
+    lens = [int(d[f"len_{r}"]) for r in rows]
+    roots = np.zeros((len(rows), max(lens), 2), dtype="float32")
+    for i, r in enumerate(rows):
+        roots[i, :lens[i]] = d[f"gt_{r}"][:lens[i], 0][:, [0, 2]]
+    egos, offset, yaw, _ = load_geometry(split, [str(d[f"path_{r}"]) for r in rows], lens, roots, dataset)
+    for i, r in enumerate(rows):
+        d[f"ego_model_{r}"] = np.array(d[f"ego_{r}"])
+        ego = d[f"ego_model_{r}"].copy()
+        ego[:len(egos[i])] = egos[i]
+        d[f"ego_{r}"] = ego.astype("float32")
+        print(f"row {r}: ego moved by {offset[i]:.2f} m and {yaw[i]:.1f} deg into the frame of the joints")
+
+
+def reframe(path, split):
+    """Bring a file written before 2026-11-13 into the layout above."""
+    d = dict(np.load(path))
+    if any(k.startswith("ego_model_") for k in d):
+        print("already in the frame of the joints:", path)
+        return
+    to_joint_frame(d, split)
+    np.savez(path, **d)
+    print("rewrote", path)
+
+
 def main():
+    if "--reframe" in sys.argv:  # python teaser_generate.py --reframe <npz> <split>
+        return reframe(sys.argv[sys.argv.index("--reframe") + 1], sys.argv[sys.argv.index("--reframe") + 2])
     ap = argparse.ArgumentParser()
     ap.add_argument("--model", required=True)
     ap.add_argument("--cfg")
@@ -131,8 +169,10 @@ def main():
     ap.add_argument("--rows", type=int, nargs="*", default=[])
     ap.add_argument("--seeds", type=int, default=8)
     ap.add_argument("--device", default="cpu")
+    ap.add_argument("--window-frame", action="store_true", help="rs2_* models: ego in the frame of the window start")
     args = ap.parse_args()
-    spec = dict(cfg=args.cfg, ckpt=args.ckpt, guidance=args.guidance) if args.ckpt else MODELS[args.model]
+    spec = dict(cfg=args.cfg, ckpt=args.ckpt, guidance=args.guidance) if args.ckpt else dict(MODELS[args.model])
+    spec["window_frame"] = args.window_frame or spec.get("window_frame", False) or args.model.startswith("rs2_")
     cfg, datamodule, get_model = build(spec, args.split)
     if args.scan:
         scan(args, datamodule.test_dataset)

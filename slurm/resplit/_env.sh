@@ -42,7 +42,16 @@ data_overrides() {
         "DATASET.EGOMOTION.SCENE_SPLIT=True"
         "FOLDER=$MODELS"
     )
+    DATA_OVERRIDES+=("${WF_OVERRIDE[@]}")
 }
+
+# rs2_* runs see the ego of a windowed track in the frame of the window start (EgoMotionDataset.ego_window_frame,
+# research/review_action_plan_2026-11-13.md). Keyed on the run name, so that a resumed segment or a later
+# evaluation cannot fall back to the frame of the rs1_* runs. Sets flags for the python entry points.
+WF_OVERRIDE=(); WF_FLAG=(); WF_PRETRAIN=()
+if [[ "$NAME" == rs2_* ]]; then
+    WF_OVERRIDE=("DATASET.EGOMOTION.EGO_WINDOW_FRAME=True"); WF_FLAG=(--window-frame); WF_PRETRAIN=(--window_frame)
+fi
 
 # Sets RESUME when a checkpoint exists; exits when the last epoch is already there.
 resume_or_finish() {

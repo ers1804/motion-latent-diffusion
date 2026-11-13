@@ -39,7 +39,7 @@ CKPT = "research/data/regressor_best.pt"
 CFG = "configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml"
 
 
-def build_cfg(split_dir, scene=False, test_split="val", seed=None):
+def build_cfg(split_dir, scene=False, test_split="val", seed=None, window_frame=False):
     overrides = [
         f"DATASET.EGOMOTION.ROOT=[{NAS}/data/diffusion/ava, {NAS}/data/diffusion/nuscenes, {NAS}/data/diffusion/waymo]",
         f"DATASET.EGOMOTION.MEAN_STD_PATH={split_dir}",
@@ -54,6 +54,8 @@ def build_cfg(split_dir, scene=False, test_split="val", seed=None):
         overrides.append("DATASET.EGOMOTION.SCENE_SPLIT=True")
     if seed is not None:
         overrides.append(f"SEED_VALUE={seed}")
+    if window_frame:  # ego of a windowed track in the frame of the window start, as for the rs2_* models
+        overrides.append("DATASET.EGOMOTION.EGO_WINDOW_FRAME=True")
     sys.argv = ["regressor", "--cfg", CFG, "--nodebug", "--overrides"] + overrides
     from mld.config import parse_args
     cfg = parse_args(phase="test")
@@ -92,7 +94,7 @@ def get_loaders(cfg):
 
 def train(args):
     import pytorch_lightning as pl
-    cfg = build_cfg(SCENE, scene=True, seed=args.seed) if args.scene else build_cfg(FV)
+    cfg = build_cfg(SCENE, scene=True, seed=args.seed, window_frame=args.window_frame) if args.scene else build_cfg(FV)
     pl.seed_everything(cfg.SEED_VALUE)
     device = "cuda" if torch.cuda.is_available() else "cpu"
     dm = get_loaders(cfg)
@@ -134,7 +136,8 @@ def evaluate(args):
     splits = [(name, SCENE) for name in args.splits] if args.scene else [("val_test", VT), ("full_val", FV)]
     for split_name, split_dir in splits:
         if args.scene:
-            cfg = build_cfg(split_dir, scene=True, test_split=split_name.removeprefix("scene_"), seed=args.seed)
+            cfg = build_cfg(split_dir, scene=True, test_split=split_name.removeprefix("scene_"), seed=args.seed,
+                            window_frame=args.window_frame)
         else:
             cfg = build_cfg(split_dir)
         pl.seed_everything(cfg.SEED_VALUE)
@@ -184,6 +187,7 @@ if __name__ == "__main__":
     ap.add_argument("--epochs", type=int, default=300)
     ap.add_argument("--scene", action="store_true", help="scene-level split: train on train, select on val, score val and test")
     ap.add_argument("--seed", type=int)
+    ap.add_argument("--window-frame", action="store_true")
     ap.add_argument("--ckpt", default=CKPT)
     ap.add_argument("--splits", nargs="+", default=["scene_val", "scene_test"], choices=["scene_val", "scene_test"])
     args = ap.parse_args()

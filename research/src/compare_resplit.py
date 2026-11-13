@@ -23,7 +23,11 @@ from intention_labels import is_stopping  # noqa: E402
 from make_scene_split import scene_of  # noqa: E402
 
 LETTER = {"ava": "A", "nuscenes": "N", "waymo": "W"}
-SIGN = dict(ADE=-1, minADE=-1, ECS=1, Brier=-1)
+# Brier: of the stop frequency over K samples, as in the first test pass. BrierC: the same with the sampling noise
+# of K samples removed, the score reported since 2026-11-13. E[(p_hat - y)^2] = (pi - y)^2 + pi (1 - pi) / K, and
+# p_hat (1 - p_hat) / (K - 1) estimates the last term without bias. The raw score penalises a model for spreading
+# its samples, the corrected one compares with a stated probability.
+SIGN = dict(ADE=-1, minADE=-1, ECS=1, Brier=-1, BrierC=-1)
 CONTRASTS = [("egoped", "pooled"), ("egoped_ia", "pooled_ia"),  # encoder at matched recipe
              ("egoped", "egoped_ia"), ("pooled", "pooled_ia"),  # recipe per encoder
              ("egoped", "uncond"), ("pooled", "uncond"),  # against the ego-blind prior of that recipe
@@ -34,7 +38,7 @@ CONTRASTS = [("egoped", "pooled"), ("egoped_ia", "pooled_ia"),  # encoder at mat
 
 
 def cell_of(run):
-    return re.sub(r"_s\d+$", "", run.removeprefix("rs1_"))
+    return re.sub(r"_s\d+$", "", re.sub(r"^rs\d+_", "", run))  # rs1_pooled_s1234 and rs2_pooled_s1234 -> pooled
 
 
 def scene_key(path):
@@ -47,13 +51,16 @@ def load(path):
     gen, gt, lens = d["roots_gen"], d["roots_gt"], d["lengths"]
     stop = np.array([is_stopping(gt[i, :lens[i]]) for i in range(len(gt))], dtype=float)
     p = np.array([np.mean([is_stopping(gen[i, k, :lens[i]]) for k in range(gen.shape[1])]) for i in range(len(gt))])
-    return dict(ade=d["ades"].mean(1), minade=d["ades"].min(1), p=p, stop=stop, gt=gt, lens=lens, paths=d["paths"])
+    return dict(ade=d["ades"].mean(1), minade=d["ades"].min(1), p=p, stop=stop, gt=gt, lens=lens, paths=d["paths"],
+                k=gen.shape[1])
 
 
 def metrics(m, idx):
     p, s = m["p"][idx], m["stop"][idx]
+    brier = ((p - s) ** 2).mean()
+    noise = (p * (1 - p)).mean() / (m["k"] - 1) if m["k"] > 1 else 0.0  # K=1: a deterministic model states 0 or 1
     return dict(ADE=m["ade"][idx].mean(), minADE=m["minade"][idx].mean(),
-                ECS=p[s == 1].mean() - p[s == 0].mean(), Brier=((p - s) ** 2).mean())
+                ECS=p[s == 1].mean() - p[s == 0].mean(), Brier=brier, BrierC=brier - noise)
 
 
 def cell_metrics(runs, idx):
@@ -111,6 +118,8 @@ def main():
         assert err < 1e-3 and (m["lens"] == ref["lens"]).all() and (m["paths"] == ref["paths"]).all(), (run, err)
         m["run"] = run
         cells.setdefault(cell_of(run), []).append(m)
+    for cell, runs in cells.items():  # rs1 and rs2 runs of one kind must not be averaged into one cell
+        assert len({m["run"].split("_")[0] for m in runs}) == 1, f"{cell}: {[m['run'] for m in runs]}"
 
     clusters = {}
     for i, p in enumerate(ref["paths"]):
@@ -119,11 +128,11 @@ def main():
     every = np.arange(len(ref["paths"]))
     print(f"split={args.split} N={len(every)} scenes={len(clusters)} stopping rate={ref['stop'].mean():.3f}")
 
-    print(f"\n{'run':26s}{'ADE':>7s}{'minADE':>8s}{'ECS':>7s}{'Brier':>7s}{'gen stop':>10s}")
+    print(f"\n{'run':26s}{'ADE':>7s}{'minADE':>8s}{'ECS':>7s}{'Brier':>7s}{'BrierC':>8s}{'gen stop':>10s}")
     for cell in sorted(cells):
         for m in cells[cell]:
             r = metrics(m, every)
-            print(f"{m['run']:26s}{r['ADE']:7.3f}{r['minADE']:8.3f}{r['ECS']:7.3f}{r['Brier']:7.3f}{m['p'].mean():10.3f}")
+            print(f"{m['run']:26s}{r['ADE']:7.3f}{r['minADE']:8.3f}{r['ECS']:7.3f}{r['Brier']:7.3f}{r['BrierC']:8.3f}{m['p'].mean():10.3f}")
 
     print("\ndelta>0 = first cell better; [95% CI, scene bootstrap]; p; (seed pair range); * = rule met")
     for a, b in CONTRASTS:

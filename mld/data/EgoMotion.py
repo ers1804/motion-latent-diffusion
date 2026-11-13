@@ -25,7 +25,8 @@ import torch
 from torch.utils.data import Dataset, DataLoader, WeightedRandomSampler
 import pytorch_lightning as pl
 
-from mld.data.humanml.scripts.motion_process import recover_from_ric
+from mld.data.humanml.common.quaternion import qrot
+from mld.data.humanml.scripts.motion_process import recover_from_ric, recover_root_rot_pos
 
 
 class EgoMotionDataset(Dataset):
@@ -69,8 +70,13 @@ class EgoMotionDataset(Dataset):
         scene_split: bool = False,
         captions_path: Optional[str] = None,
         caption_vocab: str = "ego",
+        ego_window_frame: bool = False,
         **kwargs
     ):
+        # ego_window_frame: a window cut from a longer track gets its ego re-anchored at the pedestrian's
+        # root pose at the window start (_ego_in_window_frame). Off reproduces the runs trained before
+        # 2026-11-13, whose windowed egos stay in the frame of the track's first pose.
+        self.ego_window_frame = ego_window_frame
         # scene_split: lists are exact (no name fallback) and held-out partitions are scored on
         # fixed uniform windows, so training recipes cannot change what selection or testing sees.
         self.scene_split = scene_split
@@ -522,9 +528,10 @@ class EgoMotionDataset(Dataset):
             ego_ped_dists: (T,) precomputed raw ego-ped distances (before normalization).
                            Required when interaction_crop is True.
 
-        Returns: (padded_motion, padded_ego, actual_length)
+        Returns: (padded_motion, padded_ego, actual_length, start index of the window in the track)
         """
         actual_length = len(sequence)
+        start_idx = 0
 
         # Align ego to motion length FIRST (handles 186 vs 185 mismatch)
         if len(ego_sequence) > actual_length:
@@ -570,7 +577,27 @@ class EgoMotionDataset(Dataset):
             padding_ego = np.zeros((pad_length, ego_sequence.shape[-1]), dtype=ego_sequence.dtype)
             ego_sequence = np.concatenate([ego_sequence, padding_ego], axis=0)
 
-        return sequence, ego_sequence, actual_length
+        return sequence, ego_sequence, actual_length, start_idx
+
+    def _ego_in_window_frame(self, ego, raw_ego, raw_motion, start, length):
+        """Re-anchor the ego of a window that starts `start` frames into its track.
+
+        Cropping by index leaves the ego in the frame of the track's first pose, while the motion window decodes
+        to a path that starts at the origin facing +z. The pedestrian's root pose at the start frame comes from
+        the same recovery that decodes the motion, so the ego lands exactly in the frame of the decoded window.
+        ego: normalised (max_length, 2) as cropped; raw_ego, raw_motion: the whole track, unnormalised.
+        """
+        valid = min(length, len(raw_ego) - start)  # frames beyond the ego record keep their padding
+        if valid <= 0:
+            return ego
+        quat, pos = recover_root_rot_pos(torch.as_tensor(raw_motion[None, :start + 1], dtype=torch.float32))
+        quat, pos = quat[0, start], pos[0, start]
+        p3 = torch.zeros(valid, 3)
+        p3[:, [0, 2]] = torch.as_tensor(raw_ego[start:start + valid], dtype=torch.float32) - pos[[0, 2]]
+        window = qrot(quat.expand(valid, 4), p3)[:, [0, 2]].numpy()
+        ego = ego.copy()
+        ego[:valid] = self._normalize_ego(window).astype(ego.dtype)
+        return ego
 
     def __len__(self) -> int:
         if self.overfit:
@@ -609,14 +636,17 @@ class EgoMotionDataset(Dataset):
         ego_ped_dists = np.linalg.norm(ego[:T] - ped_root_xz[:T], axis=-1)
 
         # Normalize motion and ego
+        raw_motion, raw_ego = motion, ego
         motion = self._normalize_motion(motion)
         ego = self._normalize_ego(ego)
 
         # Pad/crop sequences
-        motion, ego, motion_length = self._pad_or_crop_ego_motion(
+        motion, ego, motion_length, start_idx = self._pad_or_crop_ego_motion(
             motion, ego, self.max_motion_length, ego_ped_dists=ego_ped_dists,
             crop_key=self.sample_paths[idx],
         )
+        if self.ego_window_frame and start_idx > 0:
+            ego = self._ego_in_window_frame(ego, raw_ego, raw_motion, start_idx, motion_length)
         ego_length = motion_length
         # Filter by length constraints
         if motion_length < self.min_motion_length:
@@ -712,6 +742,7 @@ class EgoMotionDataModule(pl.LightningDataModule):
             scene_split=getattr(self.cfg.DATASET.EGOMOTION, 'SCENE_SPLIT', False),
             captions_path=getattr(self.cfg.DATASET.EGOMOTION, 'CAPTIONS_PATH', None),
             caption_vocab=getattr(self.cfg.DATASET.EGOMOTION, 'CAPTION_VOCAB', 'ego'),
+            ego_window_frame=getattr(self.cfg.DATASET.EGOMOTION, 'EGO_WINDOW_FRAME', False),
         )
 
         def _split_exists(split_name: str) -> bool:

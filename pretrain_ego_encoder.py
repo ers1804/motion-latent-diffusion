@@ -89,6 +89,8 @@ def build_cfg(args):
         cfg.TRAIN.PRETRAINED_VAE = args.pretrained_vae
     if args.scene_split:
         cfg.DATASET.EGOMOTION.SCENE_SPLIT = True
+    if args.window_frame:
+        cfg.DATASET.EGOMOTION.EGO_WINDOW_FRAME = True
     if args.interaction is not None:
         flag = args.interaction == "on"
         cfg.DATASET.EGOMOTION.INTERACTION_CROP = flag
@@ -402,6 +404,8 @@ def main():
     )
     parser.add_argument("--pretrained_vae", type=str, default=None)
     parser.add_argument("--scene_split", action="store_true")
+    parser.add_argument("--window_frame", action="store_true",
+                        help="ego of a windowed track in the frame of the window start (EgoMotionDataset)")
     parser.add_argument("--interaction", choices=["on", "off"], default=None)
     parser.add_argument(
         "--cfg", type=str, default="./configs/config_ego_motion.yaml",

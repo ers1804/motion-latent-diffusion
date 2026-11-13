@@ -197,6 +197,8 @@ def main():
     ap.add_argument("--ego-swap", action="store_true", help="wrong-vehicle control, see ego_editor")
     ap.add_argument("--ego-horizon", type=float, help="seconds of ego trajectory shown, see ego_editor")
     ap.add_argument("--ego-brake", type=float, help="m/s^2 of braking after the horizon, see ego_editor")
+    ap.add_argument("--window-frame", action="store_true",
+                    help="ego of a windowed track in the frame of the window start, for models trained that way (rs2_*)")
     ap.add_argument("--save-skate", action="store_true",
                     help="also save foot-skate ratio and articulation of every generated sample and of the labels")
     ap.add_argument("--k", type=int, default=5, help="samples per condition")
@@ -232,6 +234,8 @@ def main():
     ]
     if scene:
         overrides.append("DATASET.EGOMOTION.SCENE_SPLIT=True")
+    if args.window_frame:
+        overrides.append("DATASET.EGOMOTION.EGO_WINDOW_FRAME=True")
     overrides += spec.get("extra", [])
     sys.argv = ["eval_ade_fde", "--cfg", spec["cfg"], "--nodebug", "--overrides"] + overrides
 

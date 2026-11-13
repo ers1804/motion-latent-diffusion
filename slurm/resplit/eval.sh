@@ -26,7 +26,7 @@ if [[ "$ZERO" == "zero" ]]; then
 fi
 
 python research/src/eval_ade_fde.py --model "$TAG" --cfg "$CFG" --ckpt "$CKPT" --guidance "$GUIDANCE" \
-    --k 5 --split "scene_$SPLIT_NAME" --save-roots "${ZERO_FLAG[@]}"
+    --k 5 --split "scene_$SPLIT_NAME" --save-roots "${ZERO_FLAG[@]}" "${WF_FLAG[@]}"
 
 python $ENTRY \
 --cfg "$CFG" \
@@ -43,4 +43,5 @@ python $ENTRY \
     "model.guidance_scale=$GUIDANCE" \
     "NAME=eval_${SPLIT_NAME}_$TAG" \
     "DATASET.EGOMOTION.INTERACTION_CROP=False" \
-    "DATASET.EGOMOTION.INTERACTION_WEIGHTED_SAMPLING=False"
+    "DATASET.EGOMOTION.INTERACTION_WEIGHTED_SAMPLING=False" \
+    "${WF_OVERRIDE[@]}"

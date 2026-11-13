@@ -9,9 +9,9 @@ POOLED=configs/config_ego_motion_new_vae_stoch.yaml
 UNFROZEN=configs/config_ego_motion_new_vae_stoch_latent_4_h6_unfreeze_ego.yaml
 
 config_of() {
-    case $1 in
-        rs1_pooled*) echo "$POOLED" ;;
-        rs1_unfrozen*) echo "$UNFROZEN" ;;
+    case ${1#rs[0-9]_} in  # run kind without the generation prefix (rs1_, rs2_)
+        pooled*) echo "$POOLED" ;;
+        unfrozen*) echo "$UNFROZEN" ;;
         *) echo "$EGOPED" ;;
     esac
 }
@@ -22,9 +22,9 @@ python3 -c "import json, sys; [print(r, s['epoch'], s.get('guidance', '')) for r
     zero=; [[ $run == *uncond* ]] && zero=zero
     if [[ $MODE == sweep ]]; then
         scales="5 10 15"; [[ -n $zero ]] && scales=1
-        for g in $scales; do sbatch --job-name="rs1_sweep" slurm/resplit/eval.sh "$run" "$cfg" "$epoch" "$g" val $zero; done
+        for g in $scales; do sbatch --job-name="${run%%_*}_sweep" slurm/resplit/eval.sh "$run" "$cfg" "$epoch" "$g" val $zero; done
     elif [[ $MODE == test ]]; then
-        sbatch --job-name="rs1_test" slurm/resplit/eval.sh "$run" "$cfg" "$epoch" "$scale" test $zero
+        sbatch --job-name="${run%%_*}_test" slurm/resplit/eval.sh "$run" "$cfg" "$epoch" "$scale" test $zero
     else
         echo "unknown mode $MODE"; exit 1
     fi

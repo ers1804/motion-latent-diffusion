@@ -53,7 +53,7 @@ def read_uncond(results, name):
 
 
 def cell_of(run):
-    return re.sub(r"_s\d+$", "", run.removeprefix("rs1_"))
+    return re.sub(r"_s\d+$", "", re.sub(r"^rs\d+_", "", run))  # rs1_pooled_s1234 and rs2_pooled_s1234 -> pooled
 
 
 def epochs(args):

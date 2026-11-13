@@ -22,7 +22,7 @@ TAG=${NAME}_ep${EPOCH}_cfg${GUIDANCE}
 run() {  # tag suffix, extra flags
     local suffix=$1; shift
     python research/src/eval_ade_fde.py --model "${TAG}_$suffix" --cfg "$CFG" --ckpt "$CKPT" --guidance "$GUIDANCE" \
-        --k 5 --split "scene_$SPLIT_NAME" --save-roots "$@"
+        --k 5 --split "scene_$SPLIT_NAME" --save-roots "${WF_FLAG[@]}" "$@"
 }
 run zero --zero-ego
 run swap --ego-swap
