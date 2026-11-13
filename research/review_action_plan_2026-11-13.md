@@ -195,7 +195,7 @@ test partition is never used to choose a threshold or a model.
 | A1 breakdown | done on validation and test, written into the paper as Section VI-E |
 | A2 correlation per model | done in the text (-0.75, p = 0.02, nine models). Recompute after C1 |
 | B1 to B4 text | done. Paper at 8 pages, 39 references, abstract 1,199 characters |
-| Qualitative export | regenerated with the vehicle in the joints' frame: 16 of 28 `ego.npy` files were wrong by up to 12.6 m and 111 degrees. Mohan needs the new folder |
+| Qualitative export | regenerated with the vehicle in the joints' frame: 16 of 28 `ego.npy` files were wrong by up to 12.6 m and 111 degrees. Corrected copy on the NAS in `qualitatives/egoped_scene_test_2026-11-13_frame_fixed/`, warning note added to the old folder. Mohan has to place the vehicle again in any scene built from the 16 folders |
 | Teaser, Fig. 1 | panel (b) (validation row 523) draws the vehicle 1.9 m and 7 degrees off. To be re-rendered |
 | C2 regressor | queued on Helma, seeds 1234, 2345, 3456 (jobs 1319608 to 1319610). Smoke test on CPU passed (train and validation scoring) |
 | C3, C4 | queued on Helma for the three EgoPed seeds (jobs 1319611 to 1319613). Smoke test on CPU passed end to end |
