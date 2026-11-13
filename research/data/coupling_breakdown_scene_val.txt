@@ -16,6 +16,10 @@ split=scene_val N=1194 scenes=107 stopping rate=0.228; seeds: EgoPed 3, Full-seq
    EgoPed    ECS on windows that start later +0.220, on the others +0.546
    Full-seq  ECS on windows that start later +0.175, on the others +0.454
    prior     ECS on windows that start later +0.000, on the others +0.032
+   Without the 42 replaced rows (added after the first test run, no constant involved):
+   EgoPed    ADE 2.289 (all rows 2.270)  minADE 1.445 (all rows 1.431)  ECS 0.360 (all rows 0.363)  Brier 0.171 (all rows 0.167)
+   Full-seq  ADE 2.656 (all rows 2.639)  minADE 1.390 (all rows 1.382)  ECS 0.295 (all rows 0.298)  Brier 0.175 (all rows 0.171)
+   prior     ADE 3.079 (all rows 3.066)  minADE 1.218 (all rows 1.216)  ECS 0.025 (all rows 0.024)  Brier 0.207 (all rows 0.205)
 
 2. Pedestrian never within a margin of where the vehicle is or later drives (median closest approach 10.9 m)
    margin 2.5 m: 1172 of 1194 conditions (98.2%), stopping rate 0.227
@@ -51,3 +55,4 @@ split=scene_val N=1194 scenes=107 stopping rate=0.228; seeds: EgoPed 3, Full-seq
    angle-bin stopping rate (out of fold)       +0.095  0.664   0.166      0.226
    constant stopping rate                      +0.000  0.500   0.176      0.228
    recorded stopping rate 0.228
+   Brier score of the samples with the sampling noise of K=5 removed: EgoPed 0.156, Full-seq 0.157, prior 0.171

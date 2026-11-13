@@ -61,7 +61,7 @@ def load_geometry(split, paths, lens, gt):
     path, a track shorter than the minimum length is replaced by the next sample. The pedestrian's root pose at the
     window start, decoded from the full track's features, takes the ego into the window frame. The recorded root
     path taken the same way must reproduce the dump, which checks start frame and conventions together.
-    Returns (list of (m, 2) ego paths with m <= length, offset in metres, yaw offset in degrees, replaced rows).
+    Returns (list of (m, 2) ego paths with m <= length, offset in metres, yaw offset in degrees, mask of replaced rows).
     """
     from mld.data.EgoMotion import _canonical_crop_key
     from mld.data.humanml.common.quaternion import qrot
@@ -71,7 +71,7 @@ def load_geometry(split, paths, lens, gt):
     _, datamodule, _ = build(dict(cfg=CFG, ckpt="unused", guidance=15), split)
     ds = datamodule.test_dataset
     index = {"/".join(Path(q).parts[-3:]): i for i, q in enumerate(ds.sample_paths)}
-    egos, offset, yaw, replaced = [], np.zeros(len(paths)), np.zeros(len(paths)), 0
+    egos, offset, yaw, replaced = [], np.zeros(len(paths)), np.zeros(len(paths)), np.zeros(len(paths), dtype=bool)
     for row, (listed, n) in enumerate(zip(paths, lens)):
         idx = index[str(listed)]
         while True:
@@ -80,7 +80,7 @@ def load_geometry(split, paths, lens, gt):
             if total >= ds.min_motion_length:
                 break
             idx = (idx + 1) % len(ds)
-        replaced += ds.sample_paths[idx] != ds.sample_paths[index[str(listed)]]
+        replaced[row] = idx != index[str(listed)]
         start = 0
         if total >= ds.max_motion_length:
             h = int(hashlib.sha1(_canonical_crop_key(ds.sample_paths[idx]).encode()).hexdigest()[:8], 16)
@@ -211,12 +211,19 @@ def main():
           f"median {np.median(offset[shifted]):.1f} m (90th percentile {np.percentile(offset[shifted], 90):.1f} m), "
           f"yaw median {np.median(yaw[shifted]):.0f} deg (90th percentile {np.percentile(yaw[shifted], 90):.0f} deg).")
     print(f"   Among them recorded stop rate {stop[shifted].mean():.3f}, elsewhere {stop[~shifted].mean():.3f}. "
-          f"Rows that load the next sample because their own is too short: {replaced}. "
+          f"Rows that load the next sample because their own is too short: {replaced.sum()}. "
           f"Vehicle record shorter than the sequence: {(seen < lens).sum()}.")
     for name in CELLS:
         q = p[name]
         print(f"   {name:9s} ECS on windows that start later {ecs(q, stop & shifted, walk & shifted):+.3f}, "
               f"on the others {ecs(q, stop & ~shifted, walk & ~shifted):+.3f}")
+
+    print(f"   Without the {replaced.sum()} replaced rows (added after the first test run, no constant involved):")
+    for name in CELLS:
+        rows = [metrics(r, ~replaced) for r in runs[name]]
+        full = [metrics(r, slice(None)) for r in runs[name]]
+        print(f"   {name:9s} " + "  ".join(f"{k} {np.mean([m[k] for m in rows]):.3f} (all rows {np.mean([m[k] for m in full]):.3f})"
+                                         for k in ("ADE", "minADE", "ECS", "Brier")))
 
     # ---- 2. conditions the vehicle cannot have reacted to
     clearance = np.array([path_clearance(ego[i], gt[i], seen[i]) for i in range(n)])
@@ -279,6 +286,13 @@ def main():
         a = auc(q, stop, walk) if q.std() > 0 else 0.5
         print(f"   {label:42s}{ecs(q, stop, walk):+8.3f}{a:7.3f}{brier(q):8.3f}{q.mean():11.3f}")
     print(f"   recorded stopping rate {stop.mean():.3f}")
+    # Added after the first test run, no constant involved. A frequency over K samples carries binomial noise that a
+    # stated probability does not: E[(p_hat - y)^2] = (pi - y)^2 + pi (1 - pi) / K, and p_hat (1 - p_hat) / (K - 1)
+    # estimates the last term without bias. Only the corrected score compares with the rows that state a probability.
+    k = runs["EgoPed"][0]["p"]
+    K = int(round(1 / np.min(k[k > 0])))
+    print(f"   Brier score of the samples with the sampling noise of K={K} removed: " + ", ".join(
+        f"{name} {np.mean([brier(r['p']) - (r['p'] * (1 - r['p'])).mean() / (K - 1) for r in runs[name]]):.3f}" for name in CELLS))
 
 
 if __name__ == "__main__":
