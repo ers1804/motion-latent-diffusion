@@ -6,7 +6,7 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
 ## Rules applied (RA-L Information for Authors, checked 2026-11-09)
 
 - 6 pages in two-column IEEE format **including figures and references**, up to 2 more at $175 each.
-  Current build: **8 pages**, about 14 free reference lines at the end.
+  Current build: **8 pages**, with only a few free lines at the end of the references.
 - Initial submission uses the RAS `ieeeconf.cls` (from ras.papercept.net/conferences/support/files/ieeeconf.zip),
   US letter. The final version moves to `\documentclass[letterpaper, 10 pt, journal, twoside]{IEEEtran}`.
 - **Double-anonymous review**: no names, affiliations, acknowledgment or funding, no lab logos, and no individual
@@ -44,14 +44,17 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
     (decided 2026-11-13, after the test pass, and said so in Section V).
   - To hold 8 pages: discussion and limitations merged, the robotics outlook folded into a limitation,
     shorter guidance, PedGen and encoder paragraphs, one row less in Table V, five references fewer.
+  - Braking edit of the vehicle's plan in Section VI-D and body statistics of generated motion in the
+    limitations (`research/src/review_controls.py`, `research/data/review_controls_scene_test.txt`).
+  - Teaser panel (b) rendered again with the vehicle path in the frame of the joints.
 
 ## Still to do
 
 - A full retraining with the ego in the frame of the window start (`rs2`) is queued. If it replaces the
   current models, every table changes.
 - Pending results that will change numbers in the text: two more seeds each for the prior and the prior with
-  IA (Tables II and III, the per-model correlation, the seeds sentence in Section V), the regressor
-  baseline, the braking control and the body audit of generated motion.
+  IA (Tables II and III, the per-model correlation, the seeds sentence in Section V) and the regressor
+  baseline. Each needs room, the paper is full.
 - Overleaf needs `refs.bib` and `ral_ctl.bib` from this folder. The reviewed copy printed "[?]" for some
   citations, which this build does not.
 

@@ -1,0 +1,28 @@
+scene_val: EgoPed seeds ['rs1_pooled_s1234', 'rs1_pooled_s2345', 'rs1_pooled_s3456']; N=1194 scenes=107
+
+1. Braking after the first second, 1 s shown, then 2 m/s^2 against constant speed
+   vehicle speed at 1 s: median 3.2 m/s, faster than 2 m/s in 60.7% of the conditions (median 5.7 m/s there)
+   recorded stop rate 0.228, generated with the full input 0.197
+
+   stop probability
+   subset                             n  keeps going   brakes   brakes minus keeps going [95% CI]
+   all conditions                  1194        0.200    0.170   -0.030 [-0.076, +0.011]
+   vehicle faster than 2 m/s        725        0.201    0.159   -0.042 [-0.126, +0.023]
+   vehicle at most 2 m/s            469        0.199    0.187   -0.012 [-0.026, -0.002]
+
+   distance covered by the root (m)
+   subset                             n  keeps going   brakes   brakes minus keeps going [95% CI]
+   all conditions                  1194        9.201    9.200   -0.002 [-0.961, +0.862]
+   vehicle faster than 2 m/s        725        7.866    7.581   -0.285 [-1.631, +1.188]
+   vehicle at most 2 m/s            469       11.265   11.702   +0.437 [+0.165, +0.774]
+   stop probability, vehicle faster than 2 m/s and recorded pedestrian stops (n=150): -0.279 [-0.395, -0.153]*
+   stop probability, vehicle faster than 2 m/s and recorded pedestrian walks (n=575): +0.020 [-0.046, +0.073]
+
+2. Body statistics, generated motion against the labels of the same windows
+   windows with at least 10 walking frames: labels 89.8%, generated samples 88.6%
+   statistic              labels  generated                per seed   generated minus labels, same windows [95% CI]
+   foot-skate ratio        0.903      0.858   (0.873, 0.851, 0.851)   -0.042 [-0.062, -0.022]*
+   planted fraction        0.013      0.005   (0.004, 0.005, 0.005)   -0.008 [-0.010, -0.006]*
+   articulation (m)        0.033      0.024   (0.023, 0.026, 0.024)   -0.009 [-0.010, -0.007]*
+   articulation, generated over labels: 0.74
+   medians over windows, labels / generated samples: foot-skate ratio 0.970 / 0.931, planted fraction 0.005 / 0.000, articulation (m) 0.032 / 0.024

@@ -115,6 +115,11 @@ def body(args, tags, runs, full, boot):
         print(f"   {name:20s}{np.nanmean(label[:, c]):9.3f}{np.mean(per_seed):11.3f}"
               f"{'(' + ', '.join(f'{x:.3f}' for x in per_seed) + ')':>24s}   {fmt((np.mean(deltas), low, high, rule))}")
     print(f"   articulation, generated over labels: {np.mean([np.nanmean(d['body_gen'][..., 2]) for d in dumps]) / np.nanmean(label[:, 2]):.2f}")
+    # Added after the test read, to quote the generated motion in the terms of the label audit (pose_quality_audit.py
+    # and Section IV-C report the median over sequences). The means and the paired differences above were fixed before.
+    print("   medians over windows, labels / generated samples: " + ", ".join(
+        f"{name} {np.nanmedian(label[:, c]):.3f} / {np.mean([np.nanmedian(d['body_gen'][..., c]) for d in dumps]):.3f}"
+        for c, name in enumerate(BODY)))
 
 
 def regressor(args, tags, full, cells, boot):
