@@ -1,0 +1,154 @@
+# Action plan: pre-submission review of 2026-11-13
+
+Working plan for Erik and Claude, not for circulation. Source: the AI-generated review Fabian Flohr sent on
+2026-11-13 (`paper.skill`, "borderline accept"). Its header names IEEE IV 2027 by mistake. The target stays
+IEEE RA-L, `research/paper_ral/`, 8 pages including references.
+
+## Decisions (Erik, 2026-11-13)
+
+| # | Question | Decision |
+|---|---|---|
+| 1 | Venue | RA-L. "IV 2027" in the review header was a mistake |
+| 2 | Narrow the claim from "responds to the vehicle" to "follows the vehicle's motion context" | Yes |
+| 3 | Two more seeds for the prior and the prior with IA | Yes, without touching the existing Helma queue |
+| 4 | Ego-aware baseline | Our deterministic ego-to-motion regressor, retrained on the scene split. Not Trajectron++ |
+| 5 | Staged recordings | The pedestrian is a co-author and consented |
+| 5 | Root source | The root comes from the pose fit. Cameras are stitched through the annotated 3D box |
+
+## Verdict on the review
+
+| Point | Verdict | Action |
+|---|---|---|
+| Flaw 1: response to new ego plans untested | Valid, but the proposed mechanism (vehicle reacts to the pedestrian) is not the carrier | A1, B1, C3, text |
+| Flaw 2a: no ego-aware baseline | Valid. Trajectron++ needs the pedestrian's past, which the task withholds | C2 |
+| Flaw 2b: body quality not evaluated | Valid | C4 |
+| Flaw 3a: single-seed priors | Valid. "Every model is trained with three seeds" is false as written | C1, text |
+| Flaw 3b: correlation over 15 dependent runs | Valid | A2 |
+| Unresolved citations | Not in our PDF. The reviewed copy had an outdated bibliography | Erik syncs `refs.bib` and `ral_ctl.bib` to Overleaf |
+| 11,786 counts mirrored copies | Valid. 5,893 recordings, each with one mirrored copy in the same partition | text |
+| Full-seq MM and Brier gaps in no table, gaps differ from Table IV | Valid. The gaps are right before rounding | MM column in Table II, text |
+| Draft leftovers (placeholder figure, note to Mohan) | Known, waiting for Mohan | none |
+| Consent for the staged recordings | Valid | one sentence |
+
+Questions to the authors:
+
+- Share of stops that stand throughout, ECS for those who move and stop: A1.
+- Rankings under selection by validation ADE: not planned. The guidance section and the last-checkpoint rows
+  already show the ranking under two other selections. Revisit only if a reviewer insists.
+- Root accuracy: never checked against a reference. The text must stop calling the root "reliable" and say
+  where it comes from. A check against the annotated box tracks needs the extraction repository (optional, D2).
+- One frozen ego-motion evaluator for R-Precision: declined. ADE and ECS already score per condition, and an
+  evaluator trained on these labels inherits their limits.
+
+## What the validation checks showed (1,194 conditions, no test access)
+
+Script: `research/src/coupling_breakdown.py`, constants fixed on validation on 2026-11-13. Output:
+`research/data/coupling_breakdown_scene_val.txt`. Geometry is computed in the window frame (see the pipeline
+facts below).
+
+| Finding | Number |
+|---|---|
+| Stops that stand throughout (never leave a 1 m radius) | 161 of 272 (59%) |
+| ECS on those who move and stop, EgoPed against prior | 0.18 [0.08, 0.32] against 0.02 |
+| Pedestrian never within 2.5 m of where the vehicle is or later drives | 1,172 of 1,194 (98%) |
+| ECS on those conditions, EgoPed against prior | 0.37 [0.25, 0.48] against 0.03 |
+| Median closest approach | 10.9 m |
+| Recorded stop rate, vehicle travelling within 10 degrees of the pedestrian's facing axis | 0.07 (506 conditions) |
+| Recorded stop rate at 60 to 90 degrees | 0.46 (179 conditions) |
+| ECS within angle bins | 0.29 [0.16, 0.45] of 0.36 |
+| Rule "stops unless the vehicle travels within 10 degrees of the facing axis" | ECS 0.38, Brier 0.41, AUC 0.69, predicts stopping for 58% |
+| EgoPed samples | ECS 0.36, Brier 0.17, AUC 0.75, stop rate 0.20 (recorded 0.23) |
+| Angle-bin stopping rate, out of fold | ECS 0.10, Brier 0.17, AUC 0.66 |
+
+Reading:
+
+1. The vehicle reacting to the pedestrian cannot be what carries the score. Almost no pedestrian is ever in
+   the vehicle's path.
+2. For the same reason the data holds almost no interaction, so the score is not a measured reaction either.
+   It is a statistical dependence on the vehicle's motion and on the geometry that motion reveals.
+3. About a fifth of the score is the angle between the road direction, as shown by the vehicle, and the
+   direction the pedestrian faces. Walkers face along the road, people who stand face anywhere.
+4. ECS can be matched by a rule that over-predicts stopping. It must always be read with the Brier score or AUC.
+
+## Two pipeline facts found while checking (2026-11-13)
+
+Both were found by the code review of `coupling_breakdown.py` and confirmed in `mld/data/EgoMotion.py`.
+Neither changes a reported number. Both change what the paper may say.
+
+1. **Stale ego frame for windowed tracks.** A track of 196 frames or more is cut by index, and the ego
+   trajectory is cut with it but never re-anchored. The model therefore sees the vehicle in the frame of the
+   track's first pose, while the generated motion starts at the origin of the window. On validation this is
+   523 of 1,194 conditions (44%), with a median offset of 2.5 m (90th percentile 10.9 m) and a median yaw
+   offset of 5 degrees (90th percentile 40). ECS is 0.22 on these conditions and 0.55 on the others, where
+   the frame is right. Part of that gap is composition (long tracks hold more standing pedestrians).
+   Consequences: the method text must say it, the qualitative export and the teaser must be checked for
+   windowed conditions (the exported `ego.npy` is in the stale frame), and re-anchoring the ego at the
+   window start is a likely improvement that needs a full retrain.
+2. **Too-short tracks are replaced by their neighbour.** `__getitem__` returns the next sample when a track
+   has fewer than 40 frames. Listed against usable: train 9,410 / 9,038, validation 1,194 / 1,152, test
+   1,182 / 1,146, total 11,786 / 11,336 (5,668 recordings and their mirrored copies). On test, 36 rows are
+   therefore duplicates of a neighbouring row. Table I and the sequence counts in the text are too high by
+   3.8%. Every model is scored on the same rows, so comparisons stand.
+
+## Plan
+
+### A. From existing results, CPU only
+
+- A1. Apply `coupling_breakdown.py` once to the test partition after the script is committed. Report the
+  stop kinds, the never-in-path subset and the geometry rule in the paper.
+- A2. Report the FID correlation per model, not per run. Today, over the nine models of Tables II and IV,
+  Spearman FID against mean ADE is -0.75 (p = 0.02), and FID against ECS is +0.33 (p = 0.38), so the ECS
+  half of the claim goes. Recompute when the new prior seeds are in.
+- A3. Optional. A small classifier from the ego trajectory to the stop label, trained on the training
+  partition, as the ceiling of what the trajectory reveals.
+
+### B. Text, no new results
+
+- B1. Narrow the claim. The paper shows that generated motion depends on the vehicle input in the way the
+  recordings do. It does not show a reaction to the vehicle. New limitation: response to plans that were not
+  recorded with the pedestrian.
+- B2. Seeds. State which models have three seeds and that contrasts against a single-seed model have three
+  seed pairs. Simplify once C1 is in.
+- B3. Data. 5,893 recordings with mirrored copies, consent sentence, root source, and no "reliable" for the root.
+- B4. Numbers. MM column in Table II, gaps quoted before rounding, Brier gap out of the encoder paragraph.
+
+### C. GPU on Helma
+
+- C1. `rs1_uncond_s2345`, `rs1_uncond_s3456`, `rs1_uncond_ia_s2345`, `rs1_uncond_ia_s3456`. Submitted
+  2026-11-13 as jobs 1319359 to 1319370, three chained 24 h segments each, same code and configuration as
+  seed 1234 (Helma checkout 00da6a8, training code unchanged since). Then `select_uncond.sh` for the
+  zero-ego validation pass, selection as before, one test pass for the four new runs, and Tables II and III
+  recomputed with nine seed pairs.
+- C2. Retrain `research/src/regressor_baseline.py` on the scene split and score it with the per-condition
+  metrics. On the old split it had mean ADE 1.80 m against 2.32 m for the diffusion model and FID 36, so it
+  will probably win mean ADE and lose realism and coverage. The paper has to say that plainly.
+- C3. Yield against no-yield, fixed before any run. Both arms show the model the first second of the
+  recorded ego trajectory and then continue in the same direction. "Keeps going" holds the speed (the
+  existing `hor1` control), "brakes" decelerates at 2 m/s^2 until the vehicle stands (`--ego-brake 2`,
+  tested in `test_ego_editor.py`). Only the speed profile differs. Reported: the shift in the stop
+  probability, overall and for vehicles that move at more than 2 m/s after the first second, with the scene
+  bootstrap. Expectation: little change, because the data holds few interactions. Either outcome is reported.
+  Job: `slurm/resplit/eval_review.sh`.
+- C4. Foot-skate ratio and articulation of generated motion against the labels of the same windows
+  (`--save-skate`, same job), to put a number on "the feet slide as in the labels".
+
+### D. Open
+
+- D1. Mohan's qualitative figure and paragraph (Erik copies them in).
+- D2. Optional root check against the annotated box tracks, in the extraction repository.
+- D3. Neutral dataset name.
+
+## Protocol
+
+New subsets, baselines and edits are defined on validation, committed, and then applied to test once. The
+test partition is never used to choose a threshold or a model.
+
+## Status
+
+| Item | State |
+|---|---|
+| C1 prior seeds | queued on Helma 2026-11-13 |
+| A1 breakdown script | reviewed, frame bug fixed, validation output committed. Test run follows this commit |
+| C2 regressor | scene-split mode and job script written, one-epoch smoke test passed on CPU |
+| C3, C4 | editor and statistics written and tested on CPU, job script written |
+| Everything else | open |

@@ -110,12 +110,33 @@ MODELS = {
 }
 
 
+def body_stats(joints):
+    """(foot-skate ratio, planted fraction, articulation) of one joint sequence (L, 22, 3).
+
+    Skate ratio and planted fraction as in pose_quality_audit.py: the slowest foot joint over root speed while the
+    person walks (0 = clean footfalls, 1 = rigid sliding), and the share of walking frames with a planted foot.
+    Articulation: standard deviation over time of the root-relative joint positions, averaged over joints.
+    """
+    from pose_quality_audit import FEET, MOVING, PLANTED
+
+    v = np.diff(joints, axis=0) * FPS
+    root = np.linalg.norm(v[:, 0][:, [0, 2]], axis=-1)
+    foot = np.linalg.norm(v[:, FEET][:, :, [0, 2]], axis=-1).min(1)
+    walking = root > MOVING
+    articulation = float((joints - joints[:, :1])[:, 1:].std(0).mean())
+    if walking.sum() < 10:
+        return np.nan, np.nan, articulation
+    return float(np.median(foot[walking] / (root[walking] + 1e-8))), float((foot[walking] < PLANTED).mean()), articulation
+
+
 def ego_editor(args, dataset):
     """f(ego, first row of the batch, ego lengths) -> the edited ego input of the two ego controls.
 
     --ego-swap: every row gets the ego input of a row from another scene, of the closest length (wrong vehicle).
     --ego-horizon S: the model sees the first S seconds of the ego trajectory; later frames continue at the
     velocity of the last 0.5 s (S=0: the vehicle stands at its start). Edited in metres, then normalised again.
+    --ego-brake A (with --ego-horizon S > 0): after S seconds the vehicle keeps that direction but brakes at
+    A m/s^2 until it stands. Against the same horizon without braking, only the speed profile differs.
     """
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from make_scene_split import scene_of
@@ -135,6 +156,7 @@ def ego_editor(args, dataset):
         return lambda ego, start, ego_len: torch.as_tensor(egos[donor[start:start + len(ego)]], device=ego.device)
 
     cut = int(round(args.ego_horizon * FPS))
+    brake = getattr(args, "ego_brake", None)
 
     def to_raw(e):
         if dataset.ego_mean is not None and dataset.ego_std is not None:
@@ -153,7 +175,13 @@ def ego_editor(args, dataset):
             else:
                 first = max(cut - 1 - FPS // 2, 0)
                 v = (raw[cut - 1] - raw[first]) / max(cut - 1 - first, 1)
-                raw[cut:] = raw[cut - 1] + v * np.arange(1, L - cut + 1)[:, None]
+                steps = np.arange(1, L - cut + 1)
+                if brake is None:
+                    raw[cut:] = raw[cut - 1] + v * steps[:, None]
+                else:
+                    speed, t = np.linalg.norm(v) * FPS, steps / FPS  # m/s, s
+                    travelled = np.where(t < speed / brake, speed * t - 0.5 * brake * t ** 2, speed ** 2 / (2 * brake))
+                    raw[cut:] = raw[cut - 1] + v / max(np.linalg.norm(v), 1e-8) * travelled[:, None]
             out[b, :L] = dataset._normalize_ego(raw)
         return torch.as_tensor(out, device=ego.device)
     return edit
@@ -168,12 +196,17 @@ def main():
     ap.add_argument("--zero-ego", action="store_true")
     ap.add_argument("--ego-swap", action="store_true", help="wrong-vehicle control, see ego_editor")
     ap.add_argument("--ego-horizon", type=float, help="seconds of ego trajectory shown, see ego_editor")
+    ap.add_argument("--ego-brake", type=float, help="m/s^2 of braking after the horizon, see ego_editor")
+    ap.add_argument("--save-skate", action="store_true",
+                    help="also save foot-skate ratio and articulation of every generated sample and of the labels")
     ap.add_argument("--k", type=int, default=5, help="samples per condition")
     ap.add_argument("--split", default="val_test", choices=["val_test", "full_val", "scene_val", "scene_test"])
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--save-roots", action="store_true",
                     help="also save generated/GT root XZ trajectories (item 9 behavioral probe)")
     args = ap.parse_args()
+    if args.ego_brake is not None and not args.ego_horizon:
+        ap.error("--ego-brake needs --ego-horizon > 0")
     if args.ckpt:
         spec = dict(cfg=args.cfg, ckpt=args.ckpt, guidance=args.guidance, zero_ego=args.zero_ego)
     else:
@@ -225,6 +258,7 @@ def main():
 
     ade_all, fde_all = [], []           # per condition, per k
     roots_gen, roots_gt, lens_all = [], [], []   # optional dumps (--save-roots)
+    body_gen, body_gt = [], []                   # optional body statistics (--save-skate)
     n_cond = 0
     with torch.no_grad():
         for batch in loader:
@@ -240,9 +274,15 @@ def main():
             B = gt_root.shape[0]
             ades = np.zeros((B, args.k)); fdes = np.zeros((B, args.k))
             batch_gen = []
+            if args.save_skate:
+                body_gt.extend(body_stats(joints_ref[i, :int(lengths[i])].numpy()) for i in range(B))
+                batch_body = []
             for k in range(args.k):
                 rs = model.test_diffusion_forward(batch)
-                gen_root = rs["joints_rst"].detach().cpu()[:, :, 0, [0, 2]].numpy()
+                gen_joints = rs["joints_rst"].detach().cpu()
+                gen_root = gen_joints[:, :, 0, [0, 2]].numpy()
+                if args.save_skate:
+                    batch_body.append([body_stats(gen_joints[i, :int(lengths[i])].numpy()) for i in range(B)])
                 if args.save_roots:
                     batch_gen.append(gen_root.astype("float32"))
                 for i in range(B):
@@ -251,6 +291,8 @@ def main():
                     ades[i, k] = d.mean()
                     fdes[i, k] = d[L - 1]
             ade_all.append(ades); fde_all.append(fdes)
+            if args.save_skate:
+                body_gen.append(np.array(batch_body).transpose(1, 0, 2))  # (B, K, 3)
             if args.save_roots:
                 roots_gen.append(np.stack(batch_gen, axis=1))  # (B, K, T, 2)
                 roots_gt.append(gt_root.astype("float32"))
@@ -265,12 +307,15 @@ def main():
     out = f"research/data/ade_fde_{args.model}_{args.split}_k{args.k}.npz"
     # source/folder/name per row: scene-clustered bootstrap and alignment checks need the identity
     paths = np.array(["/".join(Path(p).parts[-3:]) for p in datamodule.test_dataset.sample_paths])
+    extra = {}
+    if args.save_skate:  # columns: skate ratio, planted fraction, articulation
+        extra = dict(body_gen=np.concatenate(body_gen), body_gt=np.array(body_gt))
     if args.save_roots:
         np.savez(out, ades=ades, fdes=fdes, paths=paths,
                  roots_gen=np.concatenate(roots_gen), roots_gt=np.concatenate(roots_gt),
-                 lengths=np.array(lens_all))
+                 lengths=np.array(lens_all), **extra)
     else:
-        np.savez(out, ades=ades, fdes=fdes, paths=paths)
+        np.savez(out, ades=ades, fdes=fdes, paths=paths, **extra)
     print("saved", out)
 
 

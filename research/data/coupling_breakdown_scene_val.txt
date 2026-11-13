@@ -1,0 +1,53 @@
+split=scene_val N=1194 scenes=107 stopping rate=0.228; seeds: EgoPed 3, Full-seq 3, prior 1
+* = 95% scene-bootstrap interval excludes 0 and all seed pairs agree in sign
+
+1. Kinds of stopping (stands throughout = never leaves a 1.0 m radius)
+   stands throughout 161 of 272 stopping conditions (59%), moves and stops 111, walks 922
+   model      p|stands  p|moves+stops  p|walks     ECS   ECS, moves and stops only
+   EgoPed        0.601          0.298    0.114   0.363   +0.184 [+0.080, +0.323]
+   Full-seq      0.516          0.286    0.124   0.298   +0.162 [+0.064, +0.290]
+   prior         0.251          0.238    0.221   0.024   +0.016 [-0.014, +0.046]
+   EgoPed minus prior, ECS on moves and stops: +0.167 [+0.055, +0.323]*
+   Full-seq minus prior, ECS on moves and stops: +0.146 [+0.039, +0.284]*
+
+0. Frame of the ego input: 523 of 1194 conditions (44%) are windows that start after the track's first frame.
+   There the model sees the vehicle in the frame of the track's first pose: offset to the window frame median 2.5 m (90th percentile 10.9 m), yaw median 5 deg (90th percentile 40 deg).
+   Among them recorded stop rate 0.310, elsewhere 0.164. Rows that load the next sample because their own is too short: 42. Vehicle record shorter than the sequence: 0.
+   EgoPed    ECS on windows that start later +0.220, on the others +0.546
+   Full-seq  ECS on windows that start later +0.175, on the others +0.454
+   prior     ECS on windows that start later +0.000, on the others +0.032
+
+2. Pedestrian never within a margin of where the vehicle is or later drives (median closest approach 10.9 m)
+   margin 2.5 m: 1172 of 1194 conditions (98.2%), stopping rate 0.227
+     EgoPed    ECS +0.365 [+0.253, +0.477]  ADE 2.246   | rest (22): ECS +0.229  ADE 3.514
+     Full-seq  ECS +0.299 [+0.204, +0.395]  ADE 2.612   | rest (22): ECS +0.157  ADE 4.093
+     prior     ECS +0.027 [-0.000, +0.056]  ADE 3.045   | rest (22): ECS -0.112  ADE 4.159
+     EgoPed minus prior on these conditions: ECS +0.338 [+0.219, +0.459]*, ADE gain +0.799 [+0.596, +0.980]* m
+     Full-seq minus prior on these conditions: ECS +0.272 [+0.176, +0.379]*, ADE gain +0.433 [+0.194, +0.662]* m
+   margin 1.5 m: 1181 of 1194 conditions (98.9%), stopping rate 0.229
+     EgoPed    ECS +0.365 [+0.254, +0.476]  ADE 2.250   | rest (13): ECS +0.373  ADE 4.046
+     Full-seq  ECS +0.303 [+0.210, +0.398]  ADE 2.616   | rest (13): ECS +0.009  ADE 4.761
+     prior     ECS +0.025 [-0.003, +0.053]  ADE 3.059   | rest (13): ECS -0.009  ADE 3.680
+   margin 4.0 m: 1133 of 1194 conditions (94.9%), stopping rate 0.219
+     EgoPed    ECS +0.354 [+0.243, +0.466]  ADE 2.249   | rest (61): ECS +0.325  ADE 2.647
+     Full-seq  ECS +0.289 [+0.194, +0.389]  ADE 2.616   | rest (61): ECS +0.228  ADE 3.079
+     prior     ECS +0.023 [-0.006, +0.051]  ADE 3.025   | rest (61): ECS +0.023  ADE 3.816
+
+3. Angle between the vehicle's direction of travel and the pedestrian's facing axis
+   vehicle           n  recorded stop  EgoPed p  prior p  EgoPed ECS in bin
+   0-10 deg        506          0.071     0.054    0.213             +0.369
+   10-20 deg        76          0.276     0.139    0.237             +0.123
+   20-40 deg        77          0.312     0.229    0.244             +0.320
+   40-60 deg        79          0.392     0.433    0.220             +0.339
+   60-90 deg       179          0.458     0.503    0.217             +0.297
+   hardly moves    277          0.282     0.201    0.253             +0.180
+   EgoPed ECS within bins, weighted by bin size: +0.293 [+0.163, +0.447] (overall +0.363); bins left out: 0 here, in 0.0% of draws
+
+   predictor of stopping                          ECS    AUC   Brier  stop rate
+   EgoPed samples (mean of seeds)              +0.363  0.749   0.167      0.197
+   Full-seq samples (mean of seeds)            +0.298  0.738   0.171      0.192
+   prior samples (mean of seeds)               +0.024  0.535   0.205      0.227
+   rule: stops unless within 10 deg            +0.377  0.689   0.409      0.576
+   angle-bin stopping rate (out of fold)       +0.095  0.664   0.166      0.226
+   constant stopping rate                      +0.000  0.500   0.176      0.228
+   recorded stopping rate 0.228
