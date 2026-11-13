@@ -310,7 +310,7 @@ test partition is never used to choose a threshold or a model.
 | Qualitative export | regenerated with the vehicle in the joints' frame: 16 of 28 `ego.npy` files were wrong by up to 12.6 m and 111 degrees. Corrected copy on the NAS in `qualitatives/egoped_scene_test_2026-11-13_frame_fixed/`, warning note added to the old folder. Mohan has to place the vehicle again in any scene built from the 16 folders |
 | Teaser, Fig. 1 | done. Panel (b) (validation row 523) rendered again with the vehicle in the frame of the joints, camera moved to keep all five vehicle positions in view |
 | Brier column | done. Tables II and V carry the noise-corrected score, Section V says it was adopted after the test pass |
-| rs2 retraining | queued on Helma, jobs 1320604 to 1320662, nice 100 |
+| rs2 retraining | running on Helma, jobs 1320604 to 1320662, nice 100. Both encoders completed 2026-11-13 17:03 (best validation MSE 1.908 full-sequence and 1.902 pooled, against 1.915 and 1.904 for rs1, so the frame barely changes pretraining). At 17:14 nine of the 19 runs were training and ten waited for a GPU. Checked in the dumped run configs of the first five: `EGO_WINDOW_FRAME: true`, the rs2 encoder of the right kind, no errors |
 | C2 regressor | done on validation and test, in the paper (Table II, Section VI-A). The training jobs 1319608 to 1319610 hit the two-hour limit after the kept checkpoint (epoch 10 to 20), scoring jobs 1320734 to 1320736 completed |
 | C3, C4 | done on validation and test, in the paper (Section VI-D, limitations, conclusion). See the section above |
 | Everything else | open |
