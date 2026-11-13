@@ -29,7 +29,7 @@ from scipy.stats import mannwhitneyu
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from compare_resplit import cell_of, load, metrics, scene_key  # noqa: E402
+from compare_resplit import cell_of, load, metrics, pick, scene_key  # noqa: E402
 
 FPS = 20
 STILL_RADIUS = 1.0  # m; a stopping pedestrian who never leaves this radius stands throughout
@@ -170,9 +170,10 @@ def main():
     ap.add_argument("--split", required=True, choices=["scene_val", "scene_test"])
     ap.add_argument("--selection", default="research/data/resplit_selection.json")
     ap.add_argument("--data", default=str(Path(__file__).resolve().parent.parent / "data"))
+    ap.add_argument("--gen", default="rs1", help="rs1: ego in the frame of the track's first pose, rs2: of the window start")
     args = ap.parse_args()
 
-    cells, ref = load_cells(Path(args.data), json.load(open(args.selection)), args.split)
+    cells, ref = load_cells(Path(args.data), pick(json.load(open(args.selection)), args.gen), args.split)
     gt, lens, paths = ref["gt"], ref["lens"], ref["paths"]
     stop, n = ref["stop"].astype(bool), len(ref["gt"])
     walk, every = ~stop, np.arange(len(ref["gt"]))
@@ -208,7 +209,7 @@ def main():
     shifted = offset > 0
     print(f"\n0. Frame of the ego input: {shifted.sum()} of {n} conditions ({shifted.mean():.0%}) are windows that start "
           f"after the track's first frame.")
-    print(f"   There the model sees the vehicle in the frame of the track's first pose: offset to the window frame "
+    print(f"   There an rs1 model sees the vehicle in the frame of the track's first pose (this run: {args.gen}): offset to the window frame "
           f"median {np.median(offset[shifted]):.1f} m (90th percentile {np.percentile(offset[shifted], 90):.1f} m), "
           f"yaw median {np.median(yaw[shifted]):.0f} deg (90th percentile {np.percentile(yaw[shifted], 90):.0f} deg).")
     print(f"   Among them recorded stop rate {stop[shifted].mean():.3f}, elsewhere {stop[~shifted].mean():.3f}. "

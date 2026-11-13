@@ -219,9 +219,7 @@ going, EgoPed's three seeds, `*` = rule met.
 - **Not yet done for rs2.** The regressor baseline (`regressor.sh <seed> rs2`), the ego controls, and an
   `rs2` switch in `coupling_breakdown.py` (its section 0 assumes the old frame). Selection needs
   `select_resplit.py --pattern 'rs2_*'` and its own selection file, which also lists the rs1 priors.
-  `cell_of` now drops the generation prefix and `compare_resplit.py` refuses a cell that mixes rs1 and rs2,
-  but `coupling_breakdown.py`, `ego_controls.py` and `review_controls.py` take one selection file and must
-  be given the rs2 one. `review_controls.py` looks for `rs1_regressor` dumps only.
+  The analysis scripts now take `--gen rs2`, see the decision rule below.
 - **Reviewed before submission.** An independent review of the change traced the flag from the job scripts
   into training, resumed segments, training-time validation, encoder pretraining and every evaluation
   script, and found no path that runs with the flag off. It found four later problems, all fixed in 3c3596c
@@ -240,6 +238,27 @@ going, EgoPed's three seeds, `*` = rule met.
   rules on validation and then scored on test once. The paper must say that the frame was corrected after
   the first test pass and that the selection rules were not changed. Whether rs2 replaces rs1 in the tables
   is decided when the validation results are in. If rs2 is not clearly better on validation, rs1 stays.
+
+### Decision rule and steps for rs2, fixed 2026-11-13 before any rs2 run has a validation result
+
+- **Rule.** Each family at its own selected checkpoints and guidance, on validation. rs2 replaces rs1 in the
+  tables if its method cell (`pooled`) beats that of rs1 under the usual rule (interval excludes 0, all nine
+  seed pairs agree) on mean ADE or on ECS, and loses under the rule on none of ADE, ECS and corrected Brier.
+  Otherwise rs1 stays, and the paper gets one sentence with the rs2 validation numbers as a robustness check.
+  FID plays no part. The seed-to-seed spread of rs1 `pooled` on validation is about 0.11 m in ADE and 0.03
+  in ECS, so a real gain has to exceed that in every pair.
+- **Secondary, reported either way.** The ECS on windows that start later against the others (rs1
+  validation 0.22 against 0.55, `coupling_breakdown.py --gen rs2`). The fix should narrow that gap.
+- **Steps, on Helma from the repository root.**
+  1. `python research/src/select_resplit.py --pattern 'rs2_*' --out research/data/resplit_epochs_rs2.json`
+  2. `bash slurm/resplit/submit_evals.sh sweep research/data/resplit_epochs_rs2.json`
+  3. `python research/src/select_resplit.py --pattern 'rs2_*' --guidance research/data/resplit_epochs_rs2.json --out research/data/resplit_selection_rs2.json`
+  4. `python research/src/compare_resplit.py --split scene_val --gen rs2 --against rs1 --selection research/data/resplit_selection.json research/data/resplit_ablation_selection.json research/data/resplit_selection_rs2.json`
+  5. Only if the rule says rs2: `submit_evals.sh test` with the rs2 selection, `eval_controls.sh` and
+     `eval_review.sh` for the three `rs2_pooled` seeds, `regressor.sh <seed> rs2`, then every table, with
+     `--gen rs2` in `coupling_breakdown.py`, `ego_controls.py` and `review_controls.py`.
+- The analysis scripts take `--gen` (default rs1). The ego-blind priors belong to both generations.
+  Checked with stand-in dumps: the same three rs1 dumps under rs2 names give a difference of zero and no star.
 
 ## Next steps, in order
 

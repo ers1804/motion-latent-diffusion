@@ -27,7 +27,7 @@ import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent))
-from compare_resplit import beats, cell_of, compare, load, metrics, scene_key  # noqa: E402
+from compare_resplit import beats, cell_of, compare, load, metrics, pick, scene_key  # noqa: E402
 from coupling_breakdown import Bootstrap, auc, fmt, load_geometry  # noqa: E402
 
 FPS = 20
@@ -123,7 +123,7 @@ def body(args, tags, runs, full, boot):
 
 
 def regressor(args, tags, full, cells, boot):
-    files = sorted(args.data.glob(f"ade_fde_rs1_regressor_s*_{args.split}_k1.npz"))
+    files = sorted(args.data.glob(f"ade_fde_{args.gen}_regressor_s*_{args.split}_k1.npz"))
     print(f"\n3. Deterministic regressor ({len(files)} seeds) against the diffusion models")
     if not files:
         print("   no regressor dumps found")
@@ -164,9 +164,10 @@ def main():
     ap.add_argument("--selection", default="research/data/resplit_selection.json")
     ap.add_argument("--data", type=Path, default=Path(__file__).resolve().parent.parent / "data")
     ap.add_argument("--skip", nargs="*", default=[], choices=["braking", "body", "regressor"])
+    ap.add_argument("--gen", default="rs1", help="generation of the conditional runs and the regressor, see compare_resplit")
     args = ap.parse_args()
 
-    selection = json.load(open(args.selection))
+    selection = pick(json.load(open(args.selection)), args.gen)
     tags = {run: f"{run}_ep{s['epoch']}_cfg{s['guidance']}" for run, s in selection.items()}
     runs = sorted(r for r in tags if cell_of(r) == "pooled")
     cells = {c: [load(args.data / f"ade_fde_{tags[r]}_{args.split}_k5.npz") for r in sorted(tags) if cell_of(r) == c]

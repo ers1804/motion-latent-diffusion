@@ -14,7 +14,7 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from compare_resplit import beats, cell_of, compare, load, metrics, scene_key  # noqa: E402
+from compare_resplit import beats, cell_of, compare, load, metrics, pick, scene_key  # noqa: E402
 
 CONTROLS = [("hor4", "ego known for 4 s"), ("hor2", "ego known for 2 s"), ("hor1", "ego known for 1 s"),
             ("hor0", "vehicle frozen at start"), ("swap", "wrong vehicle (other scene)"), ("zero", "ego zeroed")]
@@ -27,9 +27,10 @@ def main():
     ap.add_argument("--cell", default="pooled")
     ap.add_argument("--prior", default="uncond")
     ap.add_argument("--data", default=str(Path(__file__).resolve().parent.parent / "data"))
+    ap.add_argument("--gen", default="rs1", help="generation of the conditional runs, see compare_resplit")
     args = ap.parse_args()
 
-    selection = json.load(open(args.selection))
+    selection = pick(json.load(open(args.selection)), args.gen)
     tags = {run: f"{run}_ep{s['epoch']}_cfg{s['guidance']}" for run, s in selection.items()}
     runs = sorted(r for r in tags if cell_of(r) == args.cell)
     dump = lambda tag: load(Path(args.data) / f"ade_fde_{tag}_{args.split}_k5.npz")

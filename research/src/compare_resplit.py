@@ -9,6 +9,10 @@ contrast: egoped vs pooled, mean ADE. Delta > 0 means the first cell is better.
 Selection file: {"rs1_egoped_s1234": {"epoch": 2999, "guidance": 10}, ...}
 Usage: python research/src/compare_resplit.py --split scene_val --selection <json> [<json> ...] [--data research/data]
 Several selection files are merged, e.g. the 2x2 and the encoder ablations.
+
+Generations: rs1 runs saw the ego of a windowed track in the frame of the track's first pose, rs2 runs in the frame
+of the window start. --gen picks one (default rs1), the ego-blind priors exist only as rs1 and belong to both.
+--against rs1 also prints every cell of --gen against the same cell of the other generation.
 """
 import argparse
 import json
@@ -39,6 +43,15 @@ CONTRASTS = [("egoped", "pooled"), ("egoped_ia", "pooled_ia"),  # encoder at mat
 
 def cell_of(run):
     return re.sub(r"_s\d+$", "", re.sub(r"^rs\d+_", "", run))  # rs1_pooled_s1234 and rs2_pooled_s1234 -> pooled
+
+
+def generation_of(run):
+    return run.split("_")[0]
+
+
+def pick(selection, gen):
+    """The runs of one generation plus the ego-blind priors, which never see the ego and exist only as rs1."""
+    return {r: s for r, s in selection.items() if generation_of(r) == gen or cell_of(r).startswith("uncond")}
 
 
 def scene_key(path):
@@ -101,25 +114,32 @@ def main():
     ap.add_argument("--split", required=True, choices=["scene_val", "scene_test"])
     ap.add_argument("--selection", required=True, nargs="+")
     ap.add_argument("--data", default=str(Path(__file__).resolve().parent.parent / "data"))
+    ap.add_argument("--gen", default="rs1", help="generation of the conditional runs, see the module docstring")
+    ap.add_argument("--against", help="another generation to compare --gen with, cell by cell")
     args = ap.parse_args()
 
     selection = {}
     for f in args.selection:
         selection.update(json.load(open(f)))
-    cells, ref = {}, None
-    for run, s in sorted(selection.items()):
-        f = Path(args.data) / f"ade_fde_{run}_ep{s['epoch']}_cfg{s['guidance']}_{args.split}_k5.npz"
-        if not f.exists():
-            print(f"missing {f.name}")
-            continue
-        m = load(f)
-        ref = ref or m
-        err = max(np.abs(m["gt"][i, :ref["lens"][i]] - ref["gt"][i, :ref["lens"][i]]).max() for i in range(len(ref["gt"])))
-        assert err < 1e-3 and (m["lens"] == ref["lens"]).all() and (m["paths"] == ref["paths"]).all(), (run, err)
-        m["run"] = run
-        cells.setdefault(cell_of(run), []).append(m)
-    for cell, runs in cells.items():  # rs1 and rs2 runs of one kind must not be averaged into one cell
-        assert len({m["run"].split("_")[0] for m in runs}) == 1, f"{cell}: {[m['run'] for m in runs]}"
+
+    def load_cells(chosen, ref=None):
+        cells = {}
+        for run, s in sorted(chosen.items()):
+            f = Path(args.data) / f"ade_fde_{run}_ep{s['epoch']}_cfg{s['guidance']}_{args.split}_k5.npz"
+            if not f.exists():
+                print(f"missing {f.name}")
+                continue
+            m = load(f)
+            ref = ref or m
+            err = max(np.abs(m["gt"][i, :ref["lens"][i]] - ref["gt"][i, :ref["lens"][i]]).max() for i in range(len(ref["gt"])))
+            assert err < 1e-3 and (m["lens"] == ref["lens"]).all() and (m["paths"] == ref["paths"]).all(), (run, err)
+            m["run"] = run
+            cells.setdefault(cell_of(run), []).append(m)
+        for cell, runs in cells.items():  # rs1 and rs2 runs of one kind must not be averaged into one cell
+            assert len({generation_of(m["run"]) for m in runs}) == 1, f"{cell}: {[m['run'] for m in runs]}"
+        return cells, ref
+
+    cells, ref = load_cells(pick(selection, args.gen))
 
     clusters = {}
     for i, p in enumerate(ref["paths"]):
@@ -142,6 +162,16 @@ def main():
         print(f"{a} vs {b}")
         for k, v in r.items():
             print(f"  {k:7s}{v[0]:+.3f} [{v[1]:+.3f},{v[2]:+.3f}] p={v[3]:.3f} ({v[4]:+.3f},{v[5]:+.3f}){' *' if beats(v) else ''}")
+
+    if args.against:  # the same model kind, trained with the other ego frame, on the same conditions
+        other, _ = load_cells({r: s for r, s in selection.items() if generation_of(r) == args.against
+                               and not cell_of(r).startswith("uncond")}, ref)
+        print(f"\n{args.gen} against {args.against}, cell by cell; delta>0 = {args.gen} better")
+        for cell in sorted(set(cells) & set(other)):
+            r = compare(cells[cell], other[cell], clusters)
+            print(f"{cell} ({len(cells[cell])} against {len(other[cell])} seeds)")
+            for k, v in r.items():
+                print(f"  {k:7s}{v[0]:+.3f} [{v[1]:+.3f},{v[2]:+.3f}] p={v[3]:.3f} ({v[4]:+.3f},{v[5]:+.3f}){' *' if beats(v) else ''}")
 
 
 if __name__ == "__main__":
