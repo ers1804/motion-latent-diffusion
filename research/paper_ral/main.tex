@@ -255,7 +255,7 @@ For each test condition we draw $K{=}5$ samples, take the pelvis ground-plane pa
 
 \paragraph{Ego-Coupling Score.}
 \label{sec:behavior}
-A pedestrian \emph{stops} if the root speed stays below 0.2\,m/s for at least 1\,s. For condition $\mathbf{e}$, $\hat{p}(\mathrm{stop}\mid\mathbf{e})$ is the fraction of the $K$ samples that stop. The Ego-Coupling Score (ECS) is the mean of $\hat{p}$ over conditions whose recorded pedestrian stops minus its mean over conditions whose pedestrian walks. It is 0 for a model that ignores the vehicle and 1 for perfect coupling. A predictor that stops too often can also score high, so we always report the Brier score of $\hat{p}$ against the recorded label with it. Stopping occurs in 24\% of test conditions, whereas crossing the vehicle's path occurs in only about 2\% and is too rare to score.
+A pedestrian \emph{stops} if the root speed stays below 0.2\,m/s for at least 1\,s. For condition $\mathbf{e}$, $\hat{p}(\mathrm{stop}\mid\mathbf{e})$ is the fraction of the $K$ samples that stop. The Ego-Coupling Score (ECS) is the mean of $\hat{p}$ over conditions whose recorded pedestrian stops minus its mean over conditions whose pedestrian walks. It is 0 for a model that ignores the vehicle and 1 for perfect coupling. A predictor that stops too often can also score high, so we always report the Brier score of $\hat{p}$ against the recorded label with it. From that score we subtract the sampling noise of the $K$ draws, $\hat{p}(1-\hat{p})/(K-1)$ per condition, which otherwise penalises a model for spreading its samples. We adopted this correction after the test pass (uncorrected, \method scores 0.191 and the prior 0.214). Stopping occurs in 24\% of test conditions, whereas crossing the vehicle's path occurs in only about 2\% and is too rare to score.
 
 \paragraph{Seeds, statistics and selection.}
 The four main models and the two encoder ablations are trained with three seeds each, the two priors and the trainable \fullseq run with one. Each seed's checkpoint is the one with the lowest validation FID among 50 saved every 100 epochs, and each model's guidance scale is the one in $\{5, 10, 15\}$ with the lowest validation FID averaged over its seeds. Unconditional models see the real ego trajectory during training-time validation, so their checkpoints are chosen by an offline validation pass with the ego zeroed.
@@ -277,14 +277,14 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
     \toprule
     Model & FID $\downarrow$ & Div. & MM & ADE $\downarrow$ & FDE $\downarrow$ & minADE $\downarrow$ & minFDE $\downarrow$ & ECS $\uparrow$ & Brier $\downarrow$ \\
     \midrule
-    \method & 5.67\ci{5.36}{6.26} & 5.63 & 3.10 & \textbf{2.43}\ci{2.38}{2.48} & \textbf{5.11} & 1.65\ci{1.59}{1.74} & 3.40 & \textbf{0.31}\ci{0.29}{0.34} & 0.191 \\
-    \fullseq & 4.16\ci{2.96}{4.91} & 5.78 & 3.92 & 2.69\ci{2.52}{2.98} & 5.67 & \textbf{1.54}\ci{1.49}{1.57} & \textbf{3.18} & 0.27\ci{0.24}{0.29} & \textbf{0.178} \\
-    \method + IA & 4.84\ci{4.69}{5.04} & 5.83 & 3.22 & 2.93\ci{2.86}{3.03} & 6.23 & 2.04\ci{1.98}{2.13} & 4.29 & 0.21\ci{0.18}{0.25} & 0.194 \\
-    \fullseq + IA & \textbf{3.24}\ci{2.73}{4.14} & 5.89 & 3.21 & 3.01\ci{2.82}{3.14} & 6.50 & 2.07\ci{1.72}{2.31} & 4.42 & 0.10\ci{0.06}{0.12} & 0.214 \\
-    \fullseq, encoder trainable (1 seed) & 6.54 & 5.32 & 4.66 & 2.67 & 5.55 & 1.39 & 2.79 & 0.04 & 0.209 \\
+    \method & 5.67\ci{5.36}{6.26} & 5.63 & 3.10 & \textbf{2.43}\ci{2.38}{2.48} & \textbf{5.11} & 1.65\ci{1.59}{1.74} & 3.40 & \textbf{0.31}\ci{0.29}{0.34} & 0.180 \\
+    \fullseq & 4.16\ci{2.96}{4.91} & 5.78 & 3.92 & 2.69\ci{2.52}{2.98} & 5.67 & \textbf{1.54}\ci{1.49}{1.57} & \textbf{3.18} & 0.27\ci{0.24}{0.29} & \textbf{0.162} \\
+    \method + IA & 4.84\ci{4.69}{5.04} & 5.83 & 3.22 & 2.93\ci{2.86}{3.03} & 6.23 & 2.04\ci{1.98}{2.13} & 4.29 & 0.21\ci{0.18}{0.25} & 0.186 \\
+    \fullseq + IA & \textbf{3.24}\ci{2.73}{4.14} & 5.89 & 3.21 & 3.01\ci{2.82}{3.14} & 6.50 & 2.07\ci{1.72}{2.31} & 4.42 & 0.10\ci{0.06}{0.12} & 0.202 \\
+    \fullseq, encoder trainable (1 seed) & 6.54 & 5.32 & 4.66 & 2.67 & 5.55 & 1.39 & 2.79 & 0.04 & 0.195 \\
     \midrule
-    Trained prior (no ego, 1 seed) & 4.67 & 5.79 & 5.23 & 3.11 & 6.38 & 1.31 & 2.64 & 0.02 & 0.214 \\
-    Trained prior + IA (1 seed) & 3.29 & 5.47 & 4.76 & 3.00 & 6.30 & 1.52 & 3.09 & 0.01 & 0.220 \\
+    Trained prior (no ego, 1 seed) & 4.67 & 5.79 & 5.23 & 3.11 & 6.38 & 1.31 & 2.64 & 0.02 & 0.179 \\
+    Trained prior + IA (1 seed) & 3.29 & 5.47 & 4.76 & 3.00 & 6.30 & 1.52 & 3.09 & 0.01 & 0.205 \\
     \bottomrule
   \end{tabular}
 \end{table*}
@@ -336,7 +336,7 @@ Read by FID, Table~\ref{tab:main} tells a different story. The best FID belongs 
 \label{sec:design}
 
 \paragraph{Pooled against full-sequence conditioning.}
-Letting the denoiser attend to all 196 encoder tokens instead of one pooled token makes per-condition predictions worse on average. \fullseq trails \method by 0.26\,m in mean ADE (Table~\ref{tab:contrasts}), the pre-specified primary contrast, and did so on validation as well (0.37\,m). The trade-off is spread. \fullseq's samples cover more outcomes (MM 3.92 vs.\ 3.10, better minADE by 0.11\,m) and its FID is lower, at 201 instead of 6 tokens per denoising step. On coupling the two encoders are close without IA (ECS 0.27 vs.\ 0.31, below our rule on test, met on validation), and \method couples clearly better with IA (0.21 vs.\ 0.10). A likely cause is pretraining, which aligns only the pooled token and never the 196 per-frame tokens.
+Letting the denoiser attend to all 196 encoder tokens instead of one pooled token makes per-condition predictions worse on average. \fullseq trails \method by 0.26\,m in mean ADE (Table~\ref{tab:contrasts}), the pre-specified primary contrast, and did so on validation as well (0.37\,m). The trade-off is spread. \fullseq's samples cover more outcomes (MM 3.92 vs.\ 3.10, better minADE by 0.11\,m), its FID is lower and its Brier score is better on test (0.162 vs.\ 0.180, level on validation), at 201 instead of 6 tokens per denoising step. On coupling the two encoders are close without IA (ECS 0.27 vs.\ 0.31, below our rule on test, met on validation), and \method couples clearly better with IA (0.21 vs.\ 0.10). A likely cause is pretraining, which aligns only the pooled token and never the 196 per-frame tokens.
 
 \paragraph{Freezing and pretraining.}
 Table~\ref{tab:design} reports \method with its encoder trained together with the denoiser, initialised from pretraining or from scratch, three seeds each, selected like every other model.
@@ -372,7 +372,7 @@ A single-seed \fullseq run with a trainable encoder, by contrast, stays close to
 \label{sec:controls}
 
 Table~\ref{tab:controls} gives \method's three seeds manipulated ego input, without retraining.
-Given the trajectory of a vehicle from another scene, \method is no better than the trained prior (ADE 3.09 against 3.11\,m) and its coupling vanishes (ECS 0.00). Its Brier score (0.31) is far worse than the prior's, because it reacts confidently to the wrong vehicle. Zeroing the input gives the prior's numbers too. A vehicle that stays at its start position removes most of the coupling as well (ECS 0.06), so the model reacts to how the vehicle moves, not only to where it is.
+Given the trajectory of a vehicle from another scene, \method is no better than the trained prior (ADE 3.09 against 3.11\,m) and its coupling vanishes (ECS 0.00). Its Brier score (0.30) is far worse than the prior's (0.18), because it reacts confidently to the wrong vehicle. Zeroing the input gives the prior's numbers too. A vehicle that stays at its start position removes most of the coupling as well (ECS 0.06), so the model reacts to how the vehicle moves, not only to where it is.
 Showing only the first second and continuing it at constant velocity keeps the coupling (ECS 0.31 on test, 0.30 against 0.36 on validation, not a difference under our rule) and most of the gain in ADE (2.60\,m, between 2.43 with the full trajectory and 3.04 with a stationary vehicle). The stop decision is thus carried by the vehicle's early motion, and its later trajectory refines the path. The ADE cost of the 1\,s horizon meets our rule on both partitions, as do all differences between the full input and the stationary, foreign or zeroed vehicle.
 
 \begin{table}[t]
@@ -386,14 +386,14 @@ Showing only the first second and continuing it at constant velocity keeps the c
     \toprule
     Ego input & ADE $\downarrow$ & minADE $\downarrow$ & ECS $\uparrow$ & Brier $\downarrow$ \\
     \midrule
-    Full trajectory (9.8\,s) & 2.43 & 1.65 & 0.31 & 0.191 \\
-    First 2\,s, then constant velocity & 2.52 & 1.74 & 0.33 & 0.194 \\
-    First 1\,s, then constant velocity & 2.60 & 1.81 & 0.31 & 0.205 \\
-    Vehicle stationary at its start & 3.04 & 2.07 & 0.06 & 0.239 \\
-    Vehicle from another scene & 3.09 & 2.31 & 0.00 & 0.312 \\
-    Zeroed (unconditional branch) & 3.03 & 1.31 & 0.03 & 0.210 \\
+    Full trajectory (9.8\,s) & 2.43 & 1.65 & 0.31 & 0.180 \\
+    First 2\,s, then constant velocity & 2.52 & 1.74 & 0.33 & 0.184 \\
+    First 1\,s, then constant velocity & 2.60 & 1.81 & 0.31 & 0.195 \\
+    Vehicle stationary at its start & 3.04 & 2.07 & 0.06 & 0.231 \\
+    Vehicle from another scene & 3.09 & 2.31 & 0.00 & 0.302 \\
+    Zeroed (unconditional branch) & 3.03 & 1.31 & 0.03 & 0.177 \\
     \midrule
-    Trained prior (no ego) & 3.11 & 1.31 & 0.02 & 0.214 \\
+    Trained prior (no ego) & 3.11 & 1.31 & 0.02 & 0.179 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -404,7 +404,7 @@ Showing only the first second and continuing it at constant velocity keeps the c
 We probed the score with definitions fixed on validation. First, 57\% of the recorded stops are pedestrians who stand throughout, within a 1\,m radius. \method gives them a stop probability of 0.55, against 0.30 for those who move and then stop and 0.13 for walkers, and its lead over the prior in the middle group (ECS 0.17 against 0.05) meets our rule on validation but not on test.
 Second, in 99\% of the test conditions the pedestrian never comes within 2.5\,m of where the vehicle is or later drives (median closest approach 10.4\,m), and there \method keeps its ECS (0.31 against 0.02) and its ADE gain (0.68\,m). The recording vehicle thus cannot have revealed the outcome by reacting to the pedestrian, but for the same reason the data holds almost no interaction.
 Third, part of the signal is geometry. Walkers mostly face along the road, so 9\% of pedestrians stop when the vehicle travels within $10^\circ$ of the axis they face and 40\% beyond $60^\circ$. Within bins of this angle \method keeps an ECS of 0.17 (0.29 on validation). A rule that predicts a stop unless the vehicle travels within $10^\circ$ of that axis even reaches an ECS of 0.29, but it predicts a stop for 65\% of the conditions and has a Brier score of 0.47.
-Finally, a frequency over five samples carries sampling noise in its Brier score. With that noise removed, \method (0.180) is level with the prior (0.179) on test and ahead on validation (0.156 against 0.171), while it ranks conditions better on both (area under the ROC curve 0.70 against 0.52 on test).
+Finally, the Brier score does not separate \method (0.180) from the prior (0.179) on test, although it does on validation (0.156 against 0.171), while \method ranks conditions better on both (area under the ROC curve 0.70 against 0.52 on test).
 The coupling is thus a statistical dependence on the vehicle's motion and the geometry it reveals, strongest for pedestrians who stand, and not a measured reaction to the vehicle.
 
 \subsection{Guidance}

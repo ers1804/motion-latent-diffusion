@@ -40,11 +40,15 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
     the stale ego frame of windowed tracks is stated in Section IV-A.
   - FID correlation reported per model, MM column in Table II, seeds stated per model, consent sentence,
     root source, gaps quoted before rounding.
+  - Brier column of Tables II and V replaced by the score without the sampling noise of the five samples
+    (decided 2026-11-13, after the test pass, and said so in Section V).
   - To hold 8 pages: discussion and limitations merged, the robotics outlook folded into a limitation,
     shorter guidance, PedGen and encoder paragraphs, one row less in Table V, five references fewer.
 
 ## Still to do
 
+- A full retraining with the ego in the frame of the window start (`rs2`) is queued. If it replaces the
+  current models, every table changes.
 - Pending results that will change numbers in the text: two more seeds each for the prior and the prior with
   IA (Tables II and III, the per-model correlation, the seeds sentence in Section V), the regressor
   baseline, the braking control and the body audit of generated motion.
