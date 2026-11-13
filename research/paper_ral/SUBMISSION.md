@@ -47,14 +47,16 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
   - Braking edit of the vehicle's plan in Section VI-D and body statistics of generated motion in the
     limitations (`research/src/review_controls.py`, `research/data/review_controls_scene_test.txt`).
   - Teaser panel (b) rendered again with the vehicle path in the frame of the joints.
+  - Deterministic regressor as the ego-aware baseline, last row of Table II and a paragraph in Section VI-A.
+    Paid for with shorter R-Precision, bootstrap, last-checkpoint, PedGen and metrics-limitation sentences.
 
 ## Still to do
 
 - A full retraining with the ego in the frame of the window start (`rs2`) is queued. If it replaces the
   current models, every table changes.
 - Pending results that will change numbers in the text: two more seeds each for the prior and the prior with
-  IA (Tables II and III, the per-model correlation, the seeds sentence in Section V) and the regressor
-  baseline. Each needs room, the paper is full.
+  IA (Tables II and III, the per-model correlation, the seeds sentence in Section V). The paper is full,
+  so anything added needs a cut of the same length.
 - Overleaf needs `refs.bib` and `ral_ctl.bib` from this folder. The reviewed copy printed "[?]" for some
   citations, which this build does not.
 

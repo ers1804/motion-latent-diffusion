@@ -154,6 +154,30 @@ going, EgoPed's three seeds, `*` = rule met.
   limitation. The medians were added to the script after the test read, to quote the audit's statistic
   (Section IV-C uses the median over sequences). The means and the paired differences were fixed before.
 
+## Regressor baseline (C2), 2026-11-13
+
+Section 3 of `review_controls.py` ran on validation unchanged (committed at cbf1f0f), then on test once. Three
+seeds, checkpoint with the lowest validation MSE (epoch 10 to 20 of 300, the regressor overfits afterwards).
+
+| | Validation | Test |
+|---|---|---|
+| Mean ADE, regressor / EgoPed / prior | 1.79 / 2.27 / 3.07 | 1.97 / 2.43 / 3.11 |
+| minADE (regressor has one sample) | 1.79 / 1.43 / 1.22 | 1.97 / 1.65 / 1.31 |
+| ECS | 0.05 / 0.36 / 0.02 | 0.08 / 0.31 / 0.02 |
+| AUC of the stop prediction | 0.53 / 0.75 / 0.54 | 0.54 / 0.70 / 0.52 |
+| Corrected Brier | 0.223 / 0.156 / 0.171 | 0.224 / 0.180 / 0.179 |
+| Share of conditions with a generated stop | 2.5% / 19.7% / 22.7% | 2.3% / 20.5% / 22.9% |
+| FID of the regressor | 32.3 | 36.0 |
+| Regressor minus EgoPed, ADE | +0.48 m better* | +0.47 m better* |
+| Regressor minus EgoPed, ECS | -0.31* | -0.23* |
+| Regressor minus EgoPed, corrected Brier | -0.066 worse* | -0.043 worse, rule not met |
+
+The regressor wins mean ADE, as expected from the old split, by predicting the average: a slow walk that
+almost never stops. It has no coupling, a worse best-of-five error and an FID of 36. In the paper as the last
+row of Table II and a paragraph in Section VI-A, which now says that mean ADE alone rewards a model that
+never decides. To hold 8 pages, five passages were tightened (R-Precision, the bootstrap remark, the
+last-checkpoint sentence, PedGen, one limitation).
+
 ## Plan
 
 ### A. From existing results, CPU only
@@ -262,9 +286,7 @@ going, EgoPed's three seeds, `*` = rule met.
 
 ## Next steps, in order
 
-1. Regressor (C2): when jobs 1320734 to 1320736 have scored the three checkpoints, run section 3 of
-   `research/src/review_controls.py` on validation, fix it there if needed, commit, then read its test
-   dumps once and write the comparison into the paper. Sections 1 and 2 (braking, body) are done.
+1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.
 2. When C1 finishes (about 2.5 days): `select_uncond.sh` for the four runs, selection with
    `select_resplit.py` as for seed 1234, one test pass (`eval.sh ... test zero`), then Tables II and III,
    the per-model correlation and the seeds sentence.
@@ -289,6 +311,6 @@ test partition is never used to choose a threshold or a model.
 | Teaser, Fig. 1 | done. Panel (b) (validation row 523) rendered again with the vehicle in the frame of the joints, camera moved to keep all five vehicle positions in view |
 | Brier column | done. Tables II and V carry the noise-corrected score, Section V says it was adopted after the test pass |
 | rs2 retraining | queued on Helma, jobs 1320604 to 1320662, nice 100 |
-| C2 regressor | training on Helma, seeds 1234, 2345, 3456 (jobs 1319608 to 1319610). 300 epochs need a little over the two-hour limit, so the jobs end in a timeout before scoring. The kept checkpoint is from epoch 10 to 20 (validation MSE 1.30, rising to 1.45 by epoch 130), so nothing is lost. Scoring jobs 1320734 to 1320736 run after them (`regressor.sh <seed> rs1 eval`) |
+| C2 regressor | done on validation and test, in the paper (Table II, Section VI-A). The training jobs 1319608 to 1319610 hit the two-hour limit after the kept checkpoint (epoch 10 to 20), scoring jobs 1320734 to 1320736 completed |
 | C3, C4 | done on validation and test, in the paper (Section VI-D, limitations, conclusion). See the section above |
 | Everything else | open |

@@ -248,7 +248,7 @@ The consequence for evaluation is direct. The body is a lightly articulated cano
 %----------------------------------------------------------------------
 
 \paragraph{Distributional metrics.}
-FID, Diversity and MultiModality (MM) follow the HumanML3D protocol~\cite{guo2022humanml3d}, with its pretrained motion encoders as feature extractor. Diversity is the mean pairwise distance across generated samples (closer to the ground truth's 5.26--5.40 is better), and MM the mean pairwise distance among 10 samples of one condition. Each is the mean of three generation passes. We do not report R-Precision. It retrieves with each model's own ego encoder, so it is not comparable across encoders, and it falls to chance for a trainable encoder.
+FID, Diversity and MultiModality (MM) follow the HumanML3D protocol~\cite{guo2022humanml3d}, with its pretrained motion encoders as feature extractor. Diversity is the mean pairwise distance across generated samples (closer to the ground truth's 5.26--5.40 is better), and MM the mean pairwise distance among 10 samples of one condition. Each is the mean of three generation passes. We do not report R-Precision, which retrieves with each model's own ego encoder and is not comparable across encoders.
 
 \paragraph{Per-condition metrics.}
 For each test condition we draw $K{=}5$ samples, take the pelvis ground-plane path and compare it with the recorded pedestrian over the true sequence length. The average and final displacement errors (ADE, FDE) are means over the samples, and minADE and minFDE take the best of five. Mean ADE rewards samples that concentrate on the likely outcome, min-of-$K$ rewards coverage, so we read them together.
@@ -259,7 +259,7 @@ A pedestrian \emph{stops} if the root speed stays below 0.2\,m/s for at least 1\
 
 \paragraph{Seeds, statistics and selection.}
 The four main models and the two encoder ablations are trained with three seeds each, the two priors and the trainable \fullseq run with one. Each seed's checkpoint is the one with the lowest validation FID among 50 saved every 100 epochs, and each model's guidance scale is the one in $\{5, 10, 15\}$ with the lowest validation FID averaged over its seeds. Unconditional models see the real ego trajectory during training-time validation, so their checkpoints are chosen by an offline validation pass with the ego zeroed.
-Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered bootstrap draws), because pedestrians of one scene are not independent. Before the test partition was used, we fixed one rule. A model beats another only if the 95\% interval excludes zero \emph{and} all seed pairs agree in sign, nine between two three-seed models and three against a single-seed model. The bootstrap captures sampling of scenes but not of seeds, which the second condition covers. The primary contrast is \method against \fullseq on mean ADE.
+Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered bootstrap draws), because pedestrians of one scene are not independent. Before the test partition was used, we fixed one rule. A model beats another only if the 95\% interval excludes zero \emph{and} all seed pairs agree in sign, nine between two three-seed models and three against a single-seed model. The primary contrast is \method against \fullseq on mean ADE.
 
 %----------------------------------------------------------------------
 \section{RESULTS}
@@ -285,6 +285,8 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
     \midrule
     Trained prior (no ego, 1 seed) & 4.67 & 5.79 & 5.23 & 3.11 & 6.38 & 1.31 & 2.64 & 0.02 & 0.179 \\
     Trained prior + IA (1 seed) & 3.29 & 5.47 & 4.76 & 3.00 & 6.30 & 1.52 & 3.09 & 0.01 & 0.205 \\
+    \midrule
+    Deterministic regressor & 36.0\ci{35.6}{36.4} & 2.89 & 0.00 & 1.97\ci{1.95}{1.99} & 4.11 & 1.97\ci{1.95}{1.99} & 4.11 & 0.08\ci{0.03}{0.11} & 0.224 \\
     \bottomrule
   \end{tabular}
 \end{table*}
@@ -318,7 +320,9 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
 Table~\ref{tab:main} gives the test results and Table~\ref{tab:contrasts} the contrasts.
 Against a prior trained on the same data without the ego trajectory, \method lowers mean ADE by 0.68\,m (3.11 to 2.43\,m) and FDE by 1.27\,m, and raises the Ego-Coupling Score from 0.02 to 0.31, with every seed pair agreeing.
 The prior is better on minADE, as any sampler that spreads its five samples widely must be, so minADE alone is no test of conditioning.
-The coupling is the same on validation (ECS 0.36 against 0.02) and holds on both large sources (test ECS 0.32 on nuScenes and 0.26 on Waymo, against $-$0.01 and 0.04 for the prior). It is specific to the vehicle in the scene. Given another scene's vehicle, \method falls to the prior's level (Section~\ref{sec:controls}).
+The coupling is the same on validation (ECS 0.36 against 0.02) and holds on both large sources (test ECS 0.32 on nuScenes and 0.26 on Waymo, against $-$0.01 and 0.04 for the prior).
+
+A deterministic regressor from the ego trajectory to the motion (last row, three seeds) has the lowest mean ADE of all (1.97\,m), because it predicts the average, a slow walk that stops in 2\% of the conditions. It has almost no coupling (ECS 0.08, below \method's under our rule) and an FID of 36. Mean ADE alone thus rewards a model that never decides.
 
 \subsection{FID Does Not See the Conditioning}
 \label{sec:fid}
@@ -343,7 +347,7 @@ Table~\ref{tab:design} reports \method with its encoder trained together with th
 Freezing matters. The frozen encoder beats the trainable pretrained one on all four per-condition metrics under our rule (before rounding, ADE by 0.09\,m, minADE by 0.25\,m and ECS by 0.07), and on validation on all but ADE, while FID does not separate the two (5.67 vs.\ 5.65).
 Pretraining by itself does not help. Once the encoder is trainable, pretrained and scratch initialisation give the same result on every metric and on both partitions, so the pretrained representation helps only as long as diffusion training cannot change it.
 The trainable encoders also concentrate their samples (MM 2.03 and 2.15 against 3.10), which costs minADE without improving the mean.
-Validation FID selected early checkpoints for four of the six trainable runs (epochs 999--1099), so we decided before the test pass to also report the last checkpoint. It shows the same picture with worse FID, and the ADE gap to the frozen encoder (0.07\,m) no longer meets the rule.
+The last checkpoint, which we decided before the test pass to report as well, shows the same picture with worse FID, and the ADE gap to the frozen encoder (0.07\,m) no longer meets the rule.
 A single-seed \fullseq run with a trainable encoder, by contrast, stays close to ego-blind (ECS 0.04 against 0.27 frozen, Table~\ref{tab:main}).
 
 \begin{table}[t]
@@ -423,7 +427,7 @@ Guidance trades coverage for FID without changing coupling. On validation, raisi
 \subsection{Comparison with PedGen}
 \label{sec:pedgen}
 
-The released context-free model of PedGen~\cite{liu2025pedgen} cannot take a vehicle trajectory, so we use it as an ego-blind reference on the root path, the one quantity both models share. We compare paths over the first 1.95\,s of our test conditions, within PedGen's 2-second horizon. With $K{=}5$ samples, mean ADE is 0.575\,m for \method, 0.632\,m for \fullseq, 0.750\,m for our trained prior and 0.794\,m for PedGen's context-free model. \method is 0.22\,m closer than PedGen, with the interval excluding zero for every seed. Even our ego-blind prior is level with PedGen, so part of the gap is the domain. PedGen's samples walk at a median 0.65\,m/s against 1.26\,m/s in our data. The comparison shows that a published generator does not transfer to this setting without retraining, not that one architecture is better than the other.
+The released context-free model of PedGen~\cite{liu2025pedgen} cannot take a vehicle trajectory, so we use it as an ego-blind reference on the root path, the one quantity both models share. We compare paths over the first 1.95\,s of our test conditions, within PedGen's 2-second horizon. With $K{=}5$ samples, mean ADE is 0.575\,m for \method, 0.632\,m for \fullseq, 0.750\,m for our trained prior and 0.794\,m for PedGen's context-free model. \method is 0.22\,m closer than PedGen, with the interval excluding zero for every seed. Even our ego-blind prior is level with PedGen, whose samples walk at a median 0.65\,m/s against 1.26\,m/s in our data. Part of the gap is thus the domain, and the comparison shows that a published generator does not transfer without retraining, not that one architecture is better.
 
 \subsection{Qualitative Results}
 
@@ -443,7 +447,7 @@ Had we ranked by FID, this paper would recommend full-sequence attention with in
   \item \textbf{Observational coupling.} The coupling is measured on recordings in which almost no pedestrian is in the vehicle's path (Section~\ref{sec:rests}). The model responds to a braking edit (Section~\ref{sec:controls}), but no recording can confirm that response, and for windowed tracks the vehicle is given in the frame of the track's first pose.
   \item \textbf{Known future.} \method sees the vehicle's whole 9.8\,s trajectory, which suits simulation but not online prediction.
   \item \textbf{Condition and coverage.} The condition is the ego trajectory only, without map, other agents or traffic control, and held-out results rest on nuScenes and Waymo. The input is the 2D trajectory of any moving agent, so mobile robots are a natural next use after retraining on data such as JRDB~\cite{martinmartin2023jrdb}.
-  \item \textbf{Metrics.} ECS covers only stopping, because crossing is too rare in our windows to score. FID values compare only within this benchmark, and we report no perceptual study.
+  \item \textbf{Metrics.} ECS covers only stopping. FID values compare only within this benchmark, and we report no perceptual study.
 \end{itemize}
 
 %----------------------------------------------------------------------
