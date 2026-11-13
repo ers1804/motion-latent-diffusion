@@ -60,6 +60,37 @@ facts below).
 | EgoPed samples | ECS 0.36, Brier 0.17, AUC 0.75, stop rate 0.20 (recorded 0.23) |
 | Angle-bin stopping rate, out of fold | ECS 0.10, Brier 0.17, AUC 0.66 |
 
+## What the test partition showed (2026-11-13, 1,182 rows)
+
+`research/data/coupling_breakdown_scene_test.txt`. Run once at 295937b. A second run at 8805df3 added two
+derived lines (noise-corrected Brier score, metrics without replaced rows) and reproduced every earlier line.
+
+| Finding | Test | Validation |
+|---|---|---|
+| Stops that stand throughout | 161 of 284 (57%) | 161 of 272 (59%) |
+| EgoPed stop probability: stands / moves and stops / walks | 0.55 / 0.30 / 0.13 | 0.60 / 0.30 / 0.11 |
+| ECS on moves and stops, EgoPed minus prior | +0.12 [-0.02, +0.23], rule not met | +0.17 [+0.06, +0.32], rule met |
+| Never within 2.5 m of the vehicle's path | 98.7% | 98.2% |
+| ECS there, EgoPed minus prior | +0.30 [+0.19, +0.39], rule met | +0.34 [+0.22, +0.46], rule met |
+| ADE gain there, EgoPed minus prior | 0.68 m, rule met | 0.80 m, rule met |
+| Stop rate at 0 to 10 degrees / 60 to 90 degrees | 0.09 / 0.40 | 0.07 / 0.46 |
+| ECS within angle bins, of overall | 0.17 of 0.31 | 0.29 of 0.36 |
+| Rule: ECS, Brier, share predicted to stop | 0.29, 0.47, 65% | 0.38, 0.41, 58% |
+| AUC: EgoPed / angle-bin rate / prior | 0.70 / 0.65 / 0.52 | 0.75 / 0.66 / 0.54 |
+| Brier without the K=5 sampling noise: EgoPed / Full-seq / prior | 0.180 / 0.162 / 0.179 | 0.156 / 0.157 / 0.171 |
+| Brier of a constant stop rate | 0.183 | 0.176 |
+| ECS on windows with a stale frame / on the others | 0.26 / 0.35 | 0.22 / 0.55 |
+
+What is new against validation:
+
+- Among pedestrians who move and then stop, EgoPed's lead over the prior does not meet the rule on test.
+  The score is carried by pedestrians who stand.
+- The angle explains more on test (0.31 falls to 0.17 within bins) than on validation.
+- With the sampling noise removed, EgoPed's Brier score on test is level with the prior and with a constant
+  stop rate. The Brier column of Table II is computed from five-sample frequencies, which penalises models
+  whose samples spread (the prior most). The column is the pre-specified metric and stays; the text now
+  says what the correction changes. **Open decision for Erik:** replace the column by the corrected score.
+
 Reading:
 
 1. The vehicle reacting to the pedestrian cannot be what carries the score. Almost no pedestrian is ever in
@@ -148,7 +179,11 @@ test partition is never used to choose a threshold or a model.
 | Item | State |
 |---|---|
 | C1 prior seeds | queued on Helma 2026-11-13 |
-| A1 breakdown script | reviewed, frame bug fixed, validation output committed. Test run follows this commit |
+| A1 breakdown | done on validation and test, written into the paper as Section VI-E |
+| A2 correlation per model | done in the text (-0.75, p = 0.02, nine models). Recompute after C1 |
+| B1 to B4 text | done. Paper at 8 pages, 39 references, abstract 1,199 characters |
+| Qualitative export | regenerated with the vehicle in the joints' frame: 16 of 28 `ego.npy` files were wrong by up to 12.6 m and 111 degrees. Mohan needs the new folder |
+| Teaser, Fig. 1 | panel (b) (validation row 523) draws the vehicle 1.9 m and 7 degrees off. To be re-rendered |
 | C2 regressor | scene-split mode and job script written, one-epoch smoke test passed on CPU |
 | C3, C4 | editor and statistics written and tested on CPU, job script written |
 | Everything else | open |

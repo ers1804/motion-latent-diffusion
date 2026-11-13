@@ -1,0 +1,58 @@
+split=scene_test N=1182 scenes=91 stopping rate=0.240; seeds: EgoPed 3, Full-seq 3, prior 1
+* = 95% scene-bootstrap interval excludes 0 and all seed pairs agree in sign
+
+1. Kinds of stopping (stands throughout = never leaves a 1.0 m radius)
+   stands throughout 161 of 284 stopping conditions (57%), moves and stops 123, walks 898
+   model      p|stands  p|moves+stops  p|walks     ECS   ECS, moves and stops only
+   EgoPed        0.548          0.297    0.131   0.308   +0.166 [+0.030, +0.281]
+   Full-seq      0.513          0.239    0.124   0.270   +0.115 [+0.015, +0.202]
+   prior         0.214          0.275    0.225   0.015   +0.050 [+0.003, +0.093]
+   EgoPed minus prior, ECS on moves and stops: +0.116 [-0.017, +0.234]
+   Full-seq minus prior, ECS on moves and stops: +0.065 [-0.036, +0.155]
+
+0. Frame of the ego input: 503 of 1182 conditions (43%) are windows that start after the track's first frame.
+   There the model sees the vehicle in the frame of the track's first pose: offset to the window frame median 1.7 m (90th percentile 8.6 m), yaw median 5 deg (90th percentile 38 deg).
+   Among them recorded stop rate 0.272, elsewhere 0.216. Rows that load the next sample because their own is too short: 36. Vehicle record shorter than the sequence: 0.
+   EgoPed    ECS on windows that start later +0.258, on the others +0.350
+   Full-seq  ECS on windows that start later +0.221, on the others +0.310
+   prior     ECS on windows that start later +0.014, on the others +0.006
+   Without the 36 replaced rows (added after the first test run, no constant involved):
+   EgoPed    ADE 2.438 (all rows 2.434)  minADE 1.644 (all rows 1.649)  ECS 0.308 (all rows 0.308)  Brier 0.194 (all rows 0.191)
+   Full-seq  ADE 2.704 (all rows 2.693)  minADE 1.537 (all rows 1.537)  ECS 0.270 (all rows 0.270)  Brier 0.180 (all rows 0.178)
+   prior     ADE 3.126 (all rows 3.110)  minADE 1.309 (all rows 1.307)  ECS 0.015 (all rows 0.015)  Brier 0.216 (all rows 0.214)
+
+2. Pedestrian never within a margin of where the vehicle is or later drives (median closest approach 10.4 m)
+   margin 2.5 m: 1167 of 1182 conditions (98.7%), stopping rate 0.243
+     EgoPed    ECS +0.312 [+0.197, +0.411]  ADE 2.418   | rest (15): ECS +nan  ADE 3.726
+     Full-seq  ECS +0.273 [+0.171, +0.365]  ADE 2.683   | rest (15): ECS +nan  ADE 3.461
+     prior     ECS +0.015 [-0.020, +0.047]  ADE 3.099   | rest (15): ECS +nan  ADE 3.939
+     EgoPed minus prior on these conditions: ECS +0.297 [+0.188, +0.393]*, ADE gain +0.681 [+0.497, +0.865]* m
+     Full-seq minus prior on these conditions: ECS +0.257 [+0.162, +0.346]*, ADE gain +0.416 [+0.211, +0.624]* m
+   margin 1.5 m: 1173 of 1182 conditions (99.2%), stopping rate 0.242
+     EgoPed    ECS +0.311 [+0.197, +0.409]  ADE 2.423   | rest (9): ECS +nan  ADE 3.863
+     Full-seq  ECS +0.272 [+0.170, +0.364]  ADE 2.684   | rest (9): ECS +nan  ADE 3.820
+     prior     ECS +0.016 [-0.019, +0.047]  ADE 3.106   | rest (9): ECS +nan  ADE 3.568
+   margin 4.0 m: 1124 of 1182 conditions (95.1%), stopping rate 0.230
+     EgoPed    ECS +0.301 [+0.186, +0.399]  ADE 2.435   | rest (58): ECS +0.337  ADE 2.427
+     Full-seq  ECS +0.257 [+0.161, +0.339]  ADE 2.696   | rest (58): ECS +0.361  ADE 2.629
+     prior     ECS +0.009 [-0.028, +0.044]  ADE 3.085   | rest (58): ECS +0.068  ADE 3.586
+
+3. Angle between the vehicle's direction of travel and the pedestrian's facing axis
+   vehicle           n  recorded stop  EgoPed p  prior p  EgoPed ECS in bin
+   0-10 deg        419          0.091     0.046    0.219             +0.126
+   10-20 deg       102          0.206     0.088    0.235             +0.002
+   20-40 deg       118          0.424     0.316    0.203             +0.266
+   40-60 deg        76          0.487     0.469    0.224             +0.065
+   60-90 deg       223          0.399     0.489    0.235             +0.340
+   hardly moves    244          0.201     0.134    0.251             +0.168
+   EgoPed ECS within bins, weighted by bin size: +0.174 [+0.073, +0.260] (overall +0.308); bins left out: 0 here, in 0.0% of draws
+
+   predictor of stopping                          ECS    AUC   Brier  stop rate
+   EgoPed samples (mean of seeds)              +0.308  0.698   0.191      0.205
+   Full-seq samples (mean of seeds)            +0.270  0.698   0.178      0.189
+   prior samples (mean of seeds)               +0.015  0.520   0.214      0.229
+   rule: stops unless within 10 deg            +0.290  0.645   0.470      0.646
+   angle-bin stopping rate (out of fold)       +0.075  0.649   0.177      0.240
+   constant stopping rate                      +0.000  0.500   0.183      0.240
+   recorded stopping rate 0.240
+   Brier score of the samples with the sampling noise of K=5 removed: EgoPed 0.180, Full-seq 0.162, prior 0.179

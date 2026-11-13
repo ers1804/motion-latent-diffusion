@@ -4,6 +4,10 @@
 Input: the joints npz of teaser_generate.py and the condition list of select_qualitatives.py.
   python research/src/export_qualitatives.py --npz research/data/teaser_rs1_pooled_qual_scene_test.npz \
       --conditions research/data/qualitatives_rs1_pooled_scene_test.json --out <dir>
+
+The ego path is written in the frame of the joints (pedestrian at the origin of the window, facing +z). The npz
+holds it as the model sees it, which for a windowed track is the frame of the track's first pose
+(coupling_breakdown.load_geometry); meta.json records the offset between the two.
 """
 import argparse
 import json
@@ -16,6 +20,7 @@ import matplotlib.pyplot as plt  # noqa: E402
 import numpy as np  # noqa: E402
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from coupling_breakdown import load_geometry  # noqa: E402
 from intention_labels import is_stopping  # noqa: E402
 
 INK, MUTED, GRID = "#1f2a37", "#6b7280", "#e5e7eb"
@@ -50,6 +55,7 @@ def main():
     ap.add_argument("--npz", required=True)
     ap.add_argument("--conditions", required=True)
     ap.add_argument("--out", required=True)
+    ap.add_argument("--split", default="scene_test", choices=["scene_val", "scene_test"])
     args = ap.parse_args()
 
     d = np.load(args.npz)
@@ -60,10 +66,16 @@ def main():
     sheet, axes = plt.subplots((len(conditions) + cols - 1) // cols, cols, figsize=(cols * 3.2, 3.0 * ((len(conditions) + cols - 1) // cols)))
     axes = axes.ravel()
     index = []
+    roots = np.zeros((len(conditions), max(c["L"] for c in conditions), 2), dtype="float32")
+    for i, c in enumerate(conditions):
+        roots[i, :c["L"]] = d[f"gt_{c['row']}"][:c["L"], 0][:, [0, 2]]
+    egos, offset, yaw, _ = load_geometry(args.split, [c["path"] for c in conditions], [c["L"] for c in conditions], roots)
     for i, c in enumerate(conditions):
         row, L = c["row"], c["L"]
         assert str(d[f"path_{row}"]) == c["path"] and int(d[f"len_{row}"]) == L, (row, c["path"])
-        gen, gt, ego = d[f"joints_{row}"][:, :L], d[f"gt_{row}"][:L], d[f"ego_{row}"][:L]
+        gen, gt, ego = d[f"joints_{row}"][:, :L], d[f"gt_{row}"][:L], egos[i]
+        assert len(ego) == L and (offset[i] > 0 or np.abs(ego - d[f"ego_{row}"][:L]).max() < 1e-3), c["path"]
+        c = dict(c, ego_frame_offset_m=round(float(offset[i]), 2), ego_frame_yaw_deg=round(float(yaw[i]), 1))
         c = dict(c, stops_in_samples=int(sum(is_stopping(g[:, 0][:, [0, 2]]) for g in gen)))
         f = out / folder_name(i, c)
         f.mkdir(exist_ok=True)
