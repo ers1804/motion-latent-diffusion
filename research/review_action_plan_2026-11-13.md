@@ -154,6 +154,39 @@ going, EgoPed's three seeds, `*` = rule met.
   limitation. The medians were added to the script after the test read, to quote the audit's statistic
   (Section IV-C uses the median over sequences). The means and the paired differences were fixed before.
 
+## Prior seeds (C1), plain prior, 2026-11-15
+
+Seeds 2345 and 3456 of the ego-blind prior finished 2026-11-15 00:54. Checkpoints by the lowest zero-ego
+validation FID (epoch 699 and 2,699, seed 1234 had 3,299), guidance 1, one test pass (jobs 1338001 and
+1338002). Report in `research/data/resplit_test_report_priors3.txt`, selection in
+`research/data/resplit_selection_priors2.json`.
+
+| Test, plain prior | Seed 1234 | Seed 2345 | Seed 3456 | Mean |
+|---|---|---|---|---|
+| FID | 4.67 | 4.56 | 4.69 | 4.64 |
+| Diversity / MM | 5.79 / 5.23 | 5.60 / 5.10 | 5.88 / 5.20 | 5.76 / 5.18 |
+| ADE / FDE | 3.11 / 6.38 | 3.00 / 6.18 | 2.97 / 6.08 | 3.03 / 6.21 |
+| minADE / minFDE | 1.31 / 2.64 | 1.33 / 2.70 | 1.28 / 2.59 | 1.31 / 2.64 |
+| ECS / corrected Brier | 0.015 / 0.179 | 0.024 / 0.178 | 0.029 / 0.175 | 0.023 / 0.177 |
+
+| Contrast on test | One prior seed (in the paper) | Three prior seeds |
+|---|---|---|
+| EgoPed vs prior, ADE | +0.68 [0.49, 0.86]* | +0.59 [0.42, 0.77]* |
+| EgoPed vs prior, ECS | +0.29 [0.19, 0.39]* | +0.29 [0.18, 0.38]* |
+| EgoPed vs prior, minADE | -0.34 [-0.46, -0.22]* | -0.34 [-0.46, -0.23]* |
+| Full-seq vs prior, ADE | +0.42 [0.22, 0.63]* | +0.34 [0.14, 0.54], rule not met (one seed pair at -0.006) |
+| Full-seq vs prior, ECS | +0.26 [0.16, 0.34]* | +0.25 [0.15, 0.34]* |
+
+- The headline gain of EgoPed over the prior shrinks from 0.68 m to 0.59 m (prior ADE 3.03 instead of
+  3.11 m). It still meets the rule with all nine seed pairs. Seed 1234 was the weakest of the three priors.
+- Full-seq no longer beats the prior on mean ADE under the rule. On validation the same (+0.34, pair range
+  -0.05 to +0.61).
+- **Paper not yet changed.** Every number that involves the prior moves: abstract, contribution 1, Section
+  VI-A, Tables II, III and V, Section VI-D (foreign vehicle against the prior), Section VI-E
+  (`coupling_breakdown.py` uses the prior cell), the per-model correlation, Fig. 3, the PedGen paragraph, the
+  seeds sentence, the conclusion. To be done in one pass when the two IA prior seeds are in as well (they
+  finish at about 19:00 on 2026-11-15), so that Erik gets one list of changes for Overleaf.
+
 ## Regressor baseline (C2), 2026-11-13
 
 Section 3 of `review_controls.py` ran on validation unchanged (committed at cbf1f0f), then on test once. Three
@@ -303,7 +336,7 @@ test partition is never used to choose a threshold or a model.
 
 | Item | State |
 |---|---|
-| C1 prior seeds | `rs1_uncond_s2345` and `rs1_uncond_s3456` finished 2026-11-15 00:54 (epoch 4,999, 50 checkpoints each). Their zero-ego validation pass is queued (`select_uncond.sh`, jobs 1336828 and 1336829, nice 100). `rs1_uncond_ia_s2345` and `rs1_uncond_ia_s3456` are at about epoch 3,300 to 3,400 in their second segment and finish at about 19:00 on 2026-11-15 |
+| C1 prior seeds | `rs1_uncond_s2345` and `rs1_uncond_s3456` finished 2026-11-15 00:54 (epoch 4,999, 50 checkpoints each). Selected, scored on validation and on test once, see the section on the prior seeds. `rs1_uncond_ia_s2345` and `rs1_uncond_ia_s3456` are at about epoch 3,300 to 3,400 in their second segment and finish at about 19:00 on 2026-11-15 |
 | A1 breakdown | done on validation and test, written into the paper as Section VI-E |
 | A2 correlation per model | done in the text (-0.75, p = 0.02, nine models). Recompute after C1 |
 | B1 to B4 text | done. Paper at 8 pages, 39 references, abstract 1,199 characters |
