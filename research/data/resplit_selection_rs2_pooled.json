@@ -1,0 +1,14 @@
+{
+ "rs2_pooled_s1234": {
+  "epoch": 2799,
+  "guidance": 15
+ },
+ "rs2_pooled_s2345": {
+  "epoch": 1499,
+  "guidance": 15
+ },
+ "rs2_pooled_s3456": {
+  "epoch": 1099,
+  "guidance": 15
+ }
+}

@@ -1,0 +1,59 @@
+rs2 against rs1 on VALIDATION, pooled cell (the paper's EgoPed), 2026-11-15. No test access.
+rs2 = same models retrained with the ego in the frame of the window start (DATASET.EGOMOTION.EGO_WINDOW_FRAME).
+Decision rule fixed 2026-11-13 (research/review_action_plan_2026-11-13.md): rs2 replaces rs1 only if its pooled
+cell beats rs1's under the rule on mean ADE or ECS and loses on none of ADE, ECS, corrected Brier.
+RESULT: rs2 beats rs1 on nothing and loses on the corrected Brier score under the rule. rs1 stays.
+
+Checkpoints by lowest training-time validation FID (research/data/resplit_epochs_rs2_pooled.json), guidance by
+mean validation FID of the cell (research/data/resplit_selection_rs2_pooled.json), jobs 1339008 to 1339016.
+gt_Diversity of the evaluations 5.5375, the same as the rs1 pooled evaluations on validation.
+
+run                           ep  cfg  val FID  val ADE
+rs2_pooled_s1234            2799    5    4.925    2.306
+rs2_pooled_s1234            2799   10    4.527    2.306
+rs2_pooled_s1234            2799   15    4.425    2.325
+rs2_pooled_s2345            1499    5    5.188    2.344
+rs2_pooled_s2345            1499   10    4.543    2.418
+rs2_pooled_s2345            1499   15    4.038    2.519
+rs2_pooled_s3456            1099    5    4.856    2.269
+rs2_pooled_s3456            1099   10    4.356    2.323
+rs2_pooled_s3456            1099   15    4.106    2.389
+pooled       guidance 15  mean val FID cfg5 4.990  cfg10 4.475  cfg15 4.190
+
+== python research/src/compare_resplit.py --split scene_val --gen rs2 --against rs1 --selection
+   resplit_selection.json resplit_ablation_selection.json resplit_selection_priors2.json resplit_selection_rs2_pooled.json
+split=scene_val N=1194 scenes=107 stopping rate=0.228
+
+run                           ADE  minADE    ECS  Brier  BrierC  gen stop
+rs2_pooled_s1234            2.325   1.448  0.328  0.184   0.173     0.212
+rs2_pooled_s2345            2.519   1.543  0.326  0.177   0.167     0.192
+rs2_pooled_s3456            2.389   1.531  0.331  0.182   0.173     0.200
+rs1_uncond_s1234            3.066   1.216  0.024  0.205   0.171     0.227
+rs1_uncond_s2345            2.954   1.208  0.041  0.196   0.165     0.197
+rs1_uncond_s3456            2.920   1.178  0.027  0.203   0.168     0.233
+rs1_uncond_ia_s1234         2.932   1.384  0.019  0.205   0.190     0.085
+
+delta>0 = first cell better; [95% CI, scene bootstrap]; p; (seed pair range); * = rule met
+pooled vs uncond
+  ADE    +0.568 [+0.351,+0.764] p=0.000 (+0.401,+0.740) *
+  minADE -0.307 [-0.455,-0.172] p=0.000 (-0.365,-0.233) *
+  ECS    +0.298 [+0.163,+0.435] p=0.000 (+0.285,+0.307) *
+  Brier  +0.020 [-0.020,+0.059] p=0.310 (+0.013,+0.028)
+  BrierC -0.003 [-0.042,+0.034] p=0.852 (-0.008,+0.004)
+
+rs2 against rs1, cell by cell; delta>0 = rs2 better
+pooled (3 against 3 seeds)
+  ADE    -0.142 [-0.225,-0.051] p=0.003 (-0.301,+0.005)
+  minADE -0.076 [-0.142,-0.005] p=0.036 (-0.171,+0.084)
+  ECS    -0.035 [-0.089,+0.016] p=0.173 (-0.048,-0.016)
+  Brier  -0.015 [-0.029,-0.002] p=0.025 (-0.019,-0.009) *
+  BrierC -0.015 [-0.029,-0.002] p=0.028 (-0.021,-0.006) *
+
+== python research/src/rs2_frame_check.py --selection resplit_selection.json resplit_selection_rs2_pooled.json
+cell=pooled split=scene_val N=1194; windows that start later 523, others 671; seeds rs1 3, rs2 3
+* = 95% scene-bootstrap interval excludes 0 and all seed pairs agree in sign
+rs1  ECS later +0.220, others +0.546   ADE later 3.217, others 1.531   stop probability later 0.215, others 0.183
+rs2  ECS later +0.179, others +0.534   ADE later 3.346, others 1.683   stop probability later 0.200, others 0.202
+rs2 minus rs1 on later: ECS -0.041 [-0.122, +0.040]   ADE gain (positive = rs2 lower) -0.129 [-0.295, +0.063]
+rs2 minus rs1 on others: ECS -0.013 [-0.066, +0.032]   ADE gain (positive = rs2 lower) -0.151 [-0.217, -0.082]*
+gap in ECS (others minus later), rs2 minus rs1: +0.029 [-0.068, +0.121]   (negative = the fix narrows the gap)

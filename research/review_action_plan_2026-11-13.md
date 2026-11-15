@@ -326,6 +326,42 @@ last-checkpoint sentence, PedGen, one limitation).
   --out research/data/resplit_selection_rs2_pooled.json`, then step 4 with that file. The pattern needs
   `s[0-9]*`, since `rs2_pooled_s*` also matches the `pooled_scratch` runs.
 
+### rs2 decision, 2026-11-15 07:00: rs1 stays
+
+Validation, 1,194 conditions, pooled cell at its own checkpoints and guidance 15 (the sweep picked 15, as for
+rs1). Report in `research/data/resplit_val_report_rs2_pooled.txt`. Delta above 0 means rs2 is better.
+
+| Validation, pooled | rs1 | rs2 | rs2 minus rs1 | Rule |
+|---|---|---|---|---|
+| Mean ADE (m) | 2.27 | 2.41 | -0.142 [-0.225, -0.051], seed pairs -0.301 to +0.005 | not met |
+| minADE (m) | 1.43 | 1.51 | -0.076 [-0.142, -0.005], seed pairs disagree | not met |
+| ECS | 0.36 | 0.33 | -0.035 [-0.089, +0.016] | not met |
+| Corrected Brier | 0.156 | 0.171 | -0.015 [-0.029, -0.002]* | met, rs1 better |
+
+- **Rule applied.** rs2 beats rs1 on neither mean ADE nor ECS and loses on the corrected Brier score. rs1
+  stays in every table. No test pass, no controls and no regressor for rs2. The paper gets one sentence.
+- **Secondary check, and my expectation was wrong.** The fix does not narrow the gap in coupling between
+  windows that start later and the other conditions (`research/src/rs2_frame_check.py`): ECS 0.18 against 0.53
+  for rs2, 0.22 against 0.55 for rs1, difference of the gaps +0.03 [-0.07, +0.12]. So the stale frame was not
+  the cause of that gap. Windows that start later are the tracks of full length (9.8 s) with twice the stop
+  rate (0.31 against 0.16) and twice the error (ADE 3.2 against 1.5 m), which is the plainer reading.
+- **Where rs2 is behind.** On the 671 conditions whose ego input is the same for both generations
+  (ADE -0.151 [-0.217, -0.082]*), and not reliably on the 523 whose input changed (-0.129 [-0.295, +0.063]).
+  So the deficit is not an effect of the frame of the evaluated input. Cause not established. Candidates are
+  the changed inputs of the windowed training tracks and ordinary variation of seeds and checkpoints.
+- **Against the prior, rs2 keeps the result.** rs2 pooled against the three prior seeds on validation: ADE
+  +0.568 [0.351, 0.764]*, ECS +0.298 [0.163, 0.435]*.
+- **Sentence for the paper** (Section IV-A, in place of or next to the sentence on the stale frame, to be
+  written in the consolidated update): retraining with the vehicle in the frame of the window start does not
+  improve the model on validation (mean ADE 2.41 against 2.27 m, ECS 0.33 against 0.36), so the reported
+  models keep the original input.
+- **Other rs2 cells.** For a robustness statement on the comparisons (Full-seq against EgoPed, the encoder
+  ablations), the validation sweep of the nine other finished plain runs is queued, jobs 1339223 to 1339249,
+  nice 100, `research/data/resplit_epochs_rs2_plain.json`. `rs2_pooled_scratch_s3456` follows when it reaches
+  epoch 4,999, the six interaction-weighted runs at about 22:30. Validation only.
+- **Open for Erik.** The six interaction-weighted rs2 runs still hold six GPUs until about 22:30. With rs1
+  staying, they only serve the robustness statement. They keep running unless Erik wants them stopped.
+
 ## Next steps, in order
 
 1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.
