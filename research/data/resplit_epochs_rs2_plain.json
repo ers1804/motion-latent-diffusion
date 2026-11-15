@@ -34,6 +34,13 @@
   "gt_diversity": 5.569,
   "last_epoch": 4999
  },
+ "rs2_pooled_scratch_s3456": {
+  "epoch": 999,
+  "val_fid": 4.062,
+  "val_r1": 0.3767,
+  "gt_diversity": 5.737,
+  "last_epoch": 4999
+ },
  "rs2_pooled_unfrozen_s1234": {
   "epoch": 1299,
   "val_fid": 4.961,
