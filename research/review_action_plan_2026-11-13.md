@@ -213,9 +213,12 @@ Seeds 2345 and 3456 finished 18:55. Checkpoints by zero-ego validation FID (jobs
 | ECS / corrected Brier | 0.008 / 0.205 | 0.007 / 0.205 | 0.009 / 0.206 | 0.008 / 0.205 |
 
 - **FID.** The ego-blind prior with IA now has the best FID of all models (2.88), ahead of Full-seq + IA
-  (3.24, seeds 2.73 to 4.14). The paper said "level with it (3.29)". Section VI-B now states the order. The
-  abstract ("matches the best conditional model") and the conclusion ("level with") understate it and are
-  left for Erik.
+  (3.24, seeds 2.73 to 4.14). The paper said "level with it (3.29)". Section VI-B now states the order.
+  Erik, 2026-11-15 evening: change the abstract and the conclusion as recommended. Done, together with the
+  same statement in the second contribution: "It ranks an ego-blind prior first" (abstract, 1,179 of 1,200
+  characters), "An ego-blind prior has the best FID" (contribution), "ranks an ego-blind prior first"
+  (conclusion). Erik also confirmed that rs2 continues as planned, so the six interaction-weighted rs2 runs
+  finish and get their validation sweep.
 - **Contrasts on test, unchanged in substance.** EgoPed + IA against its prior ADE +0.07 [-0.23, 0.35],
   minADE -0.52*, ECS +0.21*. Full-seq + IA ADE -0.00 [-0.29, 0.26], minADE -0.55*, ECS +0.09*.
 - **Validation differs on mean ADE.** There both IA models beat their prior under the rule (+0.26* and
