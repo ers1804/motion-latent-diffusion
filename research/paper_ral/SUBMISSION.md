@@ -65,7 +65,7 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
 ## Still to do
 
 - Pending results that will change numbers in the text: two more seeds of the prior with IA (its row in
-  Table II, the last two rows of Table III, the per-model correlation and Fig. 3, which still shows 15 runs,
+  Table II, the last two rows of Table III, the per-model correlation and Fig. 3, which shows 17 runs so far,
   the seeds sentence in Section V). The paper is full, so anything added needs a cut of the same length.
 - Overleaf needs `refs.bib` and `ral_ctl.bib` from this folder. The reviewed copy printed "[?]" for some
   citations, which this build does not.

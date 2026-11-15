@@ -1,8 +1,11 @@
 """Test FID against per-condition accuracy, one point per training run (Fig. fid_vs_conditioning).
 
-Reads the test report and the K=5 test dumps of the selected checkpoints; run from the repository root:
-  python research/paper/figures/make_fid_vs_conditioning.py
+Reads the test reports and the K=5 test dumps of the selected checkpoints; run from the repository root:
+  python research/paper/figures/make_fid_vs_conditioning.py [--out <pdf>]
+The figure shows the runs of the main table. The rank correlation quoted in the text is per model, with seeds
+averaged, over the models of the main table and the encoder ablations, and is printed with its p-value.
 """
+import argparse
 import json
 import re
 import sys
@@ -34,18 +37,42 @@ CELL = {"pooled": "egoped", "pooled_ia": "egoped", "egoped": "fullseq", "egoped_
         "unfrozen": "unfrozen", "uncond": "prior", "uncond_ia": "prior"}
 
 
-def main():
-    fid = {}
-    for line in open(DATA / "resplit_test_report.txt"):
-        if line.startswith("eval_test_rs1"):
-            name = re.sub(r"_ep\d+_cfg[\d.]+$", "", line.split()[0].removeprefix("eval_test_"))
-            fid[name] = float(line.split()[1])
-    sel = json.load(open(DATA / "resplit_selection.json"))
+REPORTS = ("resplit_test_report.txt", "resplit_test_report_priors3.txt", "resplit_ablation_test_report.txt")
+
+
+def read_runs(selection_file, fid):
     runs = []
-    for run, s in sorted(sel.items()):
-        m = metrics(load(DATA / f"ade_fde_{run}_ep{s['epoch']}_cfg{s['guidance']}_scene_test_k5.npz"), slice(None))
-        cell = cell_of(run)
-        runs.append(dict(run=run, cell=cell, family=CELL[cell], ia=cell.endswith("_ia"), fid=fid[run], **m))
+    for run, s in sorted(json.load(open(DATA / selection_file)).items()):
+        tag = f"{run}_ep{s['epoch']}_cfg{s['guidance']}"
+        m = metrics(load(DATA / f"ade_fde_{tag}_scene_test_k5.npz"), slice(None))
+        runs.append(dict(run=run, cell=cell_of(run), fid=fid[tag], **m))
+    return runs
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--out", default=str(OUT))
+    args = ap.parse_args()
+
+    fid = {}  # by run, epoch and guidance: the ablation report also lists the last checkpoints
+    for report in REPORTS:
+        for line in open(DATA / report):
+            if line.startswith("eval_test_rs1"):
+                tag, value = line.split()[0].removeprefix("eval_test_"), float(line.split()[1])
+                assert fid.get(tag, value) == value, tag
+                fid[tag] = value
+    runs = read_runs("resplit_selection.json", fid)
+    for r in runs:
+        r.update(family=CELL[r["cell"]], ia=r["cell"].endswith("_ia"))
+
+    models = {}  # seeds averaged, main table plus encoder ablations
+    for r in runs + read_runs("resplit_ablation_selection.json", fid):
+        models.setdefault(r["cell"], []).append(r)
+    mean = {c: {k: np.mean([r[k] for r in rs]) for k in ("fid", "ADE", "ECS")} for c, rs in models.items()}
+    for key in ("ADE", "ECS"):
+        rho = spearmanr([m["fid"] for m in mean.values()], [m[key] for m in mean.values()])
+        print(f"per model ({len(mean)} models, seeds averaged): Spearman FID vs {key} {rho.correlation:+.2f} (p = {rho.pvalue:.2f})")
+    print("  " + ", ".join(f"{c} ({len(models[c])})" for c in sorted(models)))
 
     f = np.array([r["fid"] for r in runs])
     rho_ade = spearmanr(f, [r["ADE"] for r in runs]).correlation
@@ -75,8 +102,8 @@ def main():
     fig.legend(handles=handles, loc="lower center", ncol=3, frameon=False, bbox_to_anchor=(0.5, -0.2),
                handletextpad=0.3, columnspacing=0.9, labelcolor=INK)
     fig.tight_layout(w_pad=1.2)
-    fig.savefig(OUT)
-    print("wrote", OUT)
+    fig.savefig(args.out)
+    print("wrote", args.out)
 
 
 if __name__ == "__main__":

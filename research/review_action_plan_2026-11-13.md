@@ -194,8 +194,14 @@ validation FID (epoch 699 and 2,699, seed 1234 had 3,299), guidance 1, one test 
   on validation (0.156 against 0.171). The contrast never met the rule (+0.015 [-0.021, +0.048] with one prior
   seed, +0.012 [-0.023, +0.046] with three). My wording from the Brier change on 2026-11-13. Now "does not
   separate under our rule (0.180 against 0.177 on test, 0.156 against 0.168 on validation)".
+- **Fig. 3 and the correlation.** `research/paper/figures/make_fid_vs_conditioning.py` now reads every test
+  report and prints the per-model correlation, which was computed by hand before. With three prior seeds it
+  is unchanged: FID against mean ADE -0.75 (p = 0.02), against ECS +0.33 (p = 0.38), nine models. The figure
+  shows 17 runs (per run -0.73 and +0.49), caption updated.
 - **Still open for tonight:** Table II row of the prior with IA, last two rows of Table III, the per-model
-  correlation in Section VI-B, Fig. 3 (15 runs), the seeds sentence.
+  correlation again, Fig. 3 with 19 runs (append the FID lines of the two IA prior seeds to
+  `research/data/resplit_test_report_priors3.txt`, add the seeds to `resplit_selection.json`), the seeds
+  sentence, "(1 seed)" in Table II, the FID of the IA prior quoted in Section VI-B (3.29).
 
 ## Regressor baseline (C2), 2026-11-13
 
