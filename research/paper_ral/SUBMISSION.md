@@ -50,13 +50,23 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
   - Deterministic regressor as the ego-aware baseline, last row of Table II and a paragraph in Section VI-A.
     Paid for with shorter R-Precision, bootstrap, last-checkpoint, PedGen and metrics-limitation sentences.
 
+- 2026-11-15, three seeds of the plain prior and the rs2 decision (`research/review_action_plan_2026-11-13.md`):
+  - The prior is now the mean of three seeds (test ADE 3.03 m, seeds 3.11, 3.00, 2.97). EgoPed's gain is
+    0.59 m instead of 0.68 m and still meets the rule. Changed in the abstract, contribution 1, Section V
+    (uncorrected Brier of the prior, seeds sentence), Tables II, III and V, Sections VI-A, VI-D, VI-E, the
+    PedGen paragraph and the conclusion. Full-seq against the prior on mean ADE loses its star in Table III.
+  - Section VI-E said the corrected Brier score separates EgoPed from the prior on validation. It does not
+    under the rule (not with one prior seed either). The sentence now says so for both partitions.
+  - Retraining with the ego in the frame of the window start (`rs2`) does not beat the current models on
+    validation, so they stay. One sentence in Section IV-A, paid for by dropping the clause on the frame from
+    the limitations.
+  - To hold 8 pages, seventeen sentences lost a few words each without a change of content.
+
 ## Still to do
 
-- A full retraining with the ego in the frame of the window start (`rs2`) is queued. If it replaces the
-  current models, every table changes.
-- Pending results that will change numbers in the text: two more seeds each for the prior and the prior with
-  IA (Tables II and III, the per-model correlation, the seeds sentence in Section V). The paper is full,
-  so anything added needs a cut of the same length.
+- Pending results that will change numbers in the text: two more seeds of the prior with IA (its row in
+  Table II, the last two rows of Table III, the per-model correlation and Fig. 3, which still shows 15 runs,
+  the seeds sentence in Section V). The paper is full, so anything added needs a cut of the same length.
 - Overleaf needs `refs.bib` and `ral_ctl.bib` from this folder. The reviewed copy printed "[?]" for some
   citations, which this build does not.
 
@@ -69,4 +79,4 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
 
 ## Abstract (plain text, for the submission form)
 
-Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion depends on the vehicle, yet existing motion generators condition on text, waypoints, goals or the static scene. We present EgoPed, a latent diffusion model that generates 3D full-body pedestrian motion directly from the ego vehicle's trajectory, encoded by a pretrained, frozen trajectory encoder into a single token. On 5,668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene, EgoPed lowers the root displacement error of a trained unconditional prior from 3.11 to 2.43 m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31. The Fréchet distance is blind to this coupling. An ego-blind prior matches the best conditional model, and the two design choices it favours both raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.
+Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion depends on the vehicle, yet existing motion generators condition on text, waypoints, goals or the static scene. We present EgoPed, a latent diffusion model that generates 3D full-body pedestrian motion directly from the ego vehicle's trajectory, encoded by a pretrained, frozen trajectory encoder into a single token. On 5,668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene, EgoPed lowers the root displacement error of a trained unconditional prior from 3.03 to 2.43 m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31. The Fréchet distance is blind to this coupling. An ego-blind prior matches the best conditional model, and the two design choices it favours both raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.

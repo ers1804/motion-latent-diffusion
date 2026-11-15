@@ -107,3 +107,22 @@ pooled_unfrozen vs pooled_scratch
   ECS    -0.009 [-0.040,+0.025] p=0.579 (-0.036,+0.010)
   Brier  +0.003 [-0.009,+0.016] p=0.608 (-0.015,+0.016)
   BrierC +0.002 [-0.011,+0.015] p=0.733 (-0.014,+0.015)
+
+## research/src/short_horizon.py --split scene_test (first 1.95 s, PedGen no-context), three prior seeds
+split=scene_test N=1182/1182 GT speed m/s median 1.26, GT end z median 2.43, end x median -0.00
+model                 ADE      FDE   minADE   minFDE
+rs1_uncond_s1234_ep3299_cfg1    0.750    1.514    0.286    0.572
+rs1_uncond_s2345_ep699_cfg1    0.726    1.462    0.283    0.566
+rs1_uncond_s3456_ep2699_cfg1    0.724    1.456    0.280    0.560
+rs1_pooled_s1234_ep1399_cfg15    0.561    1.128    0.401    0.805
+rs1_pooled_s2345_ep4299_cfg15    0.589    1.184    0.351    0.707
+rs1_pooled_s3456_ep2799_cfg15    0.576    1.159    0.357    0.721
+pedgen              0.794    1.570    0.423    0.814
+
+Paired against PedGen, positive = model better [95% CI, scene bootstrap]
+rs1_uncond_s1234_ep3299_cfg1ADE +0.043 [-0.018,+0.104]  FDE +0.056 [-0.064,+0.171]  minADE +0.136 [+0.091,+0.184]  minFDE +0.242 [+0.153,+0.328]
+rs1_uncond_s2345_ep699_cfg1ADE +0.068 [+0.007,+0.125]  FDE +0.108 [-0.007,+0.220]  minADE +0.140 [+0.095,+0.182]  minFDE +0.247 [+0.162,+0.327]
+rs1_uncond_s3456_ep2699_cfg1ADE +0.070 [+0.005,+0.129]  FDE +0.115 [-0.006,+0.228]  minADE +0.143 [+0.096,+0.188]  minFDE +0.253 [+0.159,+0.347]
+rs1_pooled_s1234_ep1399_cfg15ADE +0.233 [+0.166,+0.299]  FDE +0.443 [+0.306,+0.566]  minADE +0.022 [-0.043,+0.086]  minFDE +0.009 [-0.121,+0.127]
+rs1_pooled_s2345_ep4299_cfg15ADE +0.205 [+0.145,+0.263]  FDE +0.386 [+0.268,+0.497]  minADE +0.071 [+0.006,+0.128]  minFDE +0.106 [-0.013,+0.216]
+rs1_pooled_s3456_ep2799_cfg15ADE +0.218 [+0.155,+0.276]  FDE +0.411 [+0.294,+0.523]  minADE +0.065 [+0.003,+0.123]  minFDE +0.092 [-0.025,+0.204]

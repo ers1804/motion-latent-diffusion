@@ -6,12 +6,12 @@ from pathlib import Path
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from compare_resplit import beats, cell_of, compare, metrics, scene_key  # noqa: E402
+from compare_resplit import beats, cell_of, compare, generation_of, metrics, pick, scene_key  # noqa: E402
 
 
-def fake(ade, p, stop):
+def fake(ade, p, stop, k=5):
     ade = np.asarray(ade, dtype=float)
-    return dict(ade=ade, minade=ade * .5, p=np.asarray(p, dtype=float), stop=np.asarray(stop, dtype=float))
+    return dict(ade=ade, minade=ade * .5, p=np.asarray(p, dtype=float), stop=np.asarray(stop, dtype=float), k=k)
 
 
 def main():
@@ -24,6 +24,16 @@ def main():
     r = metrics(fake(np.ones(n), stop, stop), np.arange(n))
     assert r["ECS"] == 1 and r["Brier"] == 0 and r["ADE"] == 1 and r["minADE"] == .5
     assert metrics(fake(np.ones(n), np.full(n, .3), stop), np.arange(n))["ECS"] == 0
+
+    # Corrected Brier: p = 0.4 from K=5 samples against half stops. Raw (0.16 + 0.36) / 2 = 0.26, the sampling
+    # noise of five draws is 0.4 * 0.6 / 4 = 0.06. A single sample (K=1) has no correction.
+    r = metrics(fake(np.ones(n), np.full(n, .4), stop), np.arange(n))
+    assert abs(r["Brier"] - .26) < 1e-12 and abs(r["BrierC"] - .20) < 1e-12, r
+    r = metrics(fake(np.ones(n), stop, 1 - stop, k=1), np.arange(n))
+    assert r["Brier"] == 1 and r["BrierC"] == 1, r
+    assert cell_of("rs2_pooled_s1234") == "pooled" and generation_of("rs2_pooled_s1234") == "rs2"
+    chosen = pick({"rs1_pooled_s1": 1, "rs2_pooled_s1": 2, "rs1_uncond_s1": 3, "rs1_uncond_ia_s1": 4}, "rs2")
+    assert sorted(chosen) == ["rs1_uncond_ia_s1", "rs1_uncond_s1", "rs2_pooled_s1"], chosen
 
     clusters = {i: np.array([2 * i, 2 * i + 1]) for i in range(n // 2)}
     rng = np.random.default_rng(1)

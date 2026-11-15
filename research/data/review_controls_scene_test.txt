@@ -31,11 +31,11 @@ scene_test: EgoPed seeds ['rs1_pooled_s1234', 'rs1_pooled_s2345', 'rs1_pooled_s3
    model        seeds     ADE  minADE     ECS    AUC   Brier  BrierC  gen stop
    regressor        3   1.969   1.969   0.079  0.539   0.224   0.224     0.023
    pooled           3   2.434   1.649   0.308  0.698   0.191   0.180     0.205
-   uncond           1   3.110   1.307   0.015  0.520   0.214   0.179     0.229
+   uncond           3   3.028   1.305   0.023  0.533   0.211   0.177     0.220
    rs1_regressor_s1234_metrics_scene_test.json: FID 35.968, Diversity 3.169, gt_Diversity 5.416
    rs1_regressor_s2345_metrics_scene_test.json: FID 36.426, Diversity 2.645, gt_Diversity 5.165
    rs1_regressor_s3456_metrics_scene_test.json: FID 35.557, Diversity 2.856, gt_Diversity 5.334
 
    delta>0 = regressor better [95% CI] (seed pair range); * = rule met
    regressor vs pooled  ADE +0.465 [+0.324,+0.609] (+0.394,+0.528)*  minADE -0.320 [-0.449,-0.194] (-0.394,-0.203)*  ECS -0.229 [-0.312,-0.131] (-0.301,-0.177)*  BrierC -0.043 [-0.093,+0.000] (-0.055,-0.033) 
-   regressor vs uncond  ADE +1.141 [+1.035,+1.250] (+1.122,+1.162)*  minADE -0.662 [-0.835,-0.501] (-0.681,-0.641)*  ECS +0.064 [-0.002,+0.151] (+0.019,+0.098)   BrierC -0.044 [-0.080,-0.012] (-0.053,-0.037)*
+   regressor vs uncond  ADE +1.059 [+0.965,+1.155] (+0.985,+1.162)*  minADE -0.664 [-0.825,-0.517] (-0.707,-0.622)*  ECS +0.056 [-0.008,+0.138] (+0.005,+0.098)   BrierC -0.046 [-0.080,-0.015] (-0.058,-0.037)*

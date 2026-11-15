@@ -181,11 +181,21 @@ validation FID (epoch 699 and 2,699, seed 1234 had 3,299), guidance 1, one test 
   3.11 m). It still meets the rule with all nine seed pairs. Seed 1234 was the weakest of the three priors.
 - Full-seq no longer beats the prior on mean ADE under the rule. On validation the same (+0.34, pair range
   -0.05 to +0.61).
-- **Paper not yet changed.** Every number that involves the prior moves: abstract, contribution 1, Section
-  VI-A, Tables II, III and V, Section VI-D (foreign vehicle against the prior), Section VI-E
-  (`coupling_breakdown.py` uses the prior cell), the per-model correlation, Fig. 3, the PedGen paragraph, the
-  seeds sentence, the conclusion. To be done in one pass when the two IA prior seeds are in as well (they
-  finish at about 19:00 on 2026-11-15), so that Erik gets one list of changes for Overleaf.
+- **Paper changed 2026-11-15 09:00 for the plain prior** (the IA prior follows tonight, Erik gets one list of
+  changes for Overleaf then). The two new seeds are merged into `research/data/resplit_selection.json`, so
+  that every analysis script reads three prior seeds, and `coupling_breakdown.py`, `ego_controls.py`,
+  `review_controls.py`, `resplit_breakdown.py` and `short_horizon.py` were run again. In the paper: abstract
+  (3.03 to 2.43 m), contribution 1 and conclusion (0.59 m), Section V (uncorrected Brier of the prior 0.211,
+  seeds sentence), Table II prior row with seed ranges, Table III (EgoPed against the prior +0.59* [0.42,
+  0.77], Full-seq +0.34 [0.14, 0.54] without star), Section VI-A (FDE gap 1.10 m, validation ECS of the prior
+  0.03, per source -0.02 and 0.06), Section VI-D and Table V (3.03, 1.30, 0.177), Section VI-E (ADE gain 0.60
+  m on the 99%, AUC 0.53), PedGen paragraph (prior 0.733 m, 0.06 m closer than PedGen).
+- **Correction found on the way.** Section VI-E said the corrected Brier score separates EgoPed from the prior
+  on validation (0.156 against 0.171). The contrast never met the rule (+0.015 [-0.021, +0.048] with one prior
+  seed, +0.012 [-0.023, +0.046] with three). My wording from the Brier change on 2026-11-13. Now "does not
+  separate under our rule (0.180 against 0.177 on test, 0.156 against 0.168 on validation)".
+- **Still open for tonight:** Table II row of the prior with IA, last two rows of Table III, the per-model
+  correlation in Section VI-B, Fig. 3 (15 runs), the seeds sentence.
 
 ## Regressor baseline (C2), 2026-11-13
 
