@@ -57,3 +57,7 @@ rs2  ECS later +0.179, others +0.534   ADE later 3.346, others 1.683   stop prob
 rs2 minus rs1 on later: ECS -0.041 [-0.122, +0.040]   ADE gain (positive = rs2 lower) -0.129 [-0.295, +0.063]
 rs2 minus rs1 on others: ECS -0.013 [-0.066, +0.032]   ADE gain (positive = rs2 lower) -0.151 [-0.217, -0.082]*
 gap in ECS (others minus later), rs2 minus rs1: +0.029 [-0.068, +0.121]   (negative = the fix narrows the gap)
+
+Windows that start later, by the offset between the two frames (post hoc)
+offset of at least 1 m: 366 conditions, 67 with a recorded stop   ADE rs1 3.179, rs2 3.288, gain -0.109 [-0.307, +0.125]   ECS rs2 minus rs1 -0.014 [-0.170, +0.136]
+offset of at least 5 m: 181 conditions, 23 with a recorded stop   ADE rs1 3.035, rs2 3.266, gain -0.230 [-0.507, +0.060]   ECS rs2 minus rs1 -0.020 [-0.225, +0.185]

@@ -345,6 +345,11 @@ rs1). Report in `research/data/resplit_val_report_rs2_pooled.txt`. Delta above 0
   for rs2, 0.22 against 0.55 for rs1, difference of the gaps +0.03 [-0.07, +0.12]. So the stale frame was not
   the cause of that gap. Windows that start later are the tracks of full length (9.8 s) with twice the stop
   rate (0.31 against 0.16) and twice the error (ADE 3.2 against 1.5 m), which is the plainer reading.
+  Post hoc, on a remark of the code review: the offset between the two frames is the distance the pedestrian
+  covered before the window, so it is near zero for everyone who stood until then. On the windows the fix
+  really moves, rs2 gains nothing either: offset of at least 1 m (366 conditions) ADE 3.29 against 3.18,
+  -0.11 [-0.31, +0.13]; at least 5 m (181 conditions) ADE 3.27 against 3.04, -0.23 [-0.51, +0.06]; ECS
+  differences -0.01 and -0.02 with wide intervals.
 - **Where rs2 is behind.** On the 671 conditions whose ego input is the same for both generations
   (ADE -0.151 [-0.217, -0.082]*), and not reliably on the 523 whose input changed (-0.129 [-0.295, +0.063]).
   So the deficit is not an effect of the frame of the evaluated input. Cause not established. Candidates are

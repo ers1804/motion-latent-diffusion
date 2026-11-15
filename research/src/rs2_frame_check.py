@@ -23,6 +23,7 @@ from compare_resplit import cell_of, generation_of, load  # noqa: E402
 from coupling_breakdown import Bootstrap, ecs, fmt, load_geometry  # noqa: E402
 
 SPLIT = "scene_val"  # the test partition plays no part in this decision
+MIN_OFFSETS = (1.0, 5.0)  # m; sensitivity cuts, chosen after the first read of the validation numbers
 
 
 def main():
@@ -40,7 +41,7 @@ def main():
         if cell_of(run) == args.cell and generation_of(run) in runs:
             runs[generation_of(run)].append(
                 load(Path(args.data) / f"ade_fde_{run}_ep{s['epoch']}_cfg{s['guidance']}_{SPLIT}_k5.npz"))
-    assert runs["rs1"] and runs["rs2"], {g: len(v) for g, v in runs.items()}
+    assert runs["rs1"] and len(runs["rs1"]) == len(runs["rs2"]), {g: len(v) for g, v in runs.items()}
     ref = runs["rs1"][0]
     for group in runs.values():
         for m in group:
@@ -69,6 +70,21 @@ def main():
         print(f"rs2 minus rs1 on {label}: ECS {fmt(e)}   ADE gain (positive = rs2 lower) {fmt(a)}")
     gap = boot.contrast(lambda r, idx: subset_ecs(r, idx, ~later) - subset_ecs(r, idx, later), runs["rs2"], runs["rs1"])
     print(f"gap in ECS (others minus later), rs2 minus rs1: {fmt(gap)}   (negative = the fix narrows the gap)")
+
+    # Sensitivity, added after the first read on a reviewer's remark. The offset between the two frames is the
+    # distance the pedestrian covered before the window, so it is near zero for everyone who stood until then.
+    # These cuts keep the windows the fix really moves. Few of them hold a recorded stop, so ECS can be undefined.
+    print("\nWindows that start later, by the offset between the two frames (post hoc)")
+    for least in MIN_OFFSETS:
+        far = offset >= least
+        a = boot.contrast(lambda r, idx: -r["ade"][idx][far[idx]].mean(), runs["rs2"], runs["rs1"])
+        try:
+            e = fmt(boot.contrast(lambda r, idx: subset_ecs(r, idx, far), runs["rs2"], runs["rs1"]))
+        except AssertionError:
+            e = "undefined in too many bootstrap draws"
+        ades = {g: np.mean([r["ade"][far].mean() for r in group]) for g, group in runs.items()}
+        print(f"offset of at least {least:.0f} m: {far.sum()} conditions, {(stop & far).sum()} with a recorded stop   "
+              f"ADE rs1 {ades['rs1']:.3f}, rs2 {ades['rs2']:.3f}, gain {fmt(a)}   ECS rs2 minus rs1 {e}")
 
 
 if __name__ == "__main__":
