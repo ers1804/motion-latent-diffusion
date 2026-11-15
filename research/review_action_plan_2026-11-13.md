@@ -364,6 +364,13 @@ rs1). Report in `research/data/resplit_val_report_rs2_pooled.txt`. Delta above 0
   ablations), the validation sweep of the nine other finished plain runs is queued, jobs 1339223 to 1339249,
   nice 100, `research/data/resplit_epochs_rs2_plain.json`. `rs2_pooled_scratch_s3456` follows when it reaches
   epoch 4,999, the six interaction-weighted runs at about 22:30. Validation only.
+- **Other plain rs2 cells, 2026-11-15 08:00, validation.** `research/data/resplit_val_report_rs2_plain.txt`.
+  No rs2 cell beats its rs1 counterpart on mean ADE or ECS. rs2 minus rs1: Full-seq ADE -0.04, ECS
+  -0.07*; pooled_unfrozen ADE -0.01, ECS -0.00; pooled_scratch ADE -0.08*, minADE +0.11*, ECS -0.01; the single
+  trainable Full-seq run ADE -0.58*. Within rs2 the paper's comparisons keep their direction: EgoPed against
+  the prior ADE +0.57*, ECS +0.30*; Full-seq against EgoPed ECS -0.10* and ADE -0.27 [-0.42, -0.13] with one
+  of nine seed pairs reversed by 0.04 m, so the rule is not met on ADE there (it is for rs1, -0.37*);
+  freezing the encoder ECS +0.05* (rs1 +0.08*); pretraining no difference on ADE or ECS in either family.
 - **Open for Erik.** The six interaction-weighted rs2 runs still hold six GPUs until about 22:30. With rs1
   staying, they only serve the robustness statement. They keep running unless Erik wants them stopped.
 

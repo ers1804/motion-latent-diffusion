@@ -1,0 +1,241 @@
+rs2 against rs1 on VALIDATION, all plain cells (no interaction-weighted recipe), 2026-11-15. No test access.
+Robustness check only: the decision that rs1 stays was taken on the pooled cell
+(research/data/resplit_val_report_rs2_pooled.txt).
+RESULT: no rs2 cell beats its rs1 counterpart on mean ADE or ECS. Under the rule rs2 is behind on ECS for the
+full-sequence model, on the corrected Brier score for pooled, on mean ADE for pooled_scratch (while ahead on
+minADE there) and on ADE for the single trainable full-sequence run. Within rs2 the comparisons of the paper keep
+their direction: pooled against the prior ADE +0.57* and ECS +0.30*, full-sequence against pooled ECS -0.10*
+(mean ADE -0.27 with one of nine seed pairs reversed, so the rule is not met there, it is for rs1),
+pooled against pooled_unfrozen ECS +0.05*.
+
+Checkpoints by lowest training-time validation FID (research/data/resplit_epochs_rs2_plain.json), guidance by
+mean validation FID per cell (research/data/resplit_selection_rs2_plain.json), jobs 1339223 to 1339249 and
+1339398 to 1339400. All 30 logs carry EGO_WINDOW_FRAME=True, none has a traceback.
+
+run                           ep  cfg  val FID  val ADE
+rs2_egoped_s1234            1199    5    2.439    2.362
+rs2_egoped_s1234            1199   10    1.445    2.444
+rs2_egoped_s1234            1199   15    1.467    2.553
+rs2_egoped_s2345            1399    5    2.719    2.602
+rs2_egoped_s2345            1399   10    2.457    2.801
+rs2_egoped_s2345            1399   15    2.456    2.999
+rs2_egoped_s3456            2799    5    4.490    2.353
+rs2_egoped_s3456            2799   10    3.616    2.417
+rs2_egoped_s3456            2799   15    3.293    2.483
+rs2_pooled_scratch_s1234     999    5    4.543    2.316
+rs2_pooled_scratch_s1234     999   10    4.419    2.343
+rs2_pooled_scratch_s1234     999   15    4.623    2.370
+rs2_pooled_scratch_s2345    1699    5    4.880    2.340
+rs2_pooled_scratch_s2345    1699   10    4.954    2.300
+rs2_pooled_scratch_s2345    1699   15    5.056    2.280
+rs2_pooled_scratch_s3456     999    5    3.804    2.384
+rs2_pooled_scratch_s3456     999   10    3.880    2.382
+rs2_pooled_scratch_s3456     999   15    4.032    2.388
+rs2_pooled_unfrozen_s1234   1299    5    4.985    2.294
+rs2_pooled_unfrozen_s1234   1299   10    5.041    2.275
+rs2_pooled_unfrozen_s1234   1299   15    5.198    2.280
+rs2_pooled_unfrozen_s2345   1699    5    4.609    2.278
+rs2_pooled_unfrozen_s2345   1699   10    4.566    2.251
+rs2_pooled_unfrozen_s2345   1699   15    4.472    2.245
+rs2_pooled_unfrozen_s3456    999    5    3.947    2.426
+rs2_pooled_unfrozen_s3456    999   10    3.831    2.461
+rs2_pooled_unfrozen_s3456    999   15    3.889    2.488
+rs2_unfrozen_s1234          1899    5    3.987    3.035
+rs2_unfrozen_s1234          1899   10    3.940    3.118
+rs2_unfrozen_s1234          1899   15    4.064    3.161
+egoped       guidance 15  mean val FID cfg5 3.216  cfg10 2.506  cfg15 2.405
+pooled_scratch guidance 5  mean val FID cfg5 4.409  cfg10 4.418  cfg15 4.570
+pooled_unfrozen guidance 10  mean val FID cfg5 4.514  cfg10 4.479  cfg15 4.520
+unfrozen     guidance 10  mean val FID cfg5 3.987  cfg10 3.940  cfg15 4.064
+
+== python research/src/compare_resplit.py --split scene_val --gen rs2 --against rs1 --selection
+   resplit_selection.json resplit_ablation_selection.json resplit_selection_priors2.json
+   resplit_selection_rs2_pooled.json resplit_selection_rs2_plain.json
+split=scene_val N=1194 scenes=107 stopping rate=0.228
+
+run                           ADE  minADE    ECS  Brier  BrierC  gen stop
+rs2_egoped_s1234            2.553   1.554  0.238  0.182   0.170     0.155
+rs2_egoped_s2345            2.999   1.639  0.215  0.185   0.173     0.150
+rs2_egoped_s3456            2.483   1.349  0.227  0.171   0.158     0.137
+rs2_pooled_s1234            2.325   1.448  0.328  0.184   0.173     0.212
+rs2_pooled_s2345            2.519   1.543  0.326  0.177   0.167     0.192
+rs2_pooled_s3456            2.389   1.531  0.331  0.182   0.173     0.200
+rs2_pooled_scratch_s1234    2.316   1.446  0.277  0.186   0.173     0.200
+rs2_pooled_scratch_s2345    2.340   1.557  0.286  0.196   0.183     0.223
+rs2_pooled_scratch_s3456    2.384   1.519  0.282  0.187   0.174     0.208
+rs2_pooled_unfrozen_s1234   2.275   1.578  0.320  0.183   0.173     0.204
+rs2_pooled_unfrozen_s2345   2.251   1.636  0.275  0.202   0.193     0.196
+rs2_pooled_unfrozen_s3456   2.461   1.639  0.248  0.194   0.182     0.183
+rs1_uncond_s1234            3.066   1.216  0.024  0.205   0.171     0.227
+rs1_uncond_s2345            2.954   1.208  0.041  0.196   0.165     0.197
+rs1_uncond_s3456            2.920   1.178  0.027  0.203   0.168     0.233
+rs1_uncond_ia_s1234         2.932   1.384  0.019  0.205   0.190     0.085
+rs2_unfrozen_s1234          3.118   2.035  0.039  0.220   0.212     0.069
+
+delta>0 = first cell better; [95% CI, scene bootstrap]; p; (seed pair range); * = rule met
+egoped vs pooled
+  ADE    -0.267 [-0.416,-0.133] p=0.000 (-0.674,+0.036)
+  minADE -0.006 [-0.093,+0.066] p=0.866 (-0.190,+0.194)
+  ECS    -0.102 [-0.157,-0.051] p=0.000 (-0.116,-0.088) *
+  Brier  +0.002 [-0.015,+0.019] p=0.798 (-0.008,+0.013)
+  BrierC +0.004 [-0.013,+0.022] p=0.642 (-0.006,+0.015)
+egoped vs uncond
+  ADE    +0.301 [+0.036,+0.535] p=0.024 (-0.079,+0.583)
+  minADE -0.313 [-0.475,-0.174] p=0.000 (-0.461,-0.133) *
+  ECS    +0.196 [+0.098,+0.298] p=0.000 (+0.175,+0.213) *
+  Brier  +0.023 [-0.009,+0.051] p=0.143 (+0.011,+0.035)
+  BrierC +0.001 [-0.029,+0.029] p=0.969 (-0.007,+0.013)
+pooled vs uncond
+  ADE    +0.568 [+0.351,+0.764] p=0.000 (+0.401,+0.740) *
+  minADE -0.307 [-0.455,-0.172] p=0.000 (-0.365,-0.233) *
+  ECS    +0.298 [+0.163,+0.435] p=0.000 (+0.285,+0.307) *
+  Brier  +0.020 [-0.020,+0.059] p=0.310 (+0.013,+0.028)
+  BrierC -0.003 [-0.042,+0.034] p=0.852 (-0.008,+0.004)
+egoped vs unfrozen
+  ADE    +0.439 [+0.223,+0.635] p=0.000 (+0.118,+0.635) *
+  minADE +0.522 [+0.386,+0.652] p=0.000 (+0.397,+0.687) *
+  ECS    +0.188 [+0.100,+0.277] p=0.000 (+0.177,+0.199) *
+  Brier  +0.041 [+0.012,+0.076] p=0.005 (+0.035,+0.049) *
+  BrierC +0.045 [+0.016,+0.081] p=0.002 (+0.039,+0.054) *
+pooled vs pooled_unfrozen
+  ADE    -0.082 [-0.175,+0.027] p=0.132 (-0.268,+0.135)
+  minADE +0.110 [+0.028,+0.199] p=0.005 (+0.035,+0.190) *
+  ECS    +0.047 [+0.002,+0.096] p=0.038 (+0.006,+0.083) *
+  Brier  +0.012 [-0.006,+0.030] p=0.181 (-0.000,+0.024)
+  BrierC +0.012 [-0.006,+0.030] p=0.191 (-0.000,+0.025)
+pooled_unfrozen vs pooled_scratch
+  ADE    +0.018 [-0.035,+0.072] p=0.522 (-0.145,+0.133)
+  minADE -0.110 [-0.159,-0.061] p=0.000 (-0.192,-0.021) *
+  ECS    -0.001 [-0.026,+0.026] p=0.983 (-0.038,+0.043)
+  Brier  -0.003 [-0.013,+0.006] p=0.501 (-0.016,+0.013)
+  BrierC -0.006 [-0.016,+0.004] p=0.205 (-0.020,+0.010)
+
+rs2 against rs1, cell by cell; delta>0 = rs2 better
+egoped (3 against 3 seeds)
+  ADE    -0.039 [-0.143,+0.068] p=0.430 (-0.543,+0.485)
+  minADE -0.132 [-0.212,-0.054] p=0.002 (-0.299,+0.063)
+  ECS    -0.071 [-0.107,-0.030] p=0.002 (-0.099,-0.046) *
+  Brier  -0.008 [-0.024,+0.008] p=0.285 (-0.019,+0.007)
+  BrierC -0.010 [-0.026,+0.005] p=0.203 (-0.021,+0.008)
+pooled (3 against 3 seeds)
+  ADE    -0.142 [-0.225,-0.051] p=0.003 (-0.301,+0.005)
+  minADE -0.076 [-0.142,-0.005] p=0.036 (-0.171,+0.084)
+  ECS    -0.035 [-0.089,+0.016] p=0.173 (-0.048,-0.016)
+  Brier  -0.015 [-0.029,-0.002] p=0.025 (-0.019,-0.009) *
+  BrierC -0.015 [-0.029,-0.002] p=0.028 (-0.021,-0.006) *
+pooled_scratch (3 against 3 seeds)
+  ADE    -0.077 [-0.150,-0.010] p=0.029 (-0.137,-0.017) *
+  minADE +0.105 [+0.040,+0.172] p=0.001 (+0.013,+0.198) *
+  ECS    -0.013 [-0.059,+0.033] p=0.527 (-0.043,+0.011)
+  Brier  +0.004 [-0.011,+0.019] p=0.629 (-0.012,+0.012)
+  BrierC +0.007 [-0.007,+0.022] p=0.327 (-0.008,+0.015)
+pooled_unfrozen (3 against 3 seeds)
+  ADE    -0.011 [-0.098,+0.066] p=0.773 (-0.191,+0.129)
+  minADE +0.028 [-0.036,+0.093] p=0.450 (-0.075,+0.121)
+  ECS    -0.004 [-0.058,+0.050] p=0.845 (-0.049,+0.042)
+  Brier  -0.003 [-0.018,+0.013] p=0.686 (-0.020,+0.016)
+  BrierC -0.002 [-0.017,+0.015] p=0.813 (-0.022,+0.018)
+unfrozen (1 against 1 seeds)
+  ADE    -0.580 [-0.698,-0.451] p=0.000 (-0.580,-0.580) *
+  minADE -0.769 [-0.871,-0.671] p=0.000 (-0.769,-0.769) *
+  ECS    -0.013 [-0.046,+0.019] p=0.411 (-0.013,-0.013)
+  Brier  -0.024 [-0.038,-0.011] p=0.000 (-0.024,-0.024) *
+  BrierC -0.030 [-0.045,-0.018] p=0.000 (-0.030,-0.030) *
+
+== the same contrasts within rs1, with three prior seeds
+   python research/src/compare_resplit.py --split scene_val --selection resplit_selection.json
+   resplit_ablation_selection.json resplit_selection_priors2.json
+split=scene_val N=1194 scenes=107 stopping rate=0.228
+
+run                           ADE  minADE    ECS  Brier  BrierC  gen stop
+rs1_egoped_s1234            2.495   1.395  0.315  0.178   0.165     0.201
+rs1_egoped_s2345            2.968   1.412  0.284  0.169   0.153     0.190
+rs1_egoped_s3456            2.456   1.340  0.296  0.166   0.152     0.185
+rs1_egoped_ia_s1234         2.760   1.955  0.127  0.206   0.193     0.137
+rs1_egoped_ia_s2345         2.706   1.843  0.179  0.190   0.178     0.138
+rs1_egoped_ia_s3456         2.581   1.535  0.187  0.177   0.165     0.114
+rs1_pooled_s1234            2.218   1.532  0.368  0.168   0.161     0.180
+rs1_pooled_s2345            2.331   1.390  0.347  0.167   0.156     0.194
+rs1_pooled_s3456            2.261   1.372  0.374  0.165   0.152     0.217
+rs1_pooled_ia_s1234         2.796   1.932  0.189  0.188   0.180     0.107
+rs1_pooled_ia_s2345         2.646   1.809  0.258  0.177   0.169     0.134
+rs1_pooled_ia_s3456         2.569   1.738  0.254  0.187   0.179     0.150
+rs1_pooled_scratch_s1234    2.265   1.570  0.275  0.198   0.188     0.199
+rs1_pooled_scratch_s2345    2.247   1.645  0.289  0.198   0.187     0.208
+rs1_pooled_scratch_s3456    2.298   1.622  0.321  0.184   0.175     0.191
+rs1_pooled_unfrozen_s1234   2.269   1.699  0.298  0.188   0.182     0.170
+rs1_pooled_unfrozen_s2345   2.305   1.673  0.281  0.200   0.190     0.200
+rs1_pooled_unfrozen_s3456   2.380   1.564  0.278  0.182   0.171     0.174
+rs1_uncond_s1234            3.066   1.216  0.024  0.205   0.171     0.227
+rs1_uncond_s2345            2.954   1.208  0.041  0.196   0.165     0.197
+rs1_uncond_s3456            2.920   1.178  0.027  0.203   0.168     0.233
+rs1_uncond_ia_s1234         2.932   1.384  0.019  0.205   0.190     0.085
+rs1_unfrozen_s1234          2.538   1.266  0.052  0.196   0.182     0.083
+
+delta>0 = first cell better; [95% CI, scene bootstrap]; p; (seed pair range); * = rule met
+egoped vs pooled
+  ADE    -0.370 [-0.494,-0.246] p=0.000 (-0.750,-0.125) *
+  minADE +0.049 [-0.020,+0.113] p=0.170 (-0.040,+0.192)
+  ECS    -0.065 [-0.103,-0.025] p=0.004 (-0.090,-0.033) *
+  Brier  -0.004 [-0.017,+0.008] p=0.473 (-0.013,+0.002)
+  BrierC -0.000 [-0.013,+0.012] p=0.939 (-0.013,+0.009)
+egoped_ia vs pooled_ia
+  ADE    -0.012 [-0.115,+0.087] p=0.873 (-0.191,+0.215)
+  minADE +0.048 [-0.053,+0.140] p=0.316 (-0.217,+0.396)
+  ECS    -0.069 [-0.136,-0.009] p=0.036 (-0.131,-0.001) *
+  Brier  -0.007 [-0.027,+0.014] p=0.476 (-0.029,+0.010)
+  BrierC -0.003 [-0.024,+0.018] p=0.780 (-0.024,+0.014)
+egoped vs egoped_ia
+  ADE    +0.043 [-0.101,+0.179] p=0.569 (-0.387,+0.304)
+  minADE +0.395 [+0.244,+0.567] p=0.000 (+0.123,+0.615) *
+  ECS    +0.134 [+0.059,+0.209] p=0.000 (+0.096,+0.188) *
+  Brier  +0.020 [-0.005,+0.048] p=0.097 (-0.001,+0.040)
+  BrierC +0.022 [-0.003,+0.050] p=0.075 (-0.000,+0.041)
+pooled vs pooled_ia
+  ADE    +0.401 [+0.243,+0.575] p=0.000 (+0.239,+0.578) *
+  minADE +0.395 [+0.242,+0.561] p=0.000 (+0.206,+0.560) *
+  ECS    +0.129 [+0.064,+0.193] p=0.001 (+0.090,+0.185) *
+  Brier  +0.017 [-0.006,+0.043] p=0.143 (+0.009,+0.023)
+  BrierC +0.019 [-0.004,+0.045] p=0.104 (+0.008,+0.027)
+egoped vs uncond
+  ADE    +0.340 [+0.103,+0.561] p=0.001 (-0.048,+0.610)
+  minADE -0.182 [-0.299,-0.073] p=0.000 (-0.234,-0.124) *
+  ECS    +0.267 [+0.168,+0.372] p=0.000 (+0.243,+0.290) *
+  Brier  +0.031 [-0.001,+0.061] p=0.053 (+0.019,+0.039)
+  BrierC +0.011 [-0.018,+0.041] p=0.436 (-0.000,+0.019)
+pooled vs uncond
+  ADE    +0.710 [+0.519,+0.887] p=0.000 (+0.589,+0.848) *
+  minADE -0.230 [-0.353,-0.124] p=0.000 (-0.354,-0.156) *
+  ECS    +0.332 [+0.215,+0.451] p=0.000 (+0.307,+0.350) *
+  Brier  +0.035 [-0.001,+0.070] p=0.058 (+0.028,+0.041)
+  BrierC +0.012 [-0.023,+0.046] p=0.520 (+0.004,+0.019)
+egoped_ia vs uncond_ia
+  ADE    +0.250 [+0.048,+0.444] p=0.009 (+0.172,+0.351) *
+  minADE -0.394 [-0.593,-0.212] p=0.000 (-0.571,-0.152) *
+  ECS    +0.145 [+0.077,+0.221] p=0.000 (+0.108,+0.169) *
+  Brier  +0.014 [-0.007,+0.039] p=0.221 (-0.001,+0.028)
+  BrierC +0.011 [-0.009,+0.037] p=0.350 (-0.003,+0.024)
+pooled_ia vs uncond_ia
+  ADE    +0.261 [+0.055,+0.459] p=0.010 (+0.136,+0.362) *
+  minADE -0.442 [-0.638,-0.263] p=0.000 (-0.548,-0.354) *
+  ECS    +0.215 [+0.125,+0.318] p=0.000 (+0.170,+0.239) *
+  Brier  +0.021 [-0.009,+0.054] p=0.158 (+0.018,+0.028)
+  BrierC +0.014 [-0.017,+0.046] p=0.373 (+0.010,+0.021)
+egoped vs unfrozen
+  ADE    -0.101 [-0.307,+0.110] p=0.328 (-0.430,+0.082)
+  minADE -0.116 [-0.224,-0.007] p=0.041 (-0.146,-0.074) *
+  ECS    +0.246 [+0.162,+0.332] p=0.000 (+0.232,+0.263) *
+  Brier  +0.025 [-0.007,+0.063] p=0.110 (+0.019,+0.030)
+  BrierC +0.025 [-0.007,+0.062] p=0.120 (+0.016,+0.030)
+pooled vs pooled_unfrozen
+  ADE    +0.048 [-0.043,+0.152] p=0.302 (-0.061,+0.162)
+  minADE +0.214 [+0.140,+0.298] p=0.000 (+0.032,+0.327) *
+  ECS    +0.078 [+0.026,+0.134] p=0.003 (+0.050,+0.096) *
+  Brier  +0.023 [+0.003,+0.045] p=0.023 (+0.014,+0.035) *
+  BrierC +0.025 [+0.004,+0.047] p=0.018 (+0.010,+0.038) *
+pooled_unfrozen vs pooled_scratch
+  ADE    -0.048 [-0.108,+0.008] p=0.090 (-0.133,+0.029)
+  minADE -0.033 [-0.080,+0.014] p=0.170 (-0.128,+0.081)
+  ECS    -0.009 [-0.045,+0.023] p=0.629 (-0.043,+0.023)
+  Brier  +0.003 [-0.010,+0.015] p=0.603 (-0.016,+0.016)
+  BrierC +0.003 [-0.011,+0.014] p=0.680 (-0.015,+0.017)

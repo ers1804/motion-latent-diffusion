@@ -1,0 +1,42 @@
+{
+ "rs2_egoped_s1234": {
+  "epoch": 1199,
+  "guidance": 15
+ },
+ "rs2_egoped_s2345": {
+  "epoch": 1399,
+  "guidance": 15
+ },
+ "rs2_egoped_s3456": {
+  "epoch": 2799,
+  "guidance": 15
+ },
+ "rs2_pooled_scratch_s1234": {
+  "epoch": 999,
+  "guidance": 5
+ },
+ "rs2_pooled_scratch_s2345": {
+  "epoch": 1699,
+  "guidance": 5
+ },
+ "rs2_pooled_scratch_s3456": {
+  "epoch": 999,
+  "guidance": 5
+ },
+ "rs2_pooled_unfrozen_s1234": {
+  "epoch": 1299,
+  "guidance": 10
+ },
+ "rs2_pooled_unfrozen_s2345": {
+  "epoch": 1699,
+  "guidance": 10
+ },
+ "rs2_pooled_unfrozen_s3456": {
+  "epoch": 999,
+  "guidance": 10
+ },
+ "rs2_unfrozen_s1234": {
+  "epoch": 1899,
+  "guidance": 10
+ }
+}
