@@ -1,0 +1,23 @@
+{
+ "rs2_pooled_s1234": {
+  "epoch": 2799,
+  "val_fid": 4.293,
+  "val_r1": 0.6959,
+  "gt_diversity": 5.171,
+  "last_epoch": 4999
+ },
+ "rs2_pooled_s2345": {
+  "epoch": 1499,
+  "val_fid": 4.058,
+  "val_r1": 0.6698,
+  "gt_diversity": 5.42,
+  "last_epoch": 4999
+ },
+ "rs2_pooled_s3456": {
+  "epoch": 1099,
+  "val_fid": 3.82,
+  "val_r1": 0.6959,
+  "gt_diversity": 5.707,
+  "last_epoch": 4999
+ }
+}

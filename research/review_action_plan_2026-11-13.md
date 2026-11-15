@@ -316,6 +316,15 @@ last-checkpoint sentence, PedGen, one limitation).
      `--gen rs2` in `coupling_breakdown.py`, `ego_controls.py` and `review_controls.py`.
 - The analysis scripts take `--gen` (default rs1). The ego-blind priors belong to both generations.
   Checked with stand-in dumps: the same three rs1 dumps under rs2 names give a difference of zero and no star.
+- **Progress, 2026-11-15 06:20.** The rule concerns the `pooled` cell, so that cell goes first and the other
+  cells follow in files of their own (selection files are merged by the analysis scripts, the rule is
+  unchanged). All three `rs2_pooled` seeds reached epoch 4,999 by 06:02. Checkpoints by the lowest
+  training-time validation FID, `research/data/resplit_epochs_rs2_pooled.json`: epoch 2,799 (seed 1234, FID
+  4.29), 1,499 (seed 2345, 4.06), 1,099 (seed 3456, 3.82). Guidance sweep on validation queued, jobs 1339008
+  to 1339016, nice 100 (`NICE=100 submit_evals.sh sweep`, the option is new in the script). Next:
+  `select_resplit.py --pattern 'rs2_pooled_s[0-9]*' --guidance research/data/resplit_epochs_rs2_pooled.json
+  --out research/data/resplit_selection_rs2_pooled.json`, then step 4 with that file. The pattern needs
+  `s[0-9]*`, since `rs2_pooled_s*` also matches the `pooled_scratch` runs.
 
 ## Next steps, in order
 
