@@ -1,7 +1,8 @@
 #!/bin/bash
 # Submits slurm/resplit/eval.sh for every run of a selection file. Run from the repository root on the cluster.
-# usage: submit_evals.sh sweep <resplit_epochs.json>      validation, guidance 5/10/15 (unconditional: 1, ego zeroed)
-#        submit_evals.sh test  <resplit_selection.json>   test partition, once, at the selected guidance
+# usage: [NICE=<n>] submit_evals.sh sweep <resplit_epochs.json>      validation, guidance 5/10/15 (unconditional: 1, ego zeroed)
+#        [NICE=<n>] submit_evals.sh test  <resplit_selection.json>   test partition, once, at the selected guidance
+# NICE lowers the priority of the jobs, as in resume_runs.sh.
 set -e
 MODE=$1; SELECTION=$2
 EGOPED=configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml
@@ -22,9 +23,9 @@ python3 -c "import json, sys; [print(r, s['epoch'], s.get('guidance', '')) for r
     zero=; [[ $run == *uncond* ]] && zero=zero
     if [[ $MODE == sweep ]]; then
         scales="5 10 15"; [[ -n $zero ]] && scales=1
-        for g in $scales; do sbatch --job-name="${run%%_*}_sweep" slurm/resplit/eval.sh "$run" "$cfg" "$epoch" "$g" val $zero; done
+        for g in $scales; do sbatch ${NICE:+--nice="$NICE"} --job-name="${run%%_*}_sweep" slurm/resplit/eval.sh "$run" "$cfg" "$epoch" "$g" val $zero; done
     elif [[ $MODE == test ]]; then
-        sbatch --job-name="${run%%_*}_test" slurm/resplit/eval.sh "$run" "$cfg" "$epoch" "$scale" test $zero
+        sbatch ${NICE:+--nice="$NICE"} --job-name="${run%%_*}_test" slurm/resplit/eval.sh "$run" "$cfg" "$epoch" "$scale" test $zero
     else
         echo "unknown mode $MODE"; exit 1
     fi
