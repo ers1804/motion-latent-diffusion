@@ -1,0 +1,16 @@
+{
+ "rs1_uncond_ia_s2345": {
+  "epoch": 1199,
+  "val_fid": 2.301086187362671,
+  "val_r1": NaN,
+  "gt_diversity": 5.368659496307373,
+  "last_epoch": 4999
+ },
+ "rs1_uncond_ia_s3456": {
+  "epoch": 2899,
+  "val_fid": 2.1060495376586914,
+  "val_r1": NaN,
+  "gt_diversity": 5.368659496307373,
+  "last_epoch": 4999
+ }
+}
