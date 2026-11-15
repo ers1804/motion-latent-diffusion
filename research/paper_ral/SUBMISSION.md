@@ -61,12 +61,18 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
     validation, so they stay. One sentence in Section IV-A, paid for by dropping the clause on the frame from
     the limitations.
   - To hold 8 pages, seventeen sentences lost a few words each without a change of content.
+  - The prior with IA has three seeds as well (test FID 2.88, seeds 3.29, 2.85, 2.51, ADE 3.00 m). It now
+    has the best FID of all models, ahead of Full-seq + IA (3.24), and Section VI-B says so. Table II row,
+    last two rows of Table III, the per-model correlation (-0.73, p = 0.02 and +0.38, p = 0.31), Fig. 3 with
+    19 runs, the seeds sentence. The IA models are no better than their prior on mean ADE on test but are on
+    validation, and the sentence now names both. The abstract still says the prior "matches" the best
+    conditional model, which understates it. "It ranks an ego-blind prior first" would be accurate and frees
+    21 characters. Erik decides.
+  - Every change of this day against the version of 2026-11-13 is listed in `CHANGES_2026-11-15.md`.
 
 ## Still to do
 
-- Pending results that will change numbers in the text: two more seeds of the prior with IA (its row in
-  Table II, the last two rows of Table III, the per-model correlation and Fig. 3, which shows 17 runs so far,
-  the seeds sentence in Section V). The paper is full, so anything added needs a cut of the same length.
+- The paper is full, so anything added needs a cut of the same length.
 - Overleaf needs `refs.bib` and `ral_ctl.bib` from this folder. The reviewed copy printed "[?]" for some
   citations, which this build does not.
 

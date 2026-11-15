@@ -258,7 +258,7 @@ For each test condition we draw $K{=}5$ samples, take the pelvis ground-plane pa
 A pedestrian \emph{stops} if the root speed stays below 0.2\,m/s for at least 1\,s. For condition $\mathbf{e}$, $\hat{p}(\mathrm{stop}\mid\mathbf{e})$ is the fraction of the $K$ samples that stop. The Ego-Coupling Score (ECS) is the mean of $\hat{p}$ over conditions whose recorded pedestrian stops minus its mean over conditions whose pedestrian walks. It is 0 for a model that ignores the vehicle and 1 for perfect coupling. A predictor that stops too often can also score high, so we always report the Brier score of $\hat{p}$ against the recorded label with it. From that score we subtract the sampling noise of the $K$ draws, $\hat{p}(1-\hat{p})/(K-1)$ per condition, which otherwise penalises a model for spreading its samples. We adopted this correction after the test pass (uncorrected, \method scores 0.191 and the prior 0.211). Stopping occurs in 24\% of test conditions, crossing the vehicle's path in about 2\%, too rare to score.
 
 \paragraph{Seeds, statistics and selection.}
-The four main models, the two encoder ablations and the prior are trained with three seeds each, the prior with IA and the trainable \fullseq run with one. Each seed's checkpoint is the one with the lowest validation FID among 50 saved every 100 epochs, and each model's guidance scale is the one in $\{5, 10, 15\}$ with the lowest validation FID averaged over its seeds. Unconditional models see the real ego trajectory during training-time validation, so their checkpoints are chosen by an offline validation pass with the ego zeroed.
+The four main models, the two encoder ablations and the two priors are trained with three seeds each, the trainable \fullseq run with one. Each seed's checkpoint is the one with the lowest validation FID among 50 saved every 100 epochs, and each model's guidance scale is the one in $\{5, 10, 15\}$ with the lowest validation FID averaged over its seeds. Unconditional models see the real ego trajectory during training-time validation, so their checkpoints are chosen by an offline validation pass with the ego zeroed.
 Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered bootstrap draws), because pedestrians of one scene are not independent. Before using the test partition we fixed one rule. A model beats another only if the 95\% interval excludes zero \emph{and} all seed pairs agree in sign, nine between two three-seed models and three against a single-seed model. The primary contrast is \method against \fullseq on mean ADE.
 
 %----------------------------------------------------------------------
@@ -284,7 +284,7 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
     \fullseq, encoder trainable (1 seed) & 6.54 & 5.32 & 4.66 & 2.67 & 5.55 & 1.39 & 2.79 & 0.04 & 0.195 \\
     \midrule
     Trained prior (no ego) & 4.64\ci{4.56}{4.69} & 5.76 & 5.18 & 3.03\ci{2.97}{3.11} & 6.21 & 1.30\ci{1.28}{1.33} & 2.64 & 0.02\ci{0.02}{0.03} & 0.177 \\
-    Trained prior + IA (1 seed) & 3.29 & 5.47 & 4.76 & 3.00 & 6.30 & 1.52 & 3.09 & 0.01 & 0.205 \\
+    Trained prior + IA & 2.88\ci{2.51}{3.29} & 5.53 & 4.81 & 3.00\ci{2.99}{3.02} & 6.31 & 1.52\ci{1.51}{1.54} & 3.07 & 0.01\ci{0.01}{0.01} & 0.205 \\
     \midrule
     Deterministic regressor & 36.0\ci{35.6}{36.4} & 2.89 & 0.00 & 1.97\ci{1.95}{1.99} & 4.11 & 1.97\ci{1.95}{1.99} & 4.11 & 0.08\ci{0.03}{0.11} & 0.224 \\
     \bottomrule
@@ -308,8 +308,8 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
     \fullseq vs.\ \fullseq+IA & $+0.31$\ci{0.11}{0.55} & $+0.53^\ast$\ci{0.34}{0.74} & $+0.17^\ast$\ci{0.09}{0.25} \\
     \method vs.\ prior & $+0.59^\ast$\ci{0.42}{0.77} & $-0.34^\ast$\ci{-0.46}{-0.23} & $+0.29^\ast$\ci{0.18}{0.38} \\
     \fullseq vs.\ prior & $+0.34$\ci{0.14}{0.54} & $-0.23^\ast$\ci{-0.34}{-0.13} & $+0.25^\ast$\ci{0.15}{0.34} \\
-    \method+IA vs.\ prior+IA & $+0.07$\ci{-0.23}{0.34} & $-0.52^\ast$\ci{-0.77}{-0.28} & $+0.21^\ast$\ci{0.13}{0.30} \\
-    \fullseq+IA vs.\ prior+IA & $-0.01$\ci{-0.29}{0.25} & $-0.55^\ast$\ci{-0.80}{-0.33} & $+0.09^\ast$\ci{0.04}{0.15} \\
+    \method+IA vs.\ prior+IA & $+0.07$\ci{-0.23}{0.35} & $-0.52^\ast$\ci{-0.77}{-0.27} & $+0.21^\ast$\ci{0.13}{0.30} \\
+    \fullseq+IA vs.\ prior+IA & $-0.00$\ci{-0.29}{0.26} & $-0.55^\ast$\ci{-0.80}{-0.32} & $+0.09^\ast$\ci{0.04}{0.15} \\
     \bottomrule
   \end{tabular}
 \end{table*}
@@ -327,12 +327,12 @@ A deterministic regressor from the ego trajectory to the motion (last row, three
 \subsection{FID Does Not See the Conditioning}
 \label{sec:fid}
 
-Read by FID, Table~\ref{tab:main} tells a different story. The best FID belongs to \fullseq+IA (3.24), with the ego-blind prior trained on the same recipe level with it (3.29), and \method has the worst FID of the four conditional cells (5.67) while being the most accurate on mean ADE and at least as strongly coupled. Across the nine models of Tables~\ref{tab:main} and~\ref{tab:design}, with seeds averaged, the rank correlation of FID with mean ADE is $-0.75$ ($p = 0.02$), so the lower a model's FID, the larger its trajectory error. Fig.~\ref{fig:fidade} shows the single runs of Table~\ref{tab:main}, which are not independent. FID and ECS are not significantly related ($+0.33$, $p = 0.38$). Interaction-weighted data illustrates the mechanism. It lowers FID for the conditional model and the prior alike, because it changes which motions the model sees, and at the same time it worsens mean ADE, minADE and ECS for both encoders (Table~\ref{tab:contrasts}, rows 3--4, five of six under our rule), and the IA models are no better than their own prior on mean ADE. A marginal metric can reward a change that removes conditioning. We thus select checkpoints by FID, as is standard, but rank models only by per-condition metrics.
+Read by FID, Table~\ref{tab:main} tells a different story. The best FID belongs to the ego-blind prior trained with IA (2.88), ahead of the best conditional model, \fullseq+IA (3.24), and \method has the worst FID of the four conditional cells (5.67) while being the most accurate on mean ADE and at least as strongly coupled. Across the nine models of Tables~\ref{tab:main} and~\ref{tab:design}, with seeds averaged, the rank correlation of FID with mean ADE is $-0.73$ ($p = 0.02$), so the lower a model's FID, the larger its trajectory error. Fig.~\ref{fig:fidade} shows the single runs of Table~\ref{tab:main}, which are not independent. FID and ECS are not significantly related ($+0.38$, $p = 0.31$). Interaction-weighted data illustrates the mechanism. It lowers FID for the conditional model and the prior alike, because it changes which motions the model sees, and at the same time it worsens mean ADE, minADE and ECS for both encoders (Table~\ref{tab:contrasts}, rows 3--4, five of six under our rule), and on test the IA models are no better than their own prior on mean ADE, although they are on validation. A marginal metric can reward a change that removes conditioning. We thus select checkpoints by FID, as is standard, but rank models only by per-condition metrics.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/fid_vs_conditioning.pdf}
-  \caption{Test FID against per-condition accuracy, one point per training run (17 runs, colour for model, marker for data recipe). Lower FID goes with \emph{larger} trajectory error (a), its relation to coupling (b) is weaker, and the ego-blind prior on IA data sits among the best FIDs.}
+  \caption{Test FID against per-condition accuracy, one point per training run (19 runs, colour for model, marker for data recipe). Lower FID goes with \emph{larger} trajectory error (a), its relation to coupling (b) is weaker, and the ego-blind prior on IA data sits among the best FIDs.}
   \label{fig:fidade}
 \end{figure}
 

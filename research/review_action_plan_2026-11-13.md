@@ -198,10 +198,35 @@ validation FID (epoch 699 and 2,699, seed 1234 had 3,299), guidance 1, one test 
   report and prints the per-model correlation, which was computed by hand before. With three prior seeds it
   is unchanged: FID against mean ADE -0.75 (p = 0.02), against ECS +0.33 (p = 0.38), nine models. The figure
   shows 17 runs (per run -0.73 and +0.49), caption updated.
-- **Still open for tonight:** Table II row of the prior with IA, last two rows of Table III, the per-model
-  correlation again, Fig. 3 with 19 runs (append the FID lines of the two IA prior seeds to
-  `research/data/resplit_test_report_priors3.txt`, add the seeds to `resplit_selection.json`), the seeds
-  sentence, "(1 seed)" in Table II, the FID of the IA prior quoted in Section VI-B (3.29).
+
+### Prior with IA, three seeds, 2026-11-15 20:00
+
+Seeds 2345 and 3456 finished 18:55. Checkpoints by zero-ego validation FID (jobs 1345297 and 1345298): epoch
+1,199 (2.301) and 2,899 (2.106), seed 1234 had 1,099. Validation at guidance 1 (jobs 1345752, 1345753): FID
+2.485 and 2.215. Selection committed (4477bf4) before the single test pass (jobs 1345893, 1345894).
+
+| Test, prior with IA | Seed 1234 | Seed 2345 | Seed 3456 | Mean |
+|---|---|---|---|---|
+| FID | 3.29 | 2.85 | 2.51 | 2.88 |
+| Diversity / MM | 5.48 / 4.76 | 5.62 / 4.95 | 5.49 / 4.73 | 5.53 / 4.81 |
+| ADE / minADE | 3.00 / 1.52 | 3.02 / 1.54 | 2.99 / 1.51 | 3.00 / 1.52 |
+| ECS / corrected Brier | 0.008 / 0.205 | 0.007 / 0.205 | 0.009 / 0.206 | 0.008 / 0.205 |
+
+- **FID.** The ego-blind prior with IA now has the best FID of all models (2.88), ahead of Full-seq + IA
+  (3.24, seeds 2.73 to 4.14). The paper said "level with it (3.29)". Section VI-B now states the order. The
+  abstract ("matches the best conditional model") and the conclusion ("level with") understate it and are
+  left for Erik.
+- **Contrasts on test, unchanged in substance.** EgoPed + IA against its prior ADE +0.07 [-0.23, 0.35],
+  minADE -0.52*, ECS +0.21*. Full-seq + IA ADE -0.00 [-0.29, 0.26], minADE -0.55*, ECS +0.09*.
+- **Validation differs on mean ADE.** There both IA models beat their prior under the rule (+0.26* and
+  +0.27*, and already with one prior seed, +0.25* and +0.26*). The paper said without qualification that the
+  IA models are no better than their own prior on mean ADE. It now says "on test ..., although they are on
+  validation".
+- **Correlation per model** (nine models, seeds averaged): FID against mean ADE -0.73 (p = 0.02), against ECS
+  +0.38 (p = 0.31). Before -0.75 and +0.33. Fig. 3 has 19 runs (per run -0.70 and +0.61).
+- **In the paper:** Table II row, last two rows of Table III, Section VI-B, Fig. 3 and caption, seeds
+  sentence. Eight pages, no overfull box, 39 references. Change list for Overleaf in
+  `research/paper_ral/CHANGES_2026-11-15.md`.
 
 ## Regressor baseline (C2), 2026-11-13
 
