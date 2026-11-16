@@ -88,6 +88,15 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
     regressor adds to the first contribution. Without it the last equation of Section III leaves page 2 and
     the paper runs to 9 pages, so that page is packed tightly.
 
+- 2026-11-16, later, root source corrected (entries 16 and 17 of `CHANGES_2026-11-16.md`, against the version
+  pasted into Overleaf that morning):
+  - Section IV-A said the root position comes from the pose fit. The pipeline takes root position and heading
+    from the annotated 3D box and only the body pose from the fit. Found while building the Munich test set
+    (`research/src/munich_eval.py --check-dataset`).
+  - Section IV-C said the root has no independent reference. It follows the annotated boxes, human labels in
+    nuScenes and Waymo and automatic ones (MS3D) in the staged scenes.
+  - Still 8 pages, with about three lines free on the last page.
+
 ## Still to do
 
 - The paper is full, so anything added needs a cut of the same length.

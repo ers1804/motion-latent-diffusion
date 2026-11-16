@@ -194,7 +194,7 @@ No dataset pairs vehicle trajectories with pedestrian body motion, so we built o
 We staged 17 scenarios on public roads, such as crossing in front of the vehicle, stopping at the curb or hesitating while it approaches, brakes or turns. The pedestrian in these scenes is one of the authors, who consented to the recording and its release.
 The recordings are converted to the nuScenes format and annotated with 3D boxes and orientations using MS3D~\cite{tsai2024ms3d++,tsai2023ms3d}.
 
-For every annotated pedestrian in all three sources we estimate SMPL~\cite{SMPL:2015} poses with an adapted OmniRe~\cite{chen2025omnire}, localizing the person in every camera through the projected 3D box and stitching the per-camera estimates into one sequence with the rig calibration. The root position comes from this fit.
+For every annotated pedestrian in all three sources we estimate SMPL~\cite{SMPL:2015} poses with an adapted OmniRe~\cite{chen2025omnire}, localizing the person in every camera through the projected 3D box and stitching the per-camera estimates into one sequence with the rig calibration. The fit supplies the body pose only. Root position and heading are those of the annotated box.
 The poses are converted to the 263-dimensional HumanML3D representation~\cite{guo2022humanml3d}, which retargets every sequence onto one canonical skeleton, so body shape is not represented.
 One pipeline resamples body motion and ego odometry to 20\,fps and expresses both in a pedestrian-centric frame, translated and yaw-normalized to the pedestrian's first pose.
 Every sequence is also stored mirrored left to right.
@@ -240,7 +240,7 @@ Second, \textbf{the feet do not plant}. During locomotion one foot should be sta
 Third, \textbf{articulation is damped}. Against HumanML3D's mocap statistics, root translation varies more ($1.29\times$) but root-relative joint positions, root height and turning far less ($0.44\times$, $0.26\times$, $0.37\times$). Part of that gap is content, since our data is people walking near roads.
 A pilot that re-solves the legs against the root removes the sliding (skate 0.15), so relabeling is viable future work.
 
-The consequence for evaluation is direct. The body is a lightly articulated canonical template sliding along the root path, so our conditioning evidence, trajectory error and stopping decisions, is computed from the root. The root itself has no independent reference. The labels hold no head yaw, and head turns in the raw body fits look like a bias of the vehicle-mounted cameras rather than attention, so we make no claim about orientation. FID scores the body against this damped target and is a within-benchmark comparison only.
+The consequence for evaluation is direct. The body is a lightly articulated canonical template sliding along the root path, so our conditioning evidence, trajectory error and stopping decisions, is computed from the root. The root follows the annotated boxes, which are human labels in nuScenes and Waymo and automatic labels in the staged scenes. The labels hold no head yaw, and head turns in the raw body fits look like a bias of the vehicle-mounted cameras rather than attention, so we make no claim about orientation. FID scores the body against this damped target and is a within-benchmark comparison only.
 
 %----------------------------------------------------------------------
 \section{EVALUATION PROTOCOL}

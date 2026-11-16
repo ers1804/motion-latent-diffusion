@@ -471,8 +471,9 @@ What the check of the labels found, all before any model was run on them:
   pose pipeline gives SMPL the box centre as translation and the box rotation as orientation, and expresses the
   vehicle in the frame of the pedestrian's box at its first frame. Rebuilding 40 nuScenes and 40 Waymo files
   from the boxes reproduces the vehicle path to a median 5 and 3 cm and the root path to 18 and 14 cm
-  (`munich_eval.py --check-dataset 40`). The paper says "The root position comes from this fit" and "The root
-  itself has no independent reference". Both need Erik's look.
+  (`munich_eval.py --check-dataset 40`). The paper said "The root position comes from this fit" and "The root
+  itself has no independent reference". Erik, 2026-11-16: both corrected in `main.tex`, entries 16 and 17 of
+  `research/paper_ral/CHANGES_2026-11-16.md`. The build stays at 8 pages with about three lines free.
 - Box centres jitter by about 0.1 m per keyframe. A pedestrian labelled standing reads a median 0.27 m/s, above
   the 0.2 m/s of the paper's stop rule.
 - The labelled pedestrian heading lies within 30 degrees of the walking direction for 83% of walkers, against
@@ -514,6 +515,9 @@ and vehicle inputs exactly as stored for both variants, and the vehicle input li
 
 The sequence files (`sequences_label.npz`, `sequences_motion.npz`) hold paths derived from the group's labels and
 stay out of git. Their hashes are in the manifest and are checked whenever the set is loaded.
+
+Submitted on Helma 2026-11-16 12:00, after the freeze (commit 26f7e4e): jobs 1353679 to 1353699 (`rs1_munich`),
+18 models and 3 regressors, both heading variants each, default priority.
 
 ## Next steps, in order
 
