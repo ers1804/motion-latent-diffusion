@@ -68,7 +68,9 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
     validation, and the sentence now names both.
   - Erik, 2026-11-15: the abstract, the second contribution and the conclusion now say that FID ranks an
     ego-blind prior first, in place of "matches" and "level with" the best conditional model.
-  - Every change of this day against the version of 2026-11-13 is listed in `CHANGES_2026-11-15.md`.
+  - 2026-11-16: all retrained models are evaluated on validation. None of the seven conditional models
+    improves on mean ADE or ECS, and the sentence in Section IV-A now says so for all of them.
+  - Every change of these two days against the version of 2026-11-13 is listed in `CHANGES_2026-11-15.md`.
 
 ## Still to do
 

@@ -1,0 +1,26 @@
+{
+ "rs2_egoped_ia_s1234": {
+  "epoch": 599,
+  "guidance": 5
+ },
+ "rs2_egoped_ia_s2345": {
+  "epoch": 199,
+  "guidance": 5
+ },
+ "rs2_egoped_ia_s3456": {
+  "epoch": 799,
+  "guidance": 5
+ },
+ "rs2_pooled_ia_s1234": {
+  "epoch": 599,
+  "guidance": 15
+ },
+ "rs2_pooled_ia_s2345": {
+  "epoch": 1699,
+  "guidance": 15
+ },
+ "rs2_pooled_ia_s3456": {
+  "epoch": 199,
+  "guidance": 15
+ }
+}

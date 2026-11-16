@@ -415,7 +415,19 @@ rs1). Report in `research/data/resplit_val_report_rs2_pooled.txt`. Delta above 0
   the prior ADE +0.57*, ECS +0.30*; Full-seq against EgoPed ECS -0.10* and ADE -0.27 [-0.42, -0.13] with one
   of nine seed pairs reversed by 0.04 m, so the rule is not met on ADE there (it is for rs1, -0.37*);
   freezing the encoder ECS +0.05* (rs1 +0.08*); pretraining no difference on ADE or ECS in either family.
-- **Open for Erik.** The six interaction-weighted rs2 runs still hold six GPUs until about 22:30. With rs1
+- **Interaction-weighted rs2 cells, 2026-11-16 01:25, validation. rs2 is closed.**
+  `research/data/resplit_val_report_rs2_ia.txt`. All 19 rs2 runs finished (the last at 01:09). Guidance by
+  validation FID: 5 for `egoped_ia`, 15 for `pooled_ia` (rs1 had 10 and 5). rs2 minus rs1: `egoped_ia` ADE
+  -0.08, ECS -0.04; `pooled_ia` ADE -0.56 [-0.70, -0.42], ECS -0.04, none under the rule. The gap of
+  `pooled_ia` comes with the guidance FID selects (mean ADE 3.23 at 15 against 2.55 at 5).
+  **Over all seven conditional cells rs2 beats rs1 nowhere on mean ADE or ECS, all fourteen differences are
+  negative, three under the rule.** Within rs2 the IA recipe worsens mean ADE, minADE and ECS for both
+  encoders (six of six in direction, four under the rule), as in rs1.
+  The sentence in Section IV-A now covers all conditional models: "Retraining all conditional models with the
+  vehicle in the window's own frame improved none on mean ADE or ECS on validation (EgoPed 2.41 against 2.27 m
+  and 0.33 against 0.36)." Eight pages. Change list regenerated, entries 5 and 6 differ from the list of 20:07.
+  No rs2 job is left on Helma. The rs2 checkpoints stay in `models_resplit/mld/rs2_*`.
+- **Was open for Erik, settled 2026-11-15 evening (continue as planned).** The six interaction-weighted rs2 runs still hold six GPUs until about 22:30. With rs1
   staying, they only serve the robustness statement. They keep running unless Erik wants them stopped.
 
 ## Next steps, in order

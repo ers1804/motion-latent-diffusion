@@ -1,0 +1,44 @@
+{
+ "rs2_egoped_ia_s1234": {
+  "epoch": 599,
+  "val_fid": 2.767,
+  "val_r1": 0.31,
+  "gt_diversity": 5.248,
+  "last_epoch": 4999
+ },
+ "rs2_egoped_ia_s2345": {
+  "epoch": 199,
+  "val_fid": 2.78,
+  "val_r1": 0.1943,
+  "gt_diversity": 5.385,
+  "last_epoch": 4999
+ },
+ "rs2_egoped_ia_s3456": {
+  "epoch": 799,
+  "val_fid": 2.375,
+  "val_r1": 0.3311,
+  "gt_diversity": 5.414,
+  "last_epoch": 4999
+ },
+ "rs2_pooled_ia_s1234": {
+  "epoch": 599,
+  "val_fid": 4.566,
+  "val_r1": 0.4916,
+  "gt_diversity": 5.61,
+  "last_epoch": 4999
+ },
+ "rs2_pooled_ia_s2345": {
+  "epoch": 1699,
+  "val_fid": 4.248,
+  "val_r1": 0.5878,
+  "gt_diversity": 4.807,
+  "last_epoch": 4999
+ },
+ "rs2_pooled_ia_s3456": {
+  "epoch": 199,
+  "val_fid": 4.732,
+  "val_r1": 0.4873,
+  "gt_diversity": 5.841,
+  "last_epoch": 4999
+ }
+}
