@@ -69,7 +69,7 @@
   \setcounter{figure}{0}% ieeeconf typesets the title block twice
   \centering
   \includegraphics[width=\textwidth]{figures/teaser.pdf}
-  \caption{\method generates full-body pedestrian motion from the ego vehicle's trajectory alone, given in the pedestrian's initial frame. Panels (a) and (b) share model and noise and differ only in the input trajectory. Titles give the distance traveled across 8 noise seeds, time stamps pair vehicle and pedestrian, and the grid spacing is 5\,m. Both validation conditions were chosen for illustration. Section~\ref{sec:main} measures the coupling over the whole test set.}
+  \caption{\method generates full-body pedestrian motion from the ego vehicle's trajectory alone, given in the pedestrian's initial frame. Panels (a) and (b) share model and noise and differ only in the input trajectory. Titles give the distance traveled across 8 noise seeds, time stamps pair vehicle and pedestrian, and the grid spacing is 5\,m. Both validation conditions were chosen for illustration. Section~\ref{sec:main} measures the coupling on all test conditions.}
   \label{fig:teaser}
   \end{minipage}\vspace{2mm}}
 \makeatother
@@ -79,7 +79,7 @@
 \pagestyle{empty}
 
 \begin{abstract}
-Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion depends on the vehicle, yet motion generators condition on text, waypoints, goals or the static scene. We present \method, a latent diffusion model that generates 3D full-body pedestrian motion from the ego vehicle's trajectory, encoded by a pretrained, frozen encoder into a single token. On 5{,}668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene, \method lowers the root displacement error of a trained unconditional prior from 3.03 to 2.43\,m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31, against 1.97\,m and 0.08 for a deterministic regressor. The Fréchet distance is blind to this coupling. It ranks an ego-blind prior first, and both design choices it favors raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.
+Simulation-based testing of automated vehicles needs pedestrians whose full-body motion depends on the vehicle, yet motion generators condition on text, waypoints, goals or the static scene. We present \method, a latent diffusion model that generates 3D full-body pedestrian motion from the ego vehicle's trajectory, encoded by a pretrained, frozen encoder into a single token. We use 5{,}668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene. \method lowers the root trajectory error of a trained unconditional prior from 3.03 to 2.43\,m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31. A deterministic regressor reaches 1.97\,m and 0.08. The Fréchet distance is blind to this coupling. It ranks an ego-blind prior first and favors two design choices that raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.
 \end{abstract}
 
 % RA-L wants the keywords beneath the abstract; the first two come from the RA-L list.
@@ -95,23 +95,23 @@ Generating realistic pedestrian body motion is a core capability for automated-v
 Simulation pipelines need diverse, plausible pedestrian behavior to stress-test perception and planning, especially in the long tail of close-range encounters that are unsafe or impractical to collect on the road.
 That behavior is coupled to the vehicle, whose speed, path and proximity influence whether a pedestrian crosses, waits, accelerates or turns~\cite{camara2021pedmodels2}, and benchmarks such as JAAD~\cite{rasouli2017jaad} and PIE~\cite{rasouli2019pie} annotate exactly that dependence.
 The models built on them, however, predict a discrete event or a ground-plane path~\cite{alahi2016sociallstm,salzmann2020trajectron,gu2022mid}, not an articulated body.
-The same gap exists for mobile robots that share sidewalks with people, whose simulators also need pedestrians that react to the robot.
+Mobile robots that share sidewalks with people face the same gap, as their simulators also need pedestrians that react to the robot.
 
 Full-body human motion synthesis has meanwhile advanced quickly through text-conditioned diffusion~\cite{chen2023mld,tevet2023mdm,zhang2022motiondiffuse,guo2024momask}.
-These generators are blind to the vehicle in the way a simulator cannot afford. A person crossing a street is generated the same whether a car approaches at 50\,km/h or stands still.
-Pedestrian-specific generators control the body through waypoints, goals or the static scene~\cite{rempe2023tracepace,liu2025pedgen}, and concurrent work reaches the body only through a 2D path and a text prompt~\cite{liu2026controlped}.
+These generators are blind to the vehicle in a way a simulator cannot afford. A person crossing a street is generated the same whether a car approaches at 50\,km/h or stands still.
+Pedestrian-specific generators control the body through waypoints, goals or the static scene~\cite{rempe2023tracepace,liu2025pedgen}, and concurrent work controls it only through a 2D path and a text prompt~\cite{liu2026controlped}.
 
 We present \method, which generates the body motion directly from the ego vehicle's trajectory (Fig.~\ref{fig:teaser}).
 It builds on Motion Latent Diffusion (MLD)~\cite{chen2023mld} and replaces the text condition with a pretrained, frozen trajectory encoder whose output is pooled into a single conditioning token.
 Most of this paper is about showing that such a model \emph{uses} the vehicle.
 The condition belongs to another agent and never determines the output, so the standard Fréchet distance (FID), which compares the marginal distribution of generated and real motion, can be excellent for a model that ignores the vehicle altogether.
-We therefore evaluate every model on per-condition root trajectory error and on an Ego-Coupling Score that measures whether generated stopping decisions follow the vehicle, with three training seeds for each main model, a test split that shares no scene with training, and a significance rule fixed before the test split was touched.
+We therefore evaluate every model on per-condition root trajectory error and on an Ego-Coupling Score (ECS) that measures whether generated stopping decisions follow the vehicle. Each main model has three training seeds, the test partition shares no scene with training, and the significance rule was fixed before it was touched.
 
 We make three contributions.
 \begin{enumerate}
 \item \textbf{Ego-conditioned body motion.} To our knowledge, \method is the first model to generate 3D pedestrian body motion directly from the ego-vehicle trajectory. It lowers the root trajectory error of a trained unconditional prior from 3.03 to 2.43\,m and raises the Ego-Coupling Score from 0.02 to 0.31, against 1.97\,m and 0.08 for a deterministic regressor.
-\item \textbf{Conditioning-aware evaluation.} We propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, and show that FID cannot see the conditioning. An ego-blind prior has the best FID, and both design choices FID prefers raise the mean trajectory error.
-\item \textbf{Data and its limits.} We provide 5{,}668 paired ego--pedestrian sequences, 11{,}336 with their mirrored copies, from nuScenes~\cite{caesar2020nuscenes}, Waymo~\cite{sun2020waymo} and staged recordings of our research vehicle, split by scene, and show in a reference-free audit that the body poses are a canonical template sliding along the root path.
+\item \textbf{Conditioning-aware evaluation.} We propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, and show that FID cannot see the conditioning. An ego-blind prior has the best FID, and FID prefers two design choices that raise mean trajectory error.
+\item \textbf{Data and its limits.} We provide 5{,}668 paired ego--pedestrian sequences, 11{,}336 with their mirrored copies, from nuScenes~\cite{caesar2020nuscenes}, Waymo~\cite{sun2020waymo} and staged recordings of our research vehicle, split by scene. A reference-free audit shows that the body poses are a canonical template sliding along the root path.
 \end{enumerate}
 
 %----------------------------------------------------------------------
@@ -121,7 +121,7 @@ We make three contributions.
 
 \subsection{Pedestrian Behavior and Trajectory Prediction}
 
-Video benchmarks predict discrete events such as crossing~\cite{rasouli2017jaad,rasouli2019pie}, and reported gains depend strongly on evaluation design~\cite{kotseruba2021benchmark}. Trajectory predictors treat pedestrians as points on the ground plane~\cite{rudenko2020survey}, from social pooling~\cite{alahi2016sociallstm} to attention over heterogeneous agents~\cite{salzmann2020trajectron} and diffusion~\cite{gu2022mid}. Trajectron++~\cite{salzmann2020trajectron} can also condition the forecast on the ego vehicle's planned future. We keep this literature's displacement metrics for the root of the body and add an articulated body on top.
+Video benchmarks target discrete events such as crossing~\cite{rasouli2017jaad,rasouli2019pie}, and reported gains depend strongly on evaluation design~\cite{kotseruba2021benchmark}. Trajectory predictors treat pedestrians as points on the ground plane~\cite{rudenko2020survey}, from social pooling~\cite{alahi2016sociallstm} to attention over heterogeneous agents~\cite{salzmann2020trajectron} and diffusion~\cite{gu2022mid}. Trajectron++~\cite{salzmann2020trajectron} can also condition the forecast on the ego vehicle's planned future. We keep this literature's displacement metrics for the root of the body and add an articulated body on top.
 
 \subsection{Human Motion Synthesis and Control}
 
@@ -133,7 +133,7 @@ Trace and Pace~\cite{rempe2023tracepace} combines a trajectory diffusion model, 
 
 \subsection{Evaluating Conditional Generative Models}
 
-Fréchet distances compare generated and real samples through the statistics of a pretrained feature extractor~\cite{heusel2017fid}, for motion a motion encoder~\cite{guo2022humanml3d}. Their known failure modes concern how faithfully they measure the \emph{marginal}, such as estimator bias~\cite{chong2020unbiasedfid}, preprocessing~\cite{parmar2022cleanfid} and the extractor's own class structure~\cite{kynkaanniemi2023imagenetfid}. The problem we document is orthogonal. A score can measure the marginal well and say nothing about whether the condition was used. Estimated body motion is also known to be physically imperfect~\cite{rempe2020contact,yuan2023physdiff}, and we measure how imperfect our labels are.
+Fréchet distances compare generated and real samples through the statistics of a pretrained feature extractor~\cite{heusel2017fid}, here a motion encoder~\cite{guo2022humanml3d}. Their known failure modes, such as estimator bias~\cite{chong2020unbiasedfid}, preprocessing~\cite{parmar2022cleanfid} and the extractor's class structure~\cite{kynkaanniemi2023imagenetfid}, concern how faithfully they measure the \emph{marginal}. The problem we document is orthogonal. A score can measure the marginal well and say nothing about whether the condition was used. Estimated body motion is also known to be physically imperfect~\cite{rempe2020contact,yuan2023physdiff}, and we measure how imperfect our labels are.
 
 %----------------------------------------------------------------------
 \section{METHOD}
@@ -149,7 +149,7 @@ Fréchet distances compare generated and real samples through the statistics of 
 
 \subsection{Problem Formulation}
 
-Given an ego-vehicle trajectory $\mathbf{e} \in \mathbb{R}^{T \times 2}$, the vehicle's ground-plane position over $T=196$ frames at 20\,fps expressed in the pedestrian's initial frame, we generate pedestrian body motion $\mathbf{x} \in \mathbb{R}^{T \times 263}$ in the HumanML3D representation~\cite{guo2022humanml3d}, which encodes root velocity and rotation, joint positions and velocities and foot contacts.
+Given an ego-vehicle trajectory $\mathbf{e} \in \mathbb{R}^{T \times 2}$, the vehicle's ground-plane position over $T=196$ frames at 20\,fps expressed in the pedestrian's initial frame, we generate pedestrian body motion $\mathbf{x} \in \mathbb{R}^{T \times 263}$ in the HumanML3D representation~\cite{guo2022humanml3d}. It encodes root velocity and rotation, joint positions and velocities and foot contacts.
 We model $p(\mathbf{x} \mid \mathbf{e})$ with a latent diffusion model (Fig.~\ref{fig:architecture}).
 
 \subsection{Motion VAE}
@@ -190,7 +190,7 @@ For classifier-free guidance~\cite{ho2022cfg}, the ego input is zeroed for 10\% 
 
 \subsection{Sources and Processing}
 
-No dataset pairs vehicle trajectories with pedestrian body motion, so we built one from two complementary sources. The public driving datasets nuScenes~\cite{caesar2020nuscenes} and Waymo~\cite{sun2020waymo} supply scale and behavioral diversity, and a small set of deliberately \emph{staged} high-interaction scenes recorded with our research vehicle (LiDAR, surround cameras and GNSS) targets close-range encounters that are rare in public data.
+No dataset pairs vehicle trajectories with pedestrian body motion, so we built one from two complementary parts. The public driving datasets nuScenes~\cite{caesar2020nuscenes} and Waymo~\cite{sun2020waymo} supply scale and behavioral diversity. A small set of deliberately \emph{staged} high-interaction scenes recorded with our research vehicle (LiDAR, surround cameras and GNSS) targets close-range encounters that are rare in public data.
 We staged 17 scenarios on public roads, such as crossing in front of the vehicle, stopping at the curb or hesitating while it approaches, brakes or turns. The pedestrian in these scenes is one of the authors, who consented to the recording and its release.
 The recordings are converted to the nuScenes format and annotated with 3D boxes and orientations using MS3D~\cite{tsai2024ms3d++,tsai2023ms3d}.
 
@@ -198,12 +198,12 @@ For every annotated pedestrian in all three sources we estimate SMPL~\cite{SMPL:
 The poses are converted to the 263-dimensional HumanML3D representation~\cite{guo2022humanml3d}, which retargets every sequence onto one canonical skeleton, so body shape is not represented.
 One pipeline resamples body motion and ego odometry to 20\,fps and expresses both in a pedestrian-centric frame, translated and yaw-normalized to the pedestrian's first pose.
 Every sequence is also stored mirrored left to right.
-Sequences longer than 196 frames are windowed (about 40\%), shorter ones are padded and masked. A window keeps the frame of its track's first pose, which on test lies a median 1.7\,m from the pedestrian's position at the window start (43\% of conditions). Retraining all conditional models with the vehicle in the window's own frame improved none on mean ADE or ECS on validation (\method 2.41 against 2.27\,m and 0.33 against 0.36). Tracks shorter than 2\,s are replaced by their neighbor in the list, so the 1{,}182 test rows we score hold 1{,}146 distinct conditions. Dropping the repeats changes no per-condition number by over 0.02.
+Sequences over 196 frames are windowed (about 40\%) and shorter ones are padded and masked. A window (43\% of test conditions) keeps the frame of its track's first pose, which lies a median 1.7\,m from the pedestrian's position at the window start. Retraining all conditional models with the vehicle in the window's own frame improved none on mean ADE or ECS on validation (\method 2.41 against 2.27\,m and 0.33 against 0.36). Tracks shorter than 2\,s are replaced by the neighboring sample, so the 1{,}182 test rows we score hold 1{,}146 distinct conditions. Dropping the repeats changes no per-condition number by over 0.02.
 
 \subsection{Scene-Level Split}
 
 All partitions are split by scene, so a scene, every pedestrian in it and every mirrored copy stay on one side (Table~\ref{tab:dataset}).
-In a file-level split of the same data, the mirrored twin of 83\% of the held-out sequences was in the training set.
+In a file-level split of the same data, the mirrored copy of 83\% of the held-out sequences was in the training set.
 We selected models on the validation partition and evaluated the test partition once, after all selection was fixed.
 The staged scenes contribute only six sequences to each held-out partition, so held-out results speak for nuScenes and Waymo.
 
@@ -229,18 +229,18 @@ The staged scenes contribute only six sequences to each held-out partition, so h
 \end{table}
 
 \paragraph{Interaction-aware data recipe (IA).}
-As a data-side alternative we test a recipe that concentrates training on interactions. Each sequence gets an interaction score $s = s_{\text{travel}}\, s_{\text{prox}}\, s_{\text{bearing}}$ from the pedestrian's path length, the fraction of frames within 5\,m of the vehicle and the swept relative bearing ($1 + \sum_t|\Delta\phi_t|/180^\circ$). IA samples training sequences with probability proportional to $s$ (floored at 0.01) and centers the 196-frame window on the closest approach, with $\pm25\%$ jitter. Without IA, sequences are drawn uniformly and windows at random. Evaluation always uses one fixed window per sequence, identical for every model.
+On the data side we test a recipe that concentrates training on interactions. Each sequence gets an interaction score $s = s_{\text{travel}}\, s_{\text{prox}}\, s_{\text{bearing}}$ from the pedestrian's path length, the fraction of frames within 5\,m of the vehicle and the swept relative bearing ($1 + \sum_t|\Delta\phi_t|/180^\circ$). IA samples training sequences with probability proportional to $s$ (floored at 0.01) and centers the 196-frame window on the closest approach, with $\pm25\%$ jitter. Without IA, sequences are drawn uniformly and windows at random. Evaluation always uses one fixed window per sequence, identical for every model.
 
 \subsection{Pose-Label Audit}
 \label{sec:posequality}
 
 The pose labels are estimates, and no reference such as mocap exists for these scenes. We therefore audit what can be checked without one, on all 13{,}958 scorable sequences we extracted, a superset of those in Table~\ref{tab:dataset}.
 First, \textbf{body shape was never estimated}. Every sequence shares one skeleton to within $10^{-5}$ relative bone length.
-Second, \textbf{the feet do not plant}. During locomotion one foot should be stationary, yet the slowest foot joint moves at a median $0.97$ of root speed ($0$ = clean footfalls, $1$ = the body sliding as a rigid unit), and $94.6\%$ of moving sequences never hold a foot still for more than $5\%$ of their frames.
+Second, \textbf{the feet do not plant}. During locomotion one foot should be stationary, yet the slowest foot joint moves at a median $0.97$ of root speed (skate $0$ = clean footfalls, $1$ = the body sliding as a rigid unit). In $94.6\%$ of moving sequences no foot holds still for more than $5\%$ of the frames.
 Third, \textbf{articulation is damped}. Against HumanML3D's mocap statistics, root translation varies more ($1.29\times$) but root-relative joint positions, root height and turning far less ($0.44\times$, $0.26\times$, $0.37\times$). Part of that gap is content, since our data is people walking near roads.
 A pilot that re-solves the legs against the root removes the sliding (skate 0.15), so relabeling is viable future work.
 
-The consequence for evaluation is direct. The body is a lightly articulated canonical template sliding along the root path, so our conditioning evidence, trajectory error and stopping decisions, is computed from the root. The root follows the annotated boxes, which are human labels in nuScenes and Waymo and automatic labels in the staged scenes. The labels hold no head yaw, and head turns in the raw body fits look like a bias of the vehicle-mounted cameras rather than attention, so we make no claim about orientation. FID scores the body against this damped target and is a within-benchmark comparison only.
+The consequence for evaluation is direct. The body is a lightly articulated canonical template sliding along the root path, so our conditioning evidence (trajectory error and stopping decisions) is computed from the root. The root follows the annotated boxes, which are human labels in nuScenes and Waymo and automatic labels in the staged scenes. The labels hold no head yaw, and head rotation in the raw pose fits resembles a bias of the vehicle-mounted cameras rather than attention, so we make no claim about orientation. FID scores the body against this damped target and is a within-benchmark comparison only.
 
 %----------------------------------------------------------------------
 \section{EVALUATION PROTOCOL}
@@ -251,14 +251,14 @@ The consequence for evaluation is direct. The body is a lightly articulated cano
 FID, Diversity and MultiModality (MM) follow the HumanML3D protocol~\cite{guo2022humanml3d}, with its pretrained motion encoders as feature extractor. Diversity is the mean pairwise distance across generated samples (closer to the ground truth's 5.26--5.40 is better), and MM the mean pairwise distance among 10 samples of one condition. Each is the mean of three generation passes. We do not report R-Precision, which retrieves with each model's own ego encoder and is not comparable across encoders.
 
 \paragraph{Per-condition metrics.}
-For each test condition we draw $K{=}5$ samples, take the pelvis ground-plane path and compare it with the recorded pedestrian over the true sequence length. Average and final displacement errors (ADE, FDE) are means over the samples, minADE and minFDE the best of five. Mean ADE rewards samples that concentrate on the likely outcome, min-of-$K$ rewards coverage, so we read both.
+For each test condition we draw $K{=}5$ samples, take the root ground-plane path and compare it with the recorded pedestrian over the true sequence length. Average and final displacement errors (ADE, FDE) are sample means, and minADE and minFDE are the best of five. Mean ADE rewards samples that concentrate on the likely outcome and min-of-$K$ rewards coverage, so we read both.
 
 \paragraph{Ego-Coupling Score.}
 \label{sec:behavior}
-A pedestrian \emph{stops} if the root speed stays below 0.2\,m/s for at least 1\,s. For condition $\mathbf{e}$, $\hat{p}(\mathrm{stop}\mid\mathbf{e})$ is the fraction of the $K$ samples that stop. The Ego-Coupling Score (ECS) is the mean of $\hat{p}$ over conditions whose recorded pedestrian stops minus its mean over conditions whose pedestrian walks. It is 0 for a model that ignores the vehicle and 1 for perfect coupling. A predictor that stops too often can also score high, so we always report the Brier score of $\hat{p}$ against the recorded label with it. From that score we subtract the sampling noise of the $K$ draws, $\hat{p}(1-\hat{p})/(K-1)$ per condition, which otherwise penalizes a model for spreading its samples. We adopted this correction after the test pass (uncorrected, \method scores 0.191 and the prior 0.211). Stopping occurs in 24\% of test conditions, crossing the vehicle's path in about 2\%, too rare to score.
+A pedestrian \emph{stops} if the root speed stays below 0.2\,m/s for at least 1\,s. For condition $\mathbf{e}$, $\hat{p}(\mathrm{stop}\mid\mathbf{e})$ is the fraction of the $K$ samples that stop. ECS is the mean of $\hat{p}$ over conditions whose recorded pedestrian stops minus its mean over conditions whose pedestrian walks. It is 0 for a model that ignores the vehicle and 1 for perfect coupling. A predictor that stops too often can also score high, so we always report the Brier score of $\hat{p}$ against the recorded label with it. From that score we subtract the sampling noise of the $K$ draws, $\hat{p}(1-\hat{p})/(K-1)$ per condition, which otherwise penalizes a model for spreading its samples. We adopted this correction after the test pass (uncorrected, \method scores 0.191 and the prior 0.211). Stopping occurs in 24\% of test conditions. Crossing the vehicle's path occurs in about 2\%, which is too rare to score.
 
 \paragraph{Seeds, statistics and selection.}
-The four main models, the two encoder ablations and the two priors are trained with three seeds each, the trainable \fullseq run with one. Each seed's checkpoint is the one with the lowest validation FID among 50 saved every 100 epochs, and each model's guidance scale is the one in $\{5, 10, 15\}$ with the lowest validation FID averaged over its seeds. Unconditional models see the real ego trajectory during training-time validation, so their checkpoints are chosen by an offline validation pass with the ego zeroed.
+The four main models, the two encoder ablations and the two priors have three seeds each and the trainable \fullseq run has one. Each seed's checkpoint is the one with the lowest validation FID among 50 saved every 100 epochs, and each model's guidance scale is the one in $\{5, 10, 15\}$ with the lowest validation FID averaged over its seeds. The priors see the real ego trajectory during training-time validation, so their checkpoints are chosen by an offline validation pass with the ego zeroed.
 Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered bootstrap draws), because pedestrians of one scene are not independent. Before using the test partition we fixed one rule. A model beats another only if the 95\% interval excludes zero \emph{and} all seed pairs agree in sign, nine between two three-seed models and three against a single-seed model. The primary contrast is \method against \fullseq on mean ADE.
 
 %----------------------------------------------------------------------
@@ -279,12 +279,12 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
     \midrule
     \method & 5.67\ci{5.36}{6.26} & 5.63 & 3.10 & \textbf{2.43}\ci{2.38}{2.48} & \textbf{5.11} & 1.65\ci{1.59}{1.74} & 3.40 & \textbf{0.31}\ci{0.29}{0.34} & 0.180 \\
     \fullseq & 4.16\ci{2.96}{4.91} & 5.78 & 3.92 & 2.69\ci{2.52}{2.98} & 5.67 & \textbf{1.54}\ci{1.49}{1.57} & \textbf{3.18} & 0.27\ci{0.24}{0.29} & \textbf{0.162} \\
-    \method + IA & 4.84\ci{4.69}{5.04} & 5.83 & 3.22 & 2.93\ci{2.86}{3.03} & 6.23 & 2.04\ci{1.98}{2.13} & 4.29 & 0.21\ci{0.18}{0.25} & 0.186 \\
-    \fullseq + IA & \textbf{3.24}\ci{2.73}{4.14} & 5.89 & 3.21 & 3.01\ci{2.82}{3.14} & 6.50 & 2.07\ci{1.72}{2.31} & 4.42 & 0.10\ci{0.06}{0.12} & 0.202 \\
+    \method+IA & 4.84\ci{4.69}{5.04} & 5.83 & 3.22 & 2.93\ci{2.86}{3.03} & 6.23 & 2.04\ci{1.98}{2.13} & 4.29 & 0.21\ci{0.18}{0.25} & 0.186 \\
+    \fullseq+IA & \textbf{3.24}\ci{2.73}{4.14} & 5.89 & 3.21 & 3.01\ci{2.82}{3.14} & 6.50 & 2.07\ci{1.72}{2.31} & 4.42 & 0.10\ci{0.06}{0.12} & 0.202 \\
     \fullseq, encoder trainable (1 seed) & 6.54 & 5.32 & 4.66 & 2.67 & 5.55 & 1.39 & 2.79 & 0.04 & 0.195 \\
     \midrule
     Trained prior (no ego) & 4.64\ci{4.56}{4.69} & 5.76 & 5.18 & 3.03\ci{2.97}{3.11} & 6.21 & 1.30\ci{1.28}{1.33} & 2.64 & 0.02\ci{0.02}{0.03} & 0.177 \\
-    Trained prior + IA & 2.88\ci{2.51}{3.29} & 5.53 & 4.81 & 3.00\ci{2.99}{3.02} & 6.31 & 1.52\ci{1.51}{1.54} & 3.07 & 0.01\ci{0.01}{0.01} & 0.205 \\
+    Trained prior+IA & 2.88\ci{2.51}{3.29} & 5.53 & 4.81 & 3.00\ci{2.99}{3.02} & 6.31 & 1.52\ci{1.51}{1.54} & 3.07 & 0.01\ci{0.01}{0.01} & 0.205 \\
     \midrule
     Deterministic regressor & 36.0\ci{35.6}{36.4} & 2.89 & 0.00 & 1.97\ci{1.95}{1.99} & 4.11 & 1.97\ci{1.95}{1.99} & 4.11 & 0.08\ci{0.03}{0.11} & 0.224 \\
     \bottomrule
@@ -320,14 +320,16 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
 Table~\ref{tab:main} gives the test results and Table~\ref{tab:contrasts} the contrasts.
 Against a prior trained on the same data without the ego trajectory, \method lowers mean ADE by 0.59\,m (3.03 to 2.43\,m) and FDE by 1.10\,m, and raises the Ego-Coupling Score from 0.02 to 0.31, with every seed pair agreeing.
 The prior is better on minADE, as any sampler that spreads its five samples widely must be, so minADE alone is no test of conditioning.
-Coupling is the same on validation (ECS 0.36 against 0.03) and holds on both large sources (test ECS 0.32 on nuScenes and 0.26 on Waymo, prior $-$0.02 and 0.06).
+Coupling holds on validation (ECS 0.36 against 0.03) and on both large sources (test ECS 0.32 on nuScenes and 0.26 on Waymo, prior $-$0.02 and 0.06).
 
 A deterministic regressor from the ego trajectory to the motion (last row, three seeds) has the lowest mean ADE of all (1.97\,m), because it predicts the average, a slow walk that stops in 2\% of the conditions. It has almost no coupling (ECS 0.08, below \method's under our rule) and an FID of 36. Mean ADE alone thus rewards a model that never decides.
 
 \subsection{FID Does Not See the Conditioning}
 \label{sec:fid}
 
-Read by FID, Table~\ref{tab:main} tells a different story. The best FID belongs to the ego-blind prior trained with IA (2.88), ahead of the best conditional model, \fullseq+IA (3.24), and \method has the worst FID of the four conditional cells (5.67) while being the most accurate on mean ADE and at least as strongly coupled. Across the nine models of Tables~\ref{tab:main} and~\ref{tab:design}, with seeds averaged, the rank correlation of FID with mean ADE is $-0.73$ ($p = 0.02$), so the lower a model's FID, the larger its trajectory error. Fig.~\ref{fig:fidade} shows the single runs of Table~\ref{tab:main}, which are not independent. FID and ECS are not significantly related ($+0.38$, $p = 0.31$). Interaction-weighted data illustrates the mechanism. It lowers FID for the conditional model and the prior alike, because it changes which motions the model sees, and at the same time it worsens mean ADE, minADE and ECS for both encoders (Table~\ref{tab:contrasts}, rows 3--4, five of six under our rule), and on test the IA models are no better than their own prior on mean ADE, although they are on validation. A marginal metric can reward a change that removes conditioning. We thus select checkpoints by FID, as is standard, but rank models only by per-condition metrics.
+Read by FID, Table~\ref{tab:main} tells a different story. The best FID belongs to the ego-blind prior trained with IA (2.88), ahead of the best conditional model, \fullseq+IA (3.24). \method has the worst FID of the four main models (5.67) yet is the most accurate on mean ADE and at least as strongly coupled as any. Across the nine models of Tables~\ref{tab:main} and~\ref{tab:design}, with seeds averaged, the rank correlation of FID with mean ADE is $-0.73$ ($p = 0.02$), so the lower a model's FID, the larger its trajectory error. FID and ECS are not significantly related ($+0.38$, $p = 0.31$). Fig.~\ref{fig:fidade} shows the single runs of Table~\ref{tab:main}, which are not independent. Interaction-aware data illustrates the mechanism. It lowers FID for the conditional model and the prior alike, because it changes which motions the model sees. It also worsens mean ADE, minADE and ECS for both encoders (Table~\ref{tab:contrasts}, rows 3--4, five of six under our rule). On test the IA models are no better than their prior on mean ADE, although they are on validation. A marginal metric can reward a change that removes conditioning.
+
+Guidance trades coverage for FID without changing coupling. On validation, raising $w$ from 5 to 15 lowers \method's FID from 4.61 to 3.90 but raises its minADE from 1.22 to 1.43\,m and its ADE by 0.03\,m, while ECS stays flat (0.36--0.37). Selecting the scale by FID, as our protocol does, therefore picks the least accurate setting. We keep the pre-specified selection of checkpoints and guidance by FID, as is standard, but rank models only by per-condition metrics.
 
 \begin{figure}[t]
   \centering
@@ -340,19 +342,18 @@ Read by FID, Table~\ref{tab:main} tells a different story. The best FID belongs 
 \label{sec:design}
 
 \paragraph{Pooled against full-sequence conditioning.}
-Letting the denoiser attend to all 196 encoder tokens instead of one pooled token makes per-condition predictions worse on average. \fullseq trails \method by 0.26\,m in mean ADE (Table~\ref{tab:contrasts}), the pre-specified primary contrast, and did so on validation as well (0.37\,m). The trade-off is spread. \fullseq's samples cover more outcomes (MM 3.92 vs.\ 3.10, better minADE by 0.11\,m), its FID is lower and its Brier score is better on test (0.162 vs.\ 0.180, level on validation), at 201 instead of 6 tokens per denoising step. On coupling the two encoders are close without IA (ECS 0.27 vs.\ 0.31, below our rule on test, met on validation), and \method couples clearly better with IA (0.21 vs.\ 0.10). A likely cause is pretraining, which aligns only the pooled token and never the 196 per-frame tokens.
+Letting the denoiser attend to all 196 encoder tokens instead of one pooled token makes per-condition predictions worse on average. \fullseq trails \method by 0.26\,m in mean ADE (Table~\ref{tab:contrasts}), the pre-specified primary contrast, and did so on validation as well (0.37\,m). In return, \fullseq's samples cover more outcomes (MM 3.92 vs.\ 3.10, better minADE by 0.11\,m), its FID is lower and its Brier score is better on test (0.162 vs.\ 0.180, level on validation). It processes 201 instead of 6 tokens per denoising step. On coupling the two encoders are close without IA (ECS 0.31 vs.\ 0.27, below our rule on test, met on validation), and with IA \method couples clearly better (0.21 vs.\ 0.10). A likely cause is that pretraining aligns only the pooled token.
 
 \paragraph{Freezing and pretraining.}
 Table~\ref{tab:design} reports \method with its encoder trained together with the denoiser, initialized from pretraining or from scratch, three seeds each, selected like every other model.
-Freezing matters. The frozen encoder beats the trainable pretrained one on all four per-condition metrics under our rule (before rounding, ADE by 0.09\,m, minADE by 0.25\,m and ECS by 0.07), and on validation on all but ADE, while FID does not separate the two (5.67 vs.\ 5.65).
+Freezing matters. The frozen encoder beats the trainable pretrained one on ADE, minADE and ECS under our rule (before rounding, by 0.09\,m, 0.25\,m and 0.07), and on validation on all but ADE. FID does not separate the two (5.67 vs.\ 5.65).
 Pretraining by itself does not help. Once the encoder is trainable, pretrained and scratch initialization give the same result on every metric and on both partitions, so the pretrained representation helps only as long as diffusion training cannot change it.
-The trainable encoders also concentrate their samples (MM 2.03 and 2.15 against 3.10), which costs minADE without improving the mean.
 The last checkpoint, which we decided before the test pass to report as well, shows the same picture with worse FID, and the ADE gap to the frozen encoder (0.07\,m) no longer meets the rule.
-A single-seed \fullseq run with a trainable encoder, by contrast, stays close to ego-blind (ECS 0.04 against 0.27 frozen, Table~\ref{tab:main}).
+With a trainable encoder, a single-seed \fullseq run is nearly ego-blind (ECS 0.04 against 0.27, Table~\ref{tab:main}).
 
 \begin{table}[t]
   \centering
-  \caption{Encoder ablations of \method on the test partition are means over three seeds. Upper rows use the checkpoint and guidance selected on validation like every other model (guidance 15, 15, 10). Lower rows use the last checkpoint of the same runs at the same guidance, reported as decided before the test pass.}
+  \caption{Test results for encoder ablations of \method are means over three seeds. Upper rows use the checkpoint and guidance selected on validation like every other model (guidance 15, 15, 10). Lower rows use the last checkpoint of the same runs at the same guidance, reported as decided before the test pass.}
   \label{tab:design}
   \vspace{4pt}
   \footnotesize
@@ -375,9 +376,9 @@ A single-seed \fullseq run with a trainable encoder, by contrast, stays close to
 \subsection{Which Part of the Trajectory Is Used}
 \label{sec:controls}
 
-Table~\ref{tab:controls} gives \method's three seeds manipulated ego input, without retraining.
-Given the trajectory of a vehicle from another scene, \method is no better than the trained prior (ADE 3.09 against 3.03\,m) and its coupling vanishes (ECS 0.00). Its Brier score (0.30) is far worse than the prior's (0.18), because it reacts confidently to the wrong vehicle. Zeroing the input gives the prior's numbers too. A vehicle that stays at its start position removes most of the coupling as well (ECS 0.06), so the model reacts to how the vehicle moves, not only to where it is.
-Showing only the first second and continuing it at constant velocity keeps the coupling (ECS 0.31 on test, 0.30 against 0.36 on validation, not a difference under our rule) and most of the gain in ADE (2.60\,m, between 2.43 with the full trajectory and 3.04 with a stationary vehicle). The stop decision is thus carried by the vehicle's early motion, and its later trajectory refines the path. The ADE cost of the 1\,s horizon and all differences to the stationary, foreign or zeroed vehicle meet our rule on both partitions.
+In Table~\ref{tab:controls} \method's three seeds receive manipulated ego input, without retraining.
+Given the trajectory of a vehicle from another scene, \method is no better than the trained prior (ADE 3.09 against 3.03\,m) and its coupling vanishes (ECS 0.00). Its Brier score (0.30) is far worse than the prior's (0.18), because it reacts confidently to the wrong vehicle. A vehicle that stays at its start position removes most of the coupling as well (ECS 0.06), so the model reacts to how the vehicle moves, not only to where it is.
+Showing only the first second and continuing it at constant velocity keeps the coupling (ECS 0.31 on test, 0.30 against 0.36 on validation, not a difference under our rule). It also keeps most of the gain in ADE (2.60\,m, between 2.43 with the full trajectory and 3.04 with a stationary vehicle). The stop decision is thus carried by the vehicle's early motion, and its later trajectory refines the path. The ADE cost of the 1\,s horizon and all differences to the stationary, foreign or zeroed input meet our rule on both partitions.
 
 Finally we edited the plan itself. After the same first second the vehicle either keeps its speed or brakes at 2\,m/s$^2$ until it stands. Braking lowers the generated stop probability from 0.23 to 0.15 and lengthens the path by 1.0\,m on test, both under our rule. Among vehicles faster than 2\,m/s the shift is $-0.11$, and $-0.29$ where the recorded pedestrian stops ($-0.28$ on validation, where the overall shift of $-0.03$ does not meet the rule). The model thus responds to a never-driven plan, but recordings cannot tell if the response is right.
 
@@ -407,27 +408,25 @@ Finally we edited the plan itself. After the same first second the vehicle eithe
 \subsection{What the Coupling Rests On}
 \label{sec:rests}
 
-We probed the score with definitions fixed on validation. First, 57\% of the recorded stops are pedestrians who stand throughout, within a 1\,m radius. \method gives them a stop probability of 0.55, against 0.30 for those who move and then stop and 0.13 for walkers, and its lead over the prior in the middle group (ECS 0.17 against 0.05) meets our rule on validation but not on test.
-Second, in 99\% of the test conditions the pedestrian never comes within 2.5\,m of where the vehicle is or later drives (median closest approach 10.4\,m), and there \method keeps its ECS (0.31 against 0.02) and its ADE gain (0.60\,m). The recording vehicle thus cannot have revealed the outcome by reacting to the pedestrian, but for the same reason the data holds almost no interaction.
-Third, part of the signal is geometry. Walkers mostly face along the road, so 9\% of pedestrians stop when the vehicle travels within $10^\circ$ of the axis they face and 40\% beyond $60^\circ$. Within bins of this angle \method keeps an ECS of 0.17 (0.29 on validation). A rule that predicts a stop unless the vehicle travels within $10^\circ$ of that axis even reaches an ECS of 0.29, but it predicts a stop for 65\% of the conditions and has a Brier score of 0.47.
-Finally, the Brier score does not separate \method from the prior under our rule (0.180 against 0.177 on test, 0.156 against 0.168 on validation), while \method ranks conditions better on both (area under the ROC curve 0.70 against 0.53 on test).
+We probed ECS with definitions fixed on validation. First, 57\% of the recorded stops are pedestrians who stand throughout, within a 1\,m radius. \method gives them a stop probability of 0.55, against 0.30 for those who move and then stop and 0.13 for walkers. Its lead over the prior in the middle group (ECS 0.17 against 0.05) meets our rule on validation but not on test.
+Second, in 99\% of the test conditions the pedestrian never comes within 2.5\,m of where the vehicle is or later drives (median closest approach 10.4\,m). There \method keeps its ECS (0.31 against 0.02) and its ADE gain (0.60\,m). The recording vehicle thus cannot have revealed the outcome by reacting to the pedestrian, but for the same reason the data holds almost no interaction.
+Third, part of the signal is geometry. Walkers mostly face along the road, so 9\% of pedestrians stop when the vehicle travels within $10^\circ$ of the axis they face and 40\% beyond $60^\circ$. Within bins of this angle \method keeps an ECS of 0.17 (0.29 on validation). A rule that predicts a stop unless the vehicle travels within $10^\circ$ of that axis reaches an ECS of 0.29 but predicts a stop for 65\% of the conditions and has a Brier score of 0.47.
+Finally, the Brier score does not separate \method from the prior under our rule (0.180 against 0.177 on test, 0.156 against 0.168 on validation). \method still ranks conditions better on both (area under the ROC curve 0.70 against 0.53 on test).
+
+We also scored the same checkpoints once, by a protocol fixed beforehand, on the root paths of 1{,}327 annotated pedestrians from 114 scenes of everyday drives of our research vehicle. \method keeps a lead over the prior in ADE (2.74 against 3.05\,m) and ECS (0.24 against 0.00) under our rule, with a worse Brier score (0.246 against 0.193). For the 60 pedestrians within 2.5\,m of where the vehicle is or later drives, or in its path up to 5\,s behind it, \method does not beat the prior under our rule (ADE 4.18 against 3.86\,m, ECS 0.18 against 0.03). Its Brier score is again worse (0.317 against 0.148).
 The coupling is thus a statistical dependence on the vehicle's motion and the geometry it reveals, strongest for pedestrians who stand, not a measured reaction to it.
-
-\subsection{Guidance}
-
-Guidance trades coverage for FID without changing coupling. On validation, raising $w$ from 5 to 15 lowers \method's FID from 4.61 to 3.90 but raises its minADE from 1.22 to 1.43\,m and its ADE by 0.03\,m, while ECS stays flat (0.36--0.37). \fullseq behaves alike. Selecting the scale by FID, as our protocol does, therefore picks the least accurate setting. We keep the pre-specified selection.
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=\linewidth]{figures/FINAL_setA_compressed.pdf}
-  \caption{\TODO{This placeholder from an earlier model is to be replaced (test conditions, anonymous, no taller than this).} Generated body motion is retargeted onto pedestrian characters in the CARLA simulator~\cite{dosovitskiy2017carla}, one ego condition per row. The left column shows the view from the ego vehicle, the middle column a third-person view over time with the ego trajectory (red), the shown sample's root path (dark blue) and the recorded pedestrian (orange), and the right column a bird's-eye view of five samples for the same ego trajectory. The recording is one outcome of the distribution, not its target, and the feet slide as in the labels (Section~\ref{sec:posequality}).}
+  \caption{\TODO{Placeholder, to be replaced.} Generated body motion is retargeted onto pedestrian characters in the CARLA simulator~\cite{dosovitskiy2017carla}, one ego condition per row. The left column shows the view from the ego vehicle. The middle column shows a third-person view over time with the ego trajectory (red), the shown sample's root path (dark blue) and the recorded pedestrian (orange). The right column shows a bird's-eye view of five samples for the same ego trajectory. The recording is one outcome of the distribution, not its target, and the feet slide as in the labels (Section~\ref{sec:posequality}).}
   \label{fig:qualitatives}
 \end{figure*}
 
 \subsection{Comparison with PedGen}
 \label{sec:pedgen}
 
-The released context-free model of PedGen~\cite{liu2025pedgen} cannot take a vehicle trajectory, so we use it as an ego-blind reference on the root path, the one quantity both models share. We compare paths over the first 1.95\,s of our test conditions, within PedGen's 2-second horizon. With $K{=}5$ samples, mean ADE is 0.575\,m for \method, 0.632\,m for \fullseq, 0.733\,m for our trained prior and 0.794\,m for PedGen. \method is 0.22\,m closer than PedGen, with the interval excluding zero for every seed. Even our ego-blind prior is 0.06\,m closer than PedGen, whose samples walk at a median 0.65\,m/s against 1.26\,m/s in our data. Part of the gap is thus the domain, and the comparison shows that a published generator needs retraining to transfer, not that one architecture is better.
+The released context-free model of PedGen~\cite{liu2025pedgen} cannot take a vehicle trajectory, so we use it as an ego-blind reference on the root path, the one quantity both models share. We compare paths over the first 1.95\,s of our test conditions, within PedGen's 2\,s horizon. With $K{=}5$ samples, mean ADE is 0.575\,m for \method, 0.632\,m for \fullseq, 0.733\,m for our trained prior and 0.794\,m for PedGen. \method is 0.22\,m closer than PedGen, with the interval excluding zero for every seed. Even our ego-blind prior is 0.06\,m closer, and PedGen's samples walk at a median 0.65\,m/s against 1.26\,m/s in our data. Part of the gap is thus the domain, so the comparison shows that a published generator needs retraining to transfer.
 
 \subsection{Qualitative Results}
 
@@ -440,12 +439,12 @@ Fig.~\ref{fig:teaser} shows one \method model under two vehicle trajectories wit
 \label{sec:limitations}
 %----------------------------------------------------------------------
 
-Had we ranked by FID, this paper would recommend full-sequence attention with interaction-weighted data, the combination with the weakest coupling to the vehicle among our four main models. A split that shares no scene, a rule over several seeds and per-condition metrics that an ego-blind model cannot pass prevent that conclusion. For conditional motion generation in general, we suggest reporting a separately trained unconditional prior on the same data recipe and at least one per-condition metric next to FID.
+Had we ranked by FID, this paper would recommend full-sequence attention with interaction-aware data, the combination with the weakest coupling to the vehicle among our four main models. That conclusion is prevented by a scene-level split, a rule over several seeds and per-condition metrics that an ego-blind model cannot pass. For conditional motion generation in general, we suggest reporting a separately trained unconditional prior on the same data recipe and at least one per-condition metric next to FID.
 
 \begin{itemize}
-  \item \textbf{Body pose quality.} The labels have one canonical skeleton, feet that do not plant and damped articulation (Section~\ref{sec:posequality}), and generated motion inherits this (median foot-skate ratio 0.93 against 0.96 for the labels of the same test windows, 0.72 of their articulation). Relabeling and retraining is the largest open item.
-  \item \textbf{Observational coupling.} The coupling is measured on recordings with almost no pedestrian in the vehicle's path (Section~\ref{sec:rests}). The model responds to a braking edit (Section~\ref{sec:controls}), which no recording can confirm.
-  \item \textbf{Known future.} \method sees the vehicle's whole 9.8\,s trajectory, which suits simulation but not online prediction.
+  \item \textbf{Body pose quality.} The labels have one canonical skeleton, feet that do not plant and damped articulation (Section~\ref{sec:posequality}), and generated motion inherits this (median skate 0.93 against 0.96 for the labels of the same test windows, 0.72 of their articulation). Relabeling and retraining is the largest open item.
+  \item \textbf{Observational coupling.} Our data holds almost no pedestrian in the vehicle's path, and near it in the everyday drives \method does not beat the prior (Section~\ref{sec:rests}). The model responds to a braking edit (Section~\ref{sec:controls}), which no recording can confirm.
+  \item \textbf{Known future.} \method sees the vehicle's whole 9.8\,s trajectory, which suits simulation, not online prediction.
   \item \textbf{Condition and coverage.} The condition is the ego trajectory only, without map, other agents or traffic control, and held-out results rest on nuScenes and Waymo. The input is the 2D trajectory of any moving agent, so mobile robots are a natural next use after retraining on data such as JRDB~\cite{martinmartin2023jrdb}.
   \item \textbf{Metrics.} ECS covers only stopping. FID compares only within this benchmark, with no perceptual study.
 \end{itemize}
@@ -454,7 +453,7 @@ Had we ranked by FID, this paper would recommend full-sequence attention with in
 \section{CONCLUSION}
 %----------------------------------------------------------------------
 
-\method generates full-body pedestrian motion from the ego vehicle's trajectory with a pretrained, frozen, pooled trajectory encoder and latent diffusion. It lowers the trajectory error of a prior trained without the vehicle from 3.03 to 2.43\,m and lifts the coupling of generated stopping decisions from 0.02 to 0.31, against 1.97\,m and 0.08 for a deterministic regressor. The coupling is observational and rests mostly on pedestrians who stand. The model responds when the vehicle's plan is edited, but that response remains to be validated. FID cannot certify such a model. It favors the design choices that raise mean trajectory error and ranks an ego-blind prior first. We propose per-condition trajectory error and the Ego-Coupling Score, with scene-level statistics over several seeds, for evaluating generation conditioned on another agent. Code, trained models and data will be released.
+\method generates full-body pedestrian motion from the ego vehicle's trajectory with a pretrained, frozen, pooled trajectory encoder and latent diffusion. It lowers the trajectory error of a prior trained without the vehicle from 3.03 to 2.43\,m and lifts the coupling of generated stopping decisions from 0.02 to 0.31, against 1.97\,m and 0.08 for a deterministic regressor. The coupling is observational and rests mostly on pedestrians who stand. The model responds when the vehicle's plan is edited, but that response remains to be validated. FID cannot certify such a model. It favors the design choices that raise mean trajectory error and ranks an ego-blind prior first. We propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, for evaluating generation conditioned on another agent. Code, trained models and the paired dataset will be released, but not the everyday drives.
 
 %----------------------------------------------------------------------
 \ifanonymous\else

@@ -97,9 +97,31 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
     nuScenes and Waymo and automatic ones (MS3D) in the staged scenes.
   - Still 8 pages, with about three lines free on the last page.
 
+- 2026-11-16, afternoon, external test and language pass (entries 18 to 67 of `CHANGES_2026-11-16.md`, against
+  commit d945e11):
+  - Section VI-E has a paragraph on an external test, the labeled everyday drives of the research vehicle
+    (1,327 pedestrians in 114 scenes, root path only, the same checkpoints, scored once by the protocol frozen
+    in commit 26f7e4e, report in `research/data/munich_report_label.txt`). On all pedestrians EgoPed keeps its
+    lead over the prior (ADE 2.74 against 3.05 m, ECS 0.24 against 0.00, both under the rule) with a worse
+    Brier score (0.246 against 0.193). On the 60 near the vehicle's path it does not beat the prior (ADE 4.18
+    against 3.86 m, ECS 0.18 against 0.03, Brier 0.317 against 0.148). The limitation on observational
+    coupling names this. The city is not named.
+  - Erik, 2026-11-16: the release is stated exactly. The conclusion says that the paired dataset will be
+    released, but not the everyday drives, whose pedestrians are members of the public.
+  - Paid for by folding the Guidance subsection into Section VI-B (PedGen is now VI-F, Qualitative Results
+    VI-G), by removing three sentences whose numbers are in the tables, and by shorter sentences in Sections
+    VI-C and VI-F.
+  - Language pass asked for by Erik, with an independent read of the whole text. Sixteen sentences of 40
+    words or more are split, no fragment was found, and about thirty slips of grammar, reference and
+    terminology are fixed. Section VI-C no longer says "all four per-condition metrics" while naming three.
+  - 8 pages, no overfull box, 39 references, about two lines free on page 8. The abstract has 1,193
+    characters.
+
 ## Still to do
 
 - The paper is full, so anything added needs a cut of the same length.
+  Only changes from Section VI-C on move the end of the paper. The column breaks before the headings of VI-B
+  and VI-C absorb anything cut earlier, and Section VI-B must not gain a line.
 - Overleaf needs `refs.bib` and `ral_ctl.bib` from this folder. The reviewed copy printed "[?]" for some
   citations, which this build does not.
 
@@ -113,4 +135,4 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
 
 ## Abstract (plain text, for the submission form)
 
-Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion depends on the vehicle, yet motion generators condition on text, waypoints, goals or the static scene. We present EgoPed, a latent diffusion model that generates 3D full-body pedestrian motion from the ego vehicle's trajectory, encoded by a pretrained, frozen encoder into a single token. On 5,668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene, EgoPed lowers the root displacement error of a trained unconditional prior from 3.03 to 2.43 m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31, against 1.97 m and 0.08 for a deterministic regressor. The Fréchet distance is blind to this coupling. It ranks an ego-blind prior first, and both design choices it favors raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.
+Simulation-based testing of automated vehicles needs pedestrians whose full-body motion depends on the vehicle, yet motion generators condition on text, waypoints, goals or the static scene. We present EgoPed, a latent diffusion model that generates 3D full-body pedestrian motion from the ego vehicle's trajectory, encoded by a pretrained, frozen encoder into a single token. We use 5,668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene. EgoPed lowers the root trajectory error of a trained unconditional prior from 3.03 to 2.43 m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31. A deterministic regressor reaches 1.97 m and 0.08. The Fréchet distance is blind to this coupling. It ranks an ego-blind prior first and favors two design choices that raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.
