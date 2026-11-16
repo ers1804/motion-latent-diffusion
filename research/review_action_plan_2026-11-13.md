@@ -519,6 +519,64 @@ stay out of git. Their hashes are in the manifest and are checked whenever the s
 Submitted on Helma 2026-11-16 12:00, after the freeze (commit 26f7e4e): jobs 1353679 to 1353699 (`rs1_munich`),
 18 models and 3 regressors, both heading variants each, default priority.
 
+**Result, 2026-11-16** (all 21 jobs completed, about 6 minutes each, one pass, no rerun; reports in
+`research/data/munich_report_label.txt` and `munich_report_motion.txt`, dumps on the NAS in
+`evaluation/diffusion/quantitative/scene_split_v1_dumps/munich_v1/`). Means of three seeds, labelled heading,
+recorded stop from the label. * = interval excludes 0 and all seed pairs agree.
+
+| | N | EgoPed ADE | prior ADE | EgoPed minus prior, ADE gain | EgoPed ECS | prior ECS | ECS difference |
+|---|---|---|---|---|---|---|---|
+| all sequences (primary) | 1,327 | 2.74 | 3.05 | +0.31 [+0.19, +0.43]* | 0.24 | 0.00 | +0.24 [+0.16, +0.30]* |
+| interactive subset (primary) | 60 | 4.18 | 3.86 | -0.32 [-1.05, +0.36] | 0.18 | 0.03 | +0.15 [-0.21, +0.48] |
+| within 20 m (secondary) | 1,036 | 2.68 | 3.18 | +0.50 [+0.35, +0.65]* | 0.26 | -0.01 | +0.26 [+0.18, +0.33]* |
+
+- **Primary outcome 1 holds.** On all sequences EgoPed beats the prior on mean ADE and on ECS under the rule.
+  The gain is about half of the one on test (0.31 against 0.59 m) and the ECS about three quarters (0.24
+  against 0.31). The heading variant from motion gives the same (+0.30 m*, ECS +0.25*, ADE 2.47 against 2.77 m),
+  and so does the speed rule for the recorded stop (ECS +0.23*).
+- **Primary outcome 2 does not hold.** On the interactive subset EgoPed is not better than the prior. The point
+  estimate of ADE is against it in every seed pair (-0.48 to -0.17 m), the interval includes 0, ECS is positive
+  without excluding 0. The motion variant agrees (-0.37 m [-1.08, +0.28]).
+- The regressor has the lowest mean ADE again, 2.17 m on all sequences and 2.92 m on the subset, with ECS 0.08
+  (test: 1.97 m and 0.08).
+- The corrected Brier score favours the prior over EgoPed on all sequences (0.193 against 0.246*) and on the
+  subset (0.148 against 0.317*). On test the two were level (0.180 and 0.177). EgoPed generates a stop in 28%
+  of its samples against 25% recorded.
+- Full-seq against the prior: ECS +0.21*, ADE +0.11 without meeting the rule. EgoPed against Full-seq: ADE
+  +0.20*. The IA models beat their prior on ADE and ECS on all sequences and not on ADE on the subset.
+
+Exploratory, computed after the result was seen (label variant, seed means). The ADE gain sits on pedestrians
+who stand. Recorded stops (337, of which 310 stand throughout): EgoPed 2.47 m against 3.41 m for the prior, and
+EgoPed generates a stop in 46% of its samples there against 21%. Recorded walkers (990): 2.83 against 2.92 m.
+In the interactive subset the 49 recorded walkers cost EgoPed 0.8 m (4.51 against 3.69 m), because it stops them
+in 36% of its samples (prior 25%). This is the pattern of Section VI-E of the paper on new data: the coupling
+is with standing, and where a pedestrian walks through the vehicle's path the model has nothing to add.
+
+In the paper since 2026-11-16 (Erik: "Ok, then add it"). One paragraph at the end of Section VI-E gives both
+primary outcomes with the Brier scores, and the limitation on observational coupling names the result near the
+vehicle's path. The set is called "everyday drives of our research vehicle", the city is not named. The
+conclusion says that these drives are not released (Erik, 2026-11-16). Paid for
+by folding the Guidance subsection into Section VI-B and by cuts in Sections VI-C to VI-G (list in
+`paper_ral/CHANGES_2026-11-16.md`). Only edits from Section VI-C on change the page count: the breaks before
+the headings of VI-B and VI-C absorb anything cut earlier.
+
+Secondary reading of the same report, not in the paper. On the interactive subset the IA-trained EgoPed is the
+only model with an ECS gain over its prior under the rule (0.39 against -0.01, +0.40 [+0.13, +0.65], motion
+heading +0.36 [+0.03, +0.65]), without an ADE gain (-0.09 m, interval includes 0). With the speed rule for the
+recorded stop the interval includes 0 (+0.22 [-0.02, +0.46]). 60 sequences, 11 stops, one of several secondary
+contrasts, so it is a hint that the training distribution is the lever and no more.
+
+**Is a training worth it? (Erik's question, 2026-11-16.) Recommendation: not for this paper.**
+
+- The labels give the root only. A body model needs the pose pipeline first, which leaves about 300 to 450
+  sequences, 5 to 8% of the 5,668, and about 60 interactive windows in all.
+- Training on the Munich drives uses up the only external test. Split by scene it leaves about 30 interactive
+  test windows, and the interval on 60 is already +-0.7 m.
+- A retraining chosen because of this result is tuning against the external test, which the protocol excludes.
+- After the submission: interactive windows come at about one per two labelled scenes, so a training set of
+  1,000 needs about 2,000 scenes. Worth asking the group to label drives that the parser preselects for
+  pedestrians near the path, and to fix the 90 degree heading in the converter before more is exported.
+
 ## Next steps, in order
 
 1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.
