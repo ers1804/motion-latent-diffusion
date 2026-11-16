@@ -201,7 +201,7 @@ class EgoMotionDataset(Dataset):
         cannot be found is an error; the legacy resolver below instead fell back to a same-named
         file of another source, which added foreign samples to a split.
         """
-        source_of = {"A": "ava", "N": "nuscenes", "W": "waymo"}
+        source_of = {"A": "ava", "N": "nuscenes", "W": "waymo", "U": "munich"}  # U: research/src/munich_eval.py
         roots = {}
         for root in self.data_roots:
             base = os.path.basename(os.path.normpath(root)).lower()

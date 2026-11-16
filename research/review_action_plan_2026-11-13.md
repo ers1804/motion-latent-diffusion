@@ -454,6 +454,67 @@ American spelling, and it must hold no sentence fragments. Done in `main.tex`, l
 - Not done, since it was not asked for. IEEE style puts a comma before "and" in a list of three, the paper
   does not.
 
+## Munich external test, 2026-11-16
+
+Erik, 2026-11-16: the group's Munich drives are being labelled (`NAS2/car_data/dataset_annotations_ayadata`,
+nuScenes format, 124 of 136 scenes labelled, tables `v2.2-mini`). He asked what they can give this paper and
+decided for a second, external test of the frozen models on root paths, with the interactive encounters as a
+subset. No pose fits, no retraining, nothing selected on this set.
+
+What the check of the labels found, all before any model was run on them:
+
+- **The vehicle heading in `ego_pose.json` is 90 degrees off the direction of travel in every scene**, and all
+  global boxes inherit it (stored = t + Rz(-90 deg)(p - t)). Labelled parked cars move a median 49 m as stored
+  and 0.8 m after the correction. Boxes project correctly into the cameras with the tables as they are. The
+  cause is the group's converter, not the labels. The staged scenes in the paper do not show it.
+- **The dataset's vehicle input and root path come from the labelled boxes, not from the pose fit.** Step 1 of the
+  pose pipeline gives SMPL the box centre as translation and the box rotation as orientation, and expresses the
+  vehicle in the frame of the pedestrian's box at its first frame. Rebuilding 40 nuScenes and 40 Waymo files
+  from the boxes reproduces the vehicle path to a median 5 and 3 cm and the root path to 18 and 14 cm
+  (`munich_eval.py --check-dataset 40`). The paper says "The root position comes from this fit" and "The root
+  itself has no independent reference". Both need Erik's look.
+- Box centres jitter by about 0.1 m per keyframe. A pedestrian labelled standing reads a median 0.27 m/s, above
+  the 0.2 m/s of the paper's stop rule.
+- The labelled pedestrian heading lies within 30 degrees of the walking direction for 83% of walkers, against
+  100% (nuScenes) and 89% (Waymo) in the files checked.
+
+**Protocol, fixed with this commit** (`research/src/munich_eval.py`, `research/data/munich_v1/manifest.json`):
+
+1. All labelled pedestrians not sitting or lying on half or more of their keyframes, heading corrected, box
+   centres and vehicle poses resampled linearly to 20 fps.
+2. One window of at most 196 frames per track, centred on the closest approach to the vehicle. Tracks under 40
+   frames are dropped. 1,327 sequences in 114 scenes.
+3. Frame of the pedestrian's box at the window start. The labelled heading is the primary variant, the heading
+   taken from the first 2 s of motion (when they cover 1.5 m) is a sensitivity variant, run alongside.
+4. Recorded stop is the label `pedestrian.standing` on three consecutive keyframes of the window (337 stops,
+   25.4%). The speed rule on the box path is secondary (336 stops, agreement 85%).
+5. Interactive subset from the window (60 sequences in 34 scenes). In the vehicle's path with the vehicle
+   arriving within 5 s, while it moves (4) or while it waits (11), behind it within 5 s (16), or otherwise
+   within 2.5 m of its path (29). The vehicle must drive at least 3 m in the window. Only 11 of the 60 are
+   recorded stops, so ECS on the subset is weak by construction and ADE is the number to read there.
+6. Models are those of the main table at their selected checkpoints and guidance scales
+   (`research/data/resplit_selection.json`), three seeds each, plus the three regressors. K = 5.
+7. Primary outcome. EgoPed against the prior on mean ADE and ECS, on all sequences and on the interactive
+   subset, with the scene bootstrap and the seed-pair rule of the paper (`research/src/munich_report.py`).
+   Everything else is secondary.
+8. One pass. A rerun is allowed for a technical fault only, and gets recorded here. The result is reported
+   whichever way it comes out.
+
+The whole-track parse reported to Erik earlier the same day found 79 interacting tracks in 41 scenes. The
+subset above has 60 because it is taken from the evaluated window and requires the vehicle to drive.
+
+Code review before the freeze (2026-11-16): the rule for a waiting vehicle had no limit on the time gap,
+against the text above. Fixed, which moved nine sequences from "waiting" to "within 2.5 m of its path" and left
+the subset and the paths unchanged. The frame of a window that starts late is that of the window start, which the
+rs1 models saw only for tracks of up to 196 frames, so this set does not copy the stale frame of the paper.
+
+Checks without a model: unit tests (`research/src/test_munich_eval.py`), the real loader returns recorded roots
+and vehicle inputs exactly as stored for both variants, and the vehicle input lies inside the training range
+(mean 0.8 and 2.8 m against 0.0 and 5.5 m, standard deviation 12.1 and 16.3 m against 13.0 and 16.2 m).
+
+The sequence files (`sequences_label.npz`, `sequences_motion.npz`) hold paths derived from the group's labels and
+stay out of git. Their hashes are in the manifest and are checked whenever the set is loaded.
+
 ## Next steps, in order
 
 1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.

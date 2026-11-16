@@ -35,13 +35,15 @@ NAS = os.environ.get("EGOPED_NAS", "/home/erik/NAS/methods/diffusion_gen")  # $T
 VT = "research/data/heldout_split/val_test"
 FV = f"{NAS}/data/vae/mean_std_txt/ava_nuscenes_waymo"
 SCENE = "research/data/scene_split_v1"
+MUNICH = os.environ.get("EGOPED_MUNICH", "/tmp/egoped_munich")  # munich_eval.py --materialize
 CKPT = "research/data/regressor_best.pt"
 CFG = "configs/config_ego_motion_new_vae_stoch_latent_4_trans_dec.yaml"
 
 
-def build_cfg(split_dir, scene=False, test_split="val", seed=None, window_frame=False):
+def build_cfg(split_dir, scene=False, test_split="val", seed=None, window_frame=False, roots=None):
+    roots = roots or f"[{NAS}/data/diffusion/ava, {NAS}/data/diffusion/nuscenes, {NAS}/data/diffusion/waymo]"
     overrides = [
-        f"DATASET.EGOMOTION.ROOT=[{NAS}/data/diffusion/ava, {NAS}/data/diffusion/nuscenes, {NAS}/data/diffusion/waymo]",
+        f"DATASET.EGOMOTION.ROOT={roots}",
         f"DATASET.EGOMOTION.MEAN_STD_PATH={split_dir}",
         f"DATASET.EGOMOTION.EGO_MEAN_STD_PATH={split_dir}",
         "DATASET.EGOMOTION.INTERACTION_CROP=False",
@@ -135,7 +137,11 @@ def evaluate(args):
     tag = Path(args.ckpt).stem
     splits = [(name, SCENE) for name in args.splits] if args.scene else [("val_test", VT), ("full_val", FV)]
     for split_name, split_dir in splits:
-        if args.scene:
+        munich = {"munich": f"{MUNICH}/label", "munich_motion": f"{MUNICH}/motion"}.get(split_name)  # heading variant
+        if munich:  # external root-only set: its own root and list, the training statistics
+            cfg = build_cfg(f"{munich}/split", scene=True, test_split="val", seed=args.seed,
+                            roots=f"[{munich}/data/diffusion/munich]")
+        elif args.scene:
             cfg = build_cfg(split_dir, scene=True, test_split=split_name.removeprefix("scene_"), seed=args.seed,
                             window_frame=args.window_frame)
         else:
@@ -156,12 +162,13 @@ def evaluate(args):
                 gts.append(batch["motion"])
                 lengths.extend(batch["length"])
         pred = torch.cat(preds); gt = torch.cat(gts)
-        move_enc, mot_enc = load_t2m_evaluator(cfg, device)
-        pe = compute_motion_embeddings(pred, lengths, move_enc, mot_enc, device)
-        ge = compute_motion_embeddings(gt, lengths, move_enc, mot_enc, device)
-        m = compute_metrics(pe, ge, diversity_times=min(cfg.TEST.DIVERSITY_TIMES, len(lengths) - 1))
-        print_metrics(m, title=f"Regressor baseline ({split_name}, ep{state['epoch']})")
-        save_metrics(m, f"research/data/{tag}_metrics_{split_name}.json" if args.scene else f"research/data/regressor_metrics_{split_name}.json")
+        if not munich:  # the Munich set has root paths only, so no feature-space metrics
+            move_enc, mot_enc = load_t2m_evaluator(cfg, device)
+            pe = compute_motion_embeddings(pred, lengths, move_enc, mot_enc, device)
+            ge = compute_motion_embeddings(gt, lengths, move_enc, mot_enc, device)
+            m = compute_metrics(pe, ge, diversity_times=min(cfg.TEST.DIVERSITY_TIMES, len(lengths) - 1))
+            print_metrics(m, title=f"Regressor baseline ({split_name}, ep{state['epoch']})")
+            save_metrics(m, f"research/data/{tag}_metrics_{split_name}.json" if args.scene else f"research/data/regressor_metrics_{split_name}.json")
         # ADE/FDE (deterministic, K=1)
         j_p = dm.feats2joints(pred); j_g = dm.feats2joints(gt)
         rp = j_p[:, :, 0, [0, 2]].numpy(); rg = j_g[:, :, 0, [0, 2]].numpy()
@@ -189,8 +196,10 @@ if __name__ == "__main__":
     ap.add_argument("--seed", type=int)
     ap.add_argument("--window-frame", action="store_true")
     ap.add_argument("--ckpt", default=CKPT)
-    ap.add_argument("--splits", nargs="+", default=["scene_val", "scene_test"], choices=["scene_val", "scene_test"])
+    ap.add_argument("--splits", nargs="+", default=["scene_val", "scene_test"], choices=["scene_val", "scene_test", "munich", "munich_motion"])
     args = ap.parse_args()
+    if not args.scene and any(s.startswith("munich") for s in args.splits):
+        ap.error("the Munich splits need --scene (exact resolution of the listed names)")
     if args.train:
         train(args)
     if args.eval:

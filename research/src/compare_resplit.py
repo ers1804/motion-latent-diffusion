@@ -26,7 +26,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from intention_labels import is_stopping  # noqa: E402
 from make_scene_split import scene_of  # noqa: E402
 
-LETTER = {"ava": "A", "nuscenes": "N", "waymo": "W"}
+LETTER = {"ava": "A", "nuscenes": "N", "waymo": "W", "munich": "U"}  # U: external test set, munich_eval.py
 # Brier: of the stop frequency over K samples, as in the first test pass. BrierC: the same with the sampling noise
 # of K samples removed, the score reported since 2026-11-13. E[(p_hat - y)^2] = (pi - y)^2 + pi (1 - pi) / K, and
 # p_hat (1 - p_hat) / (K - 1) estimates the last term without bias. The raw score penalises a model for spreading

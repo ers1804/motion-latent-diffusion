@@ -17,6 +17,8 @@ embedding space, so it is directly comparable across architectures.
 Usage:
   python research/src/eval_ade_fde.py --model h4 [--k 5] [--split val_test]
   python research/src/eval_ade_fde.py --model rs1_egoped --cfg <yaml> --ckpt <ckpt> --guidance 10 --split scene_test
+  EGOPED_MUNICH=<dir> python research/src/eval_ade_fde.py ... --split munich --save-roots   (munich_eval.py;
+  munich_motion is the same set with the pedestrian's heading taken from its motion)
 """
 import argparse
 import os
@@ -33,6 +35,8 @@ HM = os.environ.get("EGOPED_MODELS", f"{NAS}/models/helma_models/models/mld")
 VT = "research/data/heldout_split/val_test"
 FV = f"{NAS}/data/vae/mean_std_txt/ava_nuscenes_waymo"
 SCENE = "research/data/scene_split_v1"  # scene-disjoint split: select on val, report on test
+# External root-only test set of the labelled Munich drives, written there by munich_eval.py --materialize.
+MUNICH = os.environ.get("EGOPED_MUNICH", "/tmp/egoped_munich")
 FPS = 20
 
 MODELS = {
@@ -145,7 +149,7 @@ def ego_editor(args, dataset):
     if args.ego_swap:
         egos = np.stack([it["ego"] for it in items]).astype("float32")
         lens = np.array([it["length"] for it in items])
-        letter = {"ava": "A", "nuscenes": "N", "waymo": "W"}
+        letter = {"ava": "A", "nuscenes": "N", "waymo": "W", "munich": "U"}
         scenes = [scene_of(letter[Path(p).parts[-3]] + Path(p).stem) for p in dataset.sample_paths]
         rng = np.random.default_rng(0)
         donor = np.empty(len(items), dtype=int)
@@ -202,7 +206,7 @@ def main():
     ap.add_argument("--save-skate", action="store_true",
                     help="also save foot-skate ratio and articulation of every generated sample and of the labels")
     ap.add_argument("--k", type=int, default=5, help="samples per condition")
-    ap.add_argument("--split", default="val_test", choices=["val_test", "full_val", "scene_val", "scene_test"])
+    ap.add_argument("--split", default="val_test", choices=["val_test", "full_val", "scene_val", "scene_test", "munich", "munich_motion"])
     ap.add_argument("--batch", type=int, default=32)
     ap.add_argument("--save-roots", action="store_true",
                     help="also save generated/GT root XZ trajectories (item 9 behavioral probe)")
@@ -213,11 +217,14 @@ def main():
         spec = dict(cfg=args.cfg, ckpt=args.ckpt, guidance=args.guidance, zero_ego=args.zero_ego)
     else:
         spec = MODELS[args.model]
-    scene = args.split.startswith("scene_")
-    split_dir = SCENE if scene else (VT if args.split == "val_test" else FV)
+    munich = {"munich": f"{MUNICH}/label", "munich_motion": f"{MUNICH}/motion"}.get(args.split)  # heading variant
+    scene = args.split.startswith("scene_") or bool(munich)  # exact resolution of the listed names
+    split_dir = f"{munich}/split" if munich else SCENE if scene else (VT if args.split == "val_test" else FV)
+    roots = (f"[{munich}/data/diffusion/munich]" if munich else
+             f"[{NAS}/data/diffusion/ava, {NAS}/data/diffusion/nuscenes, {NAS}/data/diffusion/waymo]")
 
     overrides = [
-        f"DATASET.EGOMOTION.ROOT=[{NAS}/data/diffusion/ava, {NAS}/data/diffusion/nuscenes, {NAS}/data/diffusion/waymo]",
+        f"DATASET.EGOMOTION.ROOT={roots}",
         f"DATASET.EGOMOTION.MEAN_STD_PATH={split_dir}",
         f"DATASET.EGOMOTION.EGO_MEAN_STD_PATH={split_dir}",
         "DATASET.EGOMOTION.INTERACTION_CROP=False",

@@ -239,5 +239,8 @@ graphify-out/
 research/data/ade_fde_rs[0-9]_*.npz
 research/data/teaser_rs1_pooled_qual_scene_test.npz
 
+# Munich external test set: paths derived from the group's labels. The manifest with their hashes is tracked.
+research/data/munich_v1/sequences_*.npz
+
 # Locally installed third-party Claude skills (own git repositories)
 .claude/skills/
