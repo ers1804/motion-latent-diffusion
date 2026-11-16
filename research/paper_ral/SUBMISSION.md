@@ -14,7 +14,7 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
   (it shows the vehicle name, the university name, a QR code and the licence plate), "AVA" is now "staged" or "our
   research vehicle", and Munich is not named.
 - No biographies.
-- Abstract field in PaperCept: at most 1,200 characters, no TeX. The abstract below matches the paper (1,179).
+- Abstract field in PaperCept: at most 1,200 characters, no TeX. The abstract below matches the paper (1,197).
 - Keywords: 2-5, the first two from the RA-L list. Used: Human and Humanoid Motion Analysis and Synthesis;
   Intelligent Transportation Systems; Deep Learning Methods; Modeling and Simulating Humans; Performance
   Evaluation and Benchmarking.
@@ -70,6 +70,11 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
     ego-blind prior first, in place of "matches" and "level with" the best conditional model.
   - 2026-11-16: all retrained models are evaluated on validation. None of the seven conditional models
     improves on mean ADE or ECS, and the sentence in Section IV-A now says so for all of them.
+  - Erik, 2026-11-16: the abstract names the deterministic regressor. It has the lowest mean ADE of all
+    models, and the abstract led with EgoPed's gain over the prior without saying so. The lead sentence now
+    ends "against 1.97 m and 0.08 for a deterministic regressor". Paid for with five words ("existing",
+    "directly", "trajectory" before "encoder", and "the two ... both" is now "both"). 1,197 of 1,200
+    characters, so the abstract is full as well.
   - Every change of these two days against the version of 2026-11-13 is listed in `CHANGES_2026-11-15.md`.
 
 ## Still to do
@@ -87,4 +92,4 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
 
 ## Abstract (plain text, for the submission form)
 
-Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion depends on the vehicle, yet existing motion generators condition on text, waypoints, goals or the static scene. We present EgoPed, a latent diffusion model that generates 3D full-body pedestrian motion directly from the ego vehicle's trajectory, encoded by a pretrained, frozen trajectory encoder into a single token. On 5,668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene, EgoPed lowers the root displacement error of a trained unconditional prior from 3.03 to 2.43 m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31. The Fréchet distance is blind to this coupling. It ranks an ego-blind prior first, and the two design choices it favours both raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.
+Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion depends on the vehicle, yet motion generators condition on text, waypoints, goals or the static scene. We present EgoPed, a latent diffusion model that generates 3D full-body pedestrian motion from the ego vehicle's trajectory, encoded by a pretrained, frozen encoder into a single token. On 5,668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene, EgoPed lowers the root displacement error of a trained unconditional prior from 3.03 to 2.43 m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31, against 1.97 m and 0.08 for a deterministic regressor. The Fréchet distance is blind to this coupling. It ranks an ego-blind prior first, and both design choices it favours raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.

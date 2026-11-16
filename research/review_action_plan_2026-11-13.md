@@ -430,6 +430,16 @@ rs1). Report in `research/data/resplit_val_report_rs2_pooled.txt`. Delta above 0
 - **Was open for Erik, settled 2026-11-15 evening (continue as planned).** The six interaction-weighted rs2 runs still hold six GPUs until about 22:30. With rs1
   staying, they only serve the robustness statement. They keep running unless Erik wants them stopped.
 
+## The regressor in the abstract, 2026-11-16
+
+The abstract led with EgoPed's gain over the prior on mean ADE, while the deterministic regressor has the
+lowest mean ADE of all models (1.97 m on test, EgoPed 2.43 m). Erik, 2026-11-16: add the qualifier. The lead
+sentence now ends "against 1.97 m and 0.08 for a deterministic regressor", so both of the regressor's numbers
+stand next to EgoPed's 2.43 m and 0.31. Five words pay for it ("existing", "directly", "trajectory" before
+"encoder", and "the two design choices it favours both raise" is now "both design choices it favours raise").
+The abstract has 1,197 of 1,200 characters, the paper still 8 pages. The contributions and the conclusion
+are unchanged, Section VI-A carries the regressor in the body.
+
 ## Next steps, in order
 
 1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.
