@@ -440,6 +440,20 @@ stand next to EgoPed's 2.43 m and 0.31. Five words pay for it ("existing", "dire
 The abstract has 1,197 of 1,200 characters, the paper still 8 pages. The contributions and the conclusion
 are unchanged, Section VI-A carries the regressor in the body.
 
+## Style pass, 2026-11-16
+
+Erik, 2026-11-16: the first contribution and the conclusion get the regressor as well, the paper is to use
+American spelling, and it must hold no sentence fragments. Done in `main.tex`, listed for Overleaf in
+`research/paper_ral/CHANGES_2026-11-16.md` (15 entries and a table of 21 words, to apply after the list of
+2026-11-15).
+
+- The contributions and the opening phrases of eight captions were the fragments. Run-in headings stay.
+- The paper has the same length as before (8 pages, every page ends where it did). Page 2 is packed tightly.
+  One more line before the last equation of Section III pushes that equation to page 3, and the breaks after
+  it cost about ten lines, which is 9 pages. Measure any change to pages 1 and 2 with a build.
+- Not done, since it was not asked for. IEEE style puts a comma before "and" in a list of three, the paper
+  does not.
+
 ## Next steps, in order
 
 1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.

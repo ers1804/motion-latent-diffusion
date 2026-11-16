@@ -14,7 +14,7 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
   (it shows the vehicle name, the university name, a QR code and the licence plate), "AVA" is now "staged" or "our
   research vehicle", and Munich is not named.
 - No biographies.
-- Abstract field in PaperCept: at most 1,200 characters, no TeX. The abstract below matches the paper (1,197).
+- Abstract field in PaperCept: at most 1,200 characters, no TeX. The abstract below matches the paper (1,196).
 - Keywords: 2-5, the first two from the RA-L list. Used: Human and Humanoid Motion Analysis and Synthesis;
   Intelligent Transportation Systems; Deep Learning Methods; Modeling and Simulating Humans; Performance
   Evaluation and Benchmarking.
@@ -77,6 +77,17 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
     characters, so the abstract is full as well.
   - Every change of these two days against the version of 2026-11-13 is listed in `CHANGES_2026-11-15.md`.
 
+- 2026-11-16, style pass asked for by Erik (`CHANGES_2026-11-16.md`, to apply after the list above):
+  - The first contribution and the conclusion name the deterministic regressor as the abstract does, and
+    give the error as 3.03 to 2.43 m in place of a gain of 0.59 m.
+  - American spelling throughout (23 words, among them "sidewalks" for "pavements" and "curb" for "kerb").
+    Titles in the reference list stay as published.
+  - No sentence fragments. The three contributions and the opening phrase of eight captions are full
+    sentences now. Bold or italic run-in headings stay.
+  - Same length as before. One word less in the second paragraph of the introduction pays for the line the
+    regressor adds to the first contribution. Without it the last equation of Section III leaves page 2 and
+    the paper runs to 9 pages, so that page is packed tightly.
+
 ## Still to do
 
 - The paper is full, so anything added needs a cut of the same length.
@@ -86,10 +97,11 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
 - Copy Mohan's qualitative figure and CARLA paragraph from the OJ-ITS Overleaf (red TODOs in Section VI-G and
   the caption of Fig. 4). For the review version the figure must not show the vehicle's name, lab logos or
   faces, and the staged row must not be labelled "AVA". Keep it at most the height of the current placeholder,
-  or the paper goes to 9 pages. No colons or semicolons in the caption, paragraph or figure text.
+  or the paper goes to 9 pages. No colons or semicolons in the caption, paragraph or figure text, American
+  spelling, and full sentences only.
 - The dataset still has no name (Flohr's comment). It needs a neutral one that names neither the lab, the
   city nor the vehicle, and the web page goes up with the camera-ready only.
 
 ## Abstract (plain text, for the submission form)
 
-Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion depends on the vehicle, yet motion generators condition on text, waypoints, goals or the static scene. We present EgoPed, a latent diffusion model that generates 3D full-body pedestrian motion from the ego vehicle's trajectory, encoded by a pretrained, frozen encoder into a single token. On 5,668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene, EgoPed lowers the root displacement error of a trained unconditional prior from 3.03 to 2.43 m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31, against 1.97 m and 0.08 for a deterministic regressor. The Fréchet distance is blind to this coupling. It ranks an ego-blind prior first, and both design choices it favours raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.
+Simulation-based testing of automated vehicles needs pedestrians whose whole-body motion depends on the vehicle, yet motion generators condition on text, waypoints, goals or the static scene. We present EgoPed, a latent diffusion model that generates 3D full-body pedestrian motion from the ego vehicle's trajectory, encoded by a pretrained, frozen encoder into a single token. On 5,668 paired sequences from nuScenes, Waymo and our staged recordings, mirrored and split by scene, EgoPed lowers the root displacement error of a trained unconditional prior from 3.03 to 2.43 m and lifts the coupling between generated and recorded stopping decisions (Ego-Coupling Score) from 0.02 to 0.31, against 1.97 m and 0.08 for a deterministic regressor. The Fréchet distance is blind to this coupling. It ranks an ego-blind prior first, and both design choices it favors raise mean trajectory error. We therefore propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, to evaluate this task. The coupling is observational. It rests mostly on pedestrians who stand and partly on scene geometry, and the body labels are a lightly articulated template.
