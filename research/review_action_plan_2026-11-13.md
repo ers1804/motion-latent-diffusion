@@ -728,6 +728,52 @@ Validation, seed means, EgoPed (Full-seq in brackets):
 - Guidance 2 or 3 would keep most of the coupling at nearly the same energy score. The rule of item 4 selects
   1, so 1 is what is scored on test. No other scale is scored on test.
 
+### Test pass at the secondary setting, guidance 1 (jobs 1379407 to 1379412, run once on 2026-11-18)
+
+Submitted after commit e27fb50 had fixed the selection. The report was printed a second time and the numbers
+of the first printing are unchanged (the diff holds only the new cells and their contrasts).
+
+| Model | ADE | minADE | Spread | Energy | ECS | Brier (corr.) |
+|---|---|---|---|---|---|---|
+| EgoPed, guidance 1 | 2.639 | 1.259 | 2.479 | 1.400 | 0.181 | 0.155 |
+| Full-seq, guidance 1 | 2.740 | 1.267 | 2.715 | 1.383 | 0.149 | 0.150 |
+| EgoPed, guidance 15 (reported) | 2.434 | 1.649 | 1.334 | 1.767 | 0.308 | 0.180 |
+| Trained prior | 3.028 | 1.305 | 3.031 | 1.513 | 0.023 | 0.177 |
+| Retrieval | 2.772 | 1.246 | 2.644 | 1.450 | 0.161 | 0.153 |
+
+- **EgoPed without guidance against the prior.** Better under the rule on ADE (+0.389), ECS (+0.158) and
+  corrected Brier (+0.023). The energy score is better in every seed pair (+0.094 to +0.137) and the interval
+  just includes zero (+0.113 [-0.005, +0.227]), so it is **level under the rule**. minADE is level. On
+  validation all five had met the rule.
+- **Full-seq without guidance against the prior.** Better under the rule on ADE (+0.288), ECS (+0.126),
+  corrected Brier (+0.027) and energy score (+0.130 [+0.062, +0.199]). minADE is level.
+- **What guidance does to EgoPed** (guidance 1 against 15, all under the rule). Without guidance the energy
+  score (+0.367), minADE (+0.390) and corrected Brier (+0.025) are better, and ADE (2.64 against 2.43 m) and
+  ECS (0.18 against 0.31) are worse. Guidance buys mean accuracy and coupling and pays with samples that are
+  too close together.
+- **EgoPed without guidance against retrieval.** Better on ADE under the rule (+0.133), level on minADE, ECS
+  (0.18 against 0.16), corrected Brier and energy score (+0.050 [-0.030, +0.129]). On root-path metrics the
+  unguided generator is therefore about as good as a search of the training data, and 0.13 m closer.
+- EgoPed and Full-seq without guidance are level on every metric under the rule.
+- Test FID without guidance is 6.39 for EgoPed (6.11, 7.10, 5.97, against 5.67 at guidance 15) and 6.21 for
+  Full-seq (6.39, 5.48, 6.76, against 4.16). Ground-truth Diversity is 5.40 and 5.26 as in the main table, so
+  the pipeline is the same. FID and the energy score pull the guidance in opposite directions.
+
+**Reading across both settings.** No setting of EgoPed beats the prior on the energy score under the rule. At
+the reported guidance it loses under the rule, without guidance it is level (and Full-seq wins). The claims
+that hold at both settings are ADE and ECS against the prior. The coupling that exceeds what a search of the
+data shows (ECS 0.31 against 0.16) exists only with guidance, and there the samples are over-confident. The
+paper's sentence that guidance trades coverage for FID "without changing coupling" is true for the scales 5
+to 15 and false below 5.
+
+### Not in the paper yet, measured cost (2026-11-18)
+
+Nothing of this section is in `main.tex`. The paper has 25 pt to the 8-page limit, one spare line in practice. Measured in a
+scratch build: the definition with one reference (Gneiting and Raftery 2007), a retrieval paragraph in VI-A
+and the guidance paragraph of VI-B rewritten cost 240 pt, which is 215 pt (18 lines) over. Without the
+retrieval paragraph it is 107 pt (9 lines) over. Fig. 5 with its paragraph occupies 484 pt. With Fig. 5 out and
+all three additions in, 321 pt (27 lines) are free. Erik decides what is cut.
+
 ## Next steps, in order
 
 1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.
