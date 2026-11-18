@@ -1,0 +1,16 @@
+% Keep both realization paragraphs here, replacing Mohan's qualitative TODO.
+For Fig.~\ref{fig:qualitatives}, generated joint sequences are retargeted to
+CARLA~0.9.16 pedestrian skeletons using analytical inverse kinematics (IK). A shared rigid
+transform places pedestrian and vehicle paths in \texttt{Town10HD\_Opt}.
+Selected frames from fixed vehicle-view and elevated cameras are
+composited using semantic masks.
+
+Fig.~\ref{fig:realization} illustrates a separate inference-time realization
+with pretrained MotionBricks~\cite{wang2026motionbricks}. MotionBricks completes
+the articulation of one 7.6\,s sample from sparse pose targets. Explicit retiming and root projection
+either preserve the sampled trajectory or impose pose, timing and route edits.
+Contact IK stabilizes planted feet after retargeting. The authored hold at 3--4\,s
+yields 1.13\,s below 0.2\,m/s, and a 0.40\,m lateral edit increases the closest
+vehicle-center separation from 2.18 to 2.58\,m. The vehicle path stays fixed.
+We inspect all 30\,Hz frames. These authored scenarios are not new
+\method predictions or validated human responses.

@@ -1,0 +1,58 @@
+{
+  "source": {
+    "frames": 229,
+    "duration_s": 7.6,
+    "stance_speed_before_mean_mps": null,
+    "stance_speed_after_mean_mps": null,
+    "stance_speed_after_max_mps": null,
+    "foot_proxy_min_clearance_m": -1.1102230246251565e-16,
+    "stops_below_0p2mps": [],
+    "max_pelvis_correction_m": 0.0
+  },
+  "refined": {
+    "frames": 229,
+    "duration_s": 7.6,
+    "stance_speed_before_mean_mps": 0.17454377416120267,
+    "stance_speed_after_mean_mps": 4.712065001470915e-15,
+    "stance_speed_after_max_mps": 1.0658141036401503e-13,
+    "foot_proxy_min_clearance_m": -1.0408340855860843e-15,
+    "stops_below_0p2mps": [],
+    "max_pelvis_correction_m": 0.001882706866777828
+  },
+  "glance": {
+    "frames": 229,
+    "duration_s": 7.6,
+    "stance_speed_before_mean_mps": 0.16947997286313898,
+    "stance_speed_after_mean_mps": 2.7754942275582918e-15,
+    "stance_speed_after_max_mps": 2.6645352591003757e-14,
+    "foot_proxy_min_clearance_m": -1.096345236817342e-15,
+    "stops_below_0p2mps": [],
+    "max_pelvis_correction_m": 0.004138575940914602
+  },
+  "pause": {
+    "frames": 229,
+    "duration_s": 7.6,
+    "stance_speed_before_mean_mps": 0.14237955726385096,
+    "stance_speed_after_mean_mps": 3.339729348937893e-15,
+    "stance_speed_after_max_mps": 5.3316719684500096e-14,
+    "foot_proxy_min_clearance_m": -1.096345236817342e-15,
+    "stops_below_0p2mps": [
+      {
+        "start_s": 2.933333333333333,
+        "end_s": 4.066666666666666,
+        "duration_s": 1.1333333333333333
+      }
+    ],
+    "max_pelvis_correction_m": 0.018618747900572608
+  },
+  "wider": {
+    "frames": 229,
+    "duration_s": 7.6,
+    "stance_speed_before_mean_mps": 0.20248328524063672,
+    "stance_speed_after_mean_mps": 3.060160544222133e-15,
+    "stance_speed_after_max_mps": 2.6852712547870858e-14,
+    "foot_proxy_min_clearance_m": -8.847089727481716e-16,
+    "stops_below_0p2mps": [],
+    "max_pelvis_correction_m": 0.010066440986417513
+  }
+}

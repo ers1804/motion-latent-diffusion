@@ -1,0 +1,32 @@
+{
+  "16M": {
+    "old_body_rotation_error_deg_p50_p95_max": [
+      0.3307326834583668,
+      15.180951341036163,
+      36.499052553057936
+    ],
+    "corrected_body_rotation_error_deg_max": 1.0972352975180708e-05,
+    "source_and_root_unchanged": true,
+    "avatar_reference_gender": "female"
+  },
+  "08": {
+    "old_body_rotation_error_deg_p50_p95_max": [
+      0.34236070504445737,
+      5.714641542715308,
+      10.519199967309435
+    ],
+    "corrected_body_rotation_error_deg_max": 3.2888009862172014e-06,
+    "source_and_root_unchanged": true,
+    "avatar_reference_gender": "female"
+  },
+  "02M": {
+    "old_body_rotation_error_deg_p50_p95_max": [
+      0.3709020218180038,
+      8.908204739895108,
+      26.820329643764822
+    ],
+    "corrected_body_rotation_error_deg_max": 6.609879039879759e-06,
+    "source_and_root_unchanged": true,
+    "avatar_reference_gender": "female"
+  }
+}

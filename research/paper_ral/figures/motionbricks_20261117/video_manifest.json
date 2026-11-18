@@ -1,0 +1,388 @@
+{
+  "status": "MotionBricks full-motion captures complete; main-figure video remains planned",
+  "created": "2026-11-17",
+  "main_figure_video": {
+    "fps": 20,
+    "resolution": [
+      1920,
+      1080
+    ],
+    "capture": "synchronous, exact sensor/simulator frame match",
+    "scenes": [
+      {
+        "id": "16M",
+        "condition": "16_correct_stop_waymo_M441_65",
+        "sample": 7,
+        "mirror": true,
+        "frames": 175,
+        "duration_s": 8.7,
+        "align": {
+          "align": {
+            "theta": 1.0624472296680059,
+            "origin_xy": [
+              -36.4926551280409,
+              -32.408255457902165
+            ],
+            "ground_z": 0.0,
+            "road_yaw_deg": 270.4
+          },
+          "mirror": false
+        },
+        "fixed_cameras": {
+          "elevated": {
+            "loc": [
+              -46.39634645843772,
+              -44.48786215762682,
+              5.5
+            ],
+            "pitch": -18.782804462889004,
+            "yaw": 56.61192943707427,
+            "fov": 60.0,
+            "ped_px": 172.26100634871787
+          },
+          "ego": {
+            "anchor": 124,
+            "loc": [
+              -41.91716562982962,
+              -23.288229057131357,
+              1.23
+            ],
+            "yaw": -87.91466639598714,
+            "pitch": -6.0,
+            "fov": 68.0,
+            "ped_px": 206.40027542954334
+          }
+        },
+        "weather": "afternoon",
+        "walker": "walker.pedestrian.0007",
+        "carla_version": "0.9.16",
+        "town": "Town10HD_Opt",
+        "source_pack": "/home/mohan/Documents/erik/codebases/qualitatives_carla/supp/fig2_fix_20261117/16M",
+        "sha256": {
+          "ego.npy": "e70c0be8a2bdfa073edc16af931fc31d3a88a6055af043c5ba70e073f5ca79cf",
+          "sample7_joints.npy": "f9d2112131a94264cef50d54ab4a985267dd24b3e686af880c253c3b527a5a7d",
+          "retarget_hero.npz": "cdc6f2df1c8bc053136073b373ca388262bf943a338b6a1405f84e52e64158d5"
+        }
+      },
+      {
+        "id": "08",
+        "condition": "08_correct_walk_nuscenes_M005_1",
+        "sample": 2,
+        "mirror": false,
+        "frames": 153,
+        "duration_s": 7.6,
+        "align": {
+          "align": {
+            "theta": -3.162684610846072,
+            "origin_xy": [
+              -39.869520210378546,
+              2.5923898327653134
+            ],
+            "ground_z": 0.0,
+            "road_yaw_deg": -90.3
+          },
+          "mirror": false
+        },
+        "fixed_cameras": {
+          "elevated": {
+            "loc": [
+              -38.0,
+              17.0,
+              8.0
+            ],
+            "pitch": -23.0,
+            "yaw": -106.0,
+            "fov": 50.0
+          },
+          "ego": {
+            "anchor": 36,
+            "loc": [
+              -41.753077318301635,
+              6.594237568540858,
+              1.23
+            ],
+            "yaw": -90.25871801856971,
+            "pitch": -6.0,
+            "fov": 68.0,
+            "ped_px": 234.5410426316916
+          }
+        },
+        "weather": "afternoon",
+        "walker": "walker.pedestrian.0007",
+        "carla_version": "0.9.16",
+        "town": "Town10HD_Opt",
+        "source_pack": "/home/mohan/Documents/erik/codebases/qualitatives_carla/supp/fig2_fix_20261117/08",
+        "sha256": {
+          "ego.npy": "b1bfe2c02e0d3dfb32fe6d16a9cc133861dd9982e72fede8e7b058175e8bd4b7",
+          "sample2_joints.npy": "c3015b8e5c1cefd00c2326720044d274a31b18d5c1c81bdb5791b27e3752adc8",
+          "retarget_hero.npz": "7f4dcd2f090ac14751c6e14fed11424cba28344e12a05ad09a5bfd44a7f921a0"
+        }
+      },
+      {
+        "id": "02M",
+        "condition": "02_ava_M0008_37",
+        "sample": 7,
+        "mirror": true,
+        "frames": 171,
+        "duration_s": 8.5,
+        "align": {
+          "align": {
+            "theta": -1.3621740695275717,
+            "origin_xy": [
+              -45.21358032189902,
+              -48.32285167220684
+            ],
+            "ground_z": 0.0,
+            "road_yaw_deg": 270.4
+          },
+          "mirror": false
+        },
+        "fixed_cameras": {
+          "ego": {
+            "loc": [
+              -41.60675540752938,
+              -38.12789046094816,
+              1.23
+            ],
+            "pitch": -6.0,
+            "yaw": -89.75488437514703,
+            "fov": 68.0,
+            "anchor": 60
+          },
+          "elevated": {
+            "loc": [
+              -53.0,
+              -46.0,
+              6.0
+            ],
+            "pitch": -24.0,
+            "yaw": 0.0,
+            "fov": 65.0
+          }
+        },
+        "weather": "afternoon",
+        "walker": "walker.pedestrian.0007",
+        "carla_version": "0.9.16",
+        "town": "Town10HD_Opt",
+        "source_pack": "/home/mohan/Documents/erik/codebases/qualitatives_carla/supp/fig2_fix_20261117/02M",
+        "sha256": {
+          "ego.npy": "557b54b7825d7b56dcc77ec267ff275dc53a901d47569a102e99d2c54b4d5a60",
+          "sample7_joints.npy": "6c79c5784363fd536b4f760d90e44a9baa31001c2a734f14d100cdaa6503a33d",
+          "retarget_hero.npz": "11798f5ea79f95e5b620419883f26964e1f97495b4ab156967fada9d051084c7"
+        }
+      }
+    ],
+    "status": "planned, not rendered in this revision"
+  },
+  "motionbricks_figure_video": {
+    "status": "captured and inspected",
+    "fps": 30,
+    "frames_per_clip": 229,
+    "motion_timestamp_range_s": [
+      0,
+      7.6
+    ],
+    "encoded_duration_s": 7.633333333333334,
+    "source_condition": "08_correct_walk_nuscenes_M005_1",
+    "sample": 2,
+    "root_constraints": "projected source path or authored edit",
+    "pose_backend": "pretrained MotionBricks SOMA, then native CARLA retarget/contact IK",
+    "map": "Town10HD_Opt",
+    "carla_version": "0.9.16",
+    "camera_comparison": "identical shared camera track in every clip",
+    "capture": "kinematic pose replay; wait for bone readback and exact RGB sensor-frame matches",
+    "review_clips": [
+      "media/01_refinement_review.mp4",
+      "media/02_variations_review.mp4"
+    ],
+    "modes": {
+      "source": {
+        "manifest": "renders/source/render_manifest.json",
+        "sha256": {
+          "renders/source/render_manifest.json": "e3bff82181814e7b3b8f418b85e95eb065c8ca54cd85656f3ed7a5195e7f543b",
+          "media/source_detail.mp4": "12c2688b8b8fa3c0336cb3f2318674af44a33663e7e994189bd23fed9f7c30cc",
+          "media/source_scene.mp4": "c072d06e888968865d8b27d6bc7244014b9356f047539a4e4a5050102c53ffcc",
+          "figure_panels/source.json": "fede235d9f32fbad6678e38c7ae5d605e96a652e0b6f08a4e09afd1a673b87de"
+        },
+        "single_frame_figure_superseded": {
+          "mode": "source",
+          "frame": 70,
+          "t_s": 2.3333333333333335,
+          "camera": "detail",
+          "crop_box": [
+            346.0402238873855,
+            138.02457267836007,
+            848.5341803959648,
+            621.6750058178677
+          ],
+          "matched_crop": true
+        },
+        "figure": {
+          "frames": [
+            66,
+            73,
+            80
+          ],
+          "camera": "renders/source/render_manifest.json",
+          "crops": "temporal/temporal_data.json"
+        }
+      },
+      "refined": {
+        "manifest": "renders/refined/render_manifest.json",
+        "sha256": {
+          "renders/refined/render_manifest.json": "f6de75125b0f7da62d0f6da6cf15bd13b239caf118a62f54c98938217a39c3bd",
+          "media/refined_detail.mp4": "53338140ed3d23b8f78425cedbae86afb4f75e0b5817d9fb5e110ce3ef97d6da",
+          "media/refined_scene.mp4": "8ee372da33603dffb526a6402322673a5628fc5dae78f83f2c6fe1ce154c3ecd",
+          "figure_panels/refined.json": "54a954284d559c68269cc08fe1a7861b76fb620c84083c2b4ba8018fbad998d6"
+        },
+        "single_frame_figure_superseded": {
+          "mode": "refined",
+          "frame": 70,
+          "t_s": 2.3333333333333335,
+          "camera": "detail",
+          "crop_box": [
+            346.0402238873855,
+            138.02457267836007,
+            848.5341803959648,
+            621.6750058178677
+          ],
+          "matched_crop": true
+        },
+        "figure": {
+          "frames": [
+            66,
+            73,
+            80
+          ],
+          "camera": "renders/refined/render_manifest.json",
+          "crops": "temporal/temporal_data.json"
+        }
+      },
+      "glance": {
+        "manifest": "renders/glance/render_manifest.json",
+        "sha256": {
+          "renders/glance/render_manifest.json": "e1bfb715ca1b2fbbf7660b12c753796f3055d9587b9c8ef46394a5440a87203f",
+          "media/glance_detail.mp4": "372ed57f556833f8d186b4b2f563243744eb96f15163cbcc2153b0362530d522",
+          "media/glance_scene.mp4": "a7629448b3cf29ed05952b2aaa20f420049346c90c921474a19a61128a956c21",
+          "figure_panels/glance.json": "4b05718958f25e93240a8757f3c7644fd19ef92ce08644883d8a6bf0172bd0fa"
+        },
+        "single_frame_figure_superseded": {
+          "mode": "glance",
+          "frame": 70,
+          "t_s": 2.3333333333333335,
+          "camera": "detail",
+          "crop_box": [
+            346.0402238873855,
+            138.02457267836007,
+            848.5341803959648,
+            621.6750058178677
+          ],
+          "matched_crop": true
+        },
+        "figure": {
+          "views": [
+            {
+              "mode": "refined",
+              "frame": 90
+            },
+            {
+              "mode": "glance",
+              "frame": 90
+            },
+            {
+              "mode": "glance",
+              "frame": 150
+            }
+          ],
+          "camera": "temporal/head_renders/*/render_manifest.json",
+          "label": "Head pose (primarily tilt)"
+        }
+      },
+      "pause": {
+        "manifest": "renders/pause/render_manifest.json",
+        "sha256": {
+          "renders/pause/render_manifest.json": "b9758d225a9d34c770226c2e4e3d41ef118cd39611852576e0642db932244370",
+          "media/pause_detail.mp4": "3f0a9bd8871911d21f158e5989034edc8d7731a85ff990d2f5040f177eb19a4e",
+          "media/pause_scene.mp4": "4e366e493a0e8198443610b0bae8a2f89088364430a1a1b3f08aa728ad95f403",
+          "figure_panels/pause.json": "66bf983835d1b3de12bac7e0fb947a77773019ed5650f764bac173eb9dae7033"
+        },
+        "single_frame_figure_superseded": {
+          "mode": "pause",
+          "frame": 108,
+          "t_s": 3.6,
+          "camera": "detail",
+          "crop_box": [
+            376.89362573653784,
+            128.40525555813963,
+            832.7715388686754,
+            567.187746947822
+          ],
+          "matched_crop": false
+        },
+        "figure": {
+          "frames": [
+            72,
+            108,
+            141
+          ],
+          "camera": "renders/pause/render_manifest.json",
+          "crops": "temporal/temporal_data.json"
+        }
+      },
+      "wider": {
+        "manifest": "renders/wider/render_manifest.json",
+        "sha256": {
+          "renders/wider/render_manifest.json": "9c7df14fb75a30edbe57d19cfdd08cf584b7976d6ed6878c51bc073b4a62ebf7",
+          "media/wider_detail.mp4": "b03091344a67c7f59f1159e912d8d4b05f263f99ef374409b7e436b5860cdaf8",
+          "media/wider_scene.mp4": "a8181612ad456c45770fe6f1837973429d51afcab4d72da169ec0d3aa4407957",
+          "figure_panels/wider.json": "58238302e93e6ba36d744d631ea2bee6ad39a878b3f98570b01cb83c2c3c5ddb"
+        },
+        "single_frame_figure_superseded": {
+          "mode": "wider",
+          "frame": 70,
+          "t_s": 2.3333333333333335,
+          "camera": "detail",
+          "crop_box": [
+            346.0402238873855,
+            138.02457267836007,
+            848.5341803959648,
+            621.6750058178677
+          ],
+          "matched_crop": true
+        },
+        "figure": {
+          "frame": 70,
+          "camera": "temporal/path_renders/wider/render_manifest.json",
+          "overlay": "full accepted root trajectories projected through the actual camera"
+        }
+      }
+    },
+    "accepted_controls_sha256": "96329a4779dbb4e3887b6b7b6d4d6981d31fe20c78eb2e4689c654eef6de2e22",
+    "presentation_metadata": "temporal/temporal_data.json",
+    "new_views": "Close-up and overhead still cameras saved for future video capture; full original scene/detail clips are unchanged."
+  },
+  "historical_motionbricks_pilot": {
+    "fps": 30,
+    "source_condition": "08_correct_walk_nuscenes_M005_1",
+    "sample": 2,
+    "source_fps": 20,
+    "pilot_machine": "beast",
+    "pilot_dir": "/home/ivlab/Documents/motionbricks_demo_2026-11-15/egoped_20261117",
+    "motionbricks_commit": "54fc563aeaaf819a753d72cc9fdc6713989cdd43",
+    "modes": [
+      "source",
+      "refine",
+      "glance",
+      "wait"
+    ],
+    "publication_approved": false,
+    "pending": [
+      "full-sequence rendered inspection",
+      "contact/penetration check",
+      "CARLA retargeting and placement",
+      "wait timing calibration"
+    ],
+    "comparison": "same scene, vehicle path, camera and timestamps; appearance edits shown separately",
+    "status": "historical pilot; superseded by accepted full captures below"
+  }
+}

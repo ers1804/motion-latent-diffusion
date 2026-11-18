@@ -1,0 +1,152 @@
+{
+  "source": {
+    "minimum_skeleton_to_vehicle_footprint_m": 0.8778546865775951,
+    "skeleton_xy_bounds": [
+      [
+        -40.07382178409587,
+        -9.736595269462562
+      ],
+      [
+        -39.18305226043731,
+        2.6096294995423577
+      ]
+    ],
+    "nearest_static_footprints": [
+      {
+        "name": "BP_StreetLight_simple42_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 4.3444346365626405
+      },
+      {
+        "name": "BP_StreetLight_simple13_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 5.729708377792111
+      },
+      {
+        "name": "BP_SplinePoweLine6_23_SM_58",
+        "label": "Poles",
+        "planar_clearance_m": 5.7377618631559395
+      }
+    ]
+  },
+  "refined": {
+    "minimum_skeleton_to_vehicle_footprint_m": 0.8565800438336757,
+    "skeleton_xy_bounds": [
+      [
+        -40.07382178409587,
+        -9.736595271683623
+      ],
+      [
+        -39.10865586957107,
+        2.6096294995423577
+      ]
+    ],
+    "nearest_static_footprints": [
+      {
+        "name": "BP_StreetLight_simple42_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 4.34443463434152
+      },
+      {
+        "name": "BP_SplinePoweLine6_23_SM_58",
+        "label": "Poles",
+        "planar_clearance_m": 5.6997860948435655
+      },
+      {
+        "name": "BP_StreetLight_simple13_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 5.729708377792111
+      }
+    ]
+  },
+  "glance": {
+    "minimum_skeleton_to_vehicle_footprint_m": 0.8140772260408193,
+    "skeleton_xy_bounds": [
+      [
+        -40.07382178409587,
+        -9.736595294786195
+      ],
+      [
+        -39.11294159458997,
+        2.6096294995423577
+      ]
+    ],
+    "nearest_static_footprints": [
+      {
+        "name": "BP_StreetLight_simple42_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 4.34443461123903
+      },
+      {
+        "name": "BP_SplinePoweLine6_23_SM_58",
+        "label": "Poles",
+        "planar_clearance_m": 5.693981591548713
+      },
+      {
+        "name": "BP_StreetLight_simple13_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 5.729708377792111
+      }
+    ]
+  },
+  "pause": {
+    "minimum_skeleton_to_vehicle_footprint_m": 0.8966763535755984,
+    "skeleton_xy_bounds": [
+      [
+        -40.07382178409587,
+        -7.35428701580874
+      ],
+      [
+        -39.14747115479415,
+        2.6096294995423577
+      ]
+    ],
+    "nearest_static_footprints": [
+      {
+        "name": "BP_SplinePoweLine6_23_SM_58",
+        "label": "Poles",
+        "planar_clearance_m": 5.6997860948435655
+      },
+      {
+        "name": "BP_StreetLight_simple13_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 5.729708377792111
+      },
+      {
+        "name": "BP_StreetLight_simple42_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 6.726742832480187
+      }
+    ]
+  },
+  "wider": {
+    "minimum_skeleton_to_vehicle_footprint_m": 1.254002912713029,
+    "skeleton_xy_bounds": [
+      [
+        -40.07382178409587,
+        -9.736595271683623
+      ],
+      [
+        -38.741728436311796,
+        2.6096294995423577
+      ]
+    ],
+    "nearest_static_footprints": [
+      {
+        "name": "BP_StreetLight_simple42_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 4.34443463434152
+      },
+      {
+        "name": "BP_SplinePoweLine6_23_SM_58",
+        "label": "Poles",
+        "planar_clearance_m": 5.313723938020137
+      },
+      {
+        "name": "BP_StreetLight_simple13_SM_3",
+        "label": "Poles",
+        "planar_clearance_m": 5.729708377792111
+      }
+    ]
+  }
+}

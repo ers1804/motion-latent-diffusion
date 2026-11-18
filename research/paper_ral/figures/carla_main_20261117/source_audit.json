@@ -1,0 +1,167 @@
+[
+  {
+    "condition": "Waymo M441_65",
+    "pack": {
+      "folder": "16_correct_stop_waymo_M441_65",
+      "mirror": true,
+      "hero": 7,
+      "paths": [
+        2.53,
+        1.1,
+        0.94,
+        0.7,
+        1.43,
+        1.06,
+        1.5,
+        1.62
+      ],
+      "L": 175,
+      "hero_rule": "medoid of the 8 root paths (mean pointwise distance)"
+    },
+    "recorded_stops": true,
+    "generated_stops": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "min_synchronized_gt_root_to_car_center_m": 3.629950761795044,
+    "closest_frame": 174,
+    "final_displacements_m": [
+      1.2708590030670166,
+      0.5800302028656006,
+      0.5153440833091736,
+      0.3951793611049652,
+      1.029941201210022,
+      0.591988742351532,
+      0.45238736271858215,
+      0.7065680027008057
+    ],
+    "sha256": {
+      "sample3_joints.npy": "eae5fa24a1592109f51e94a2b7c0f1b383cf6a9b15a20ad4a38b6c296b06686d",
+      "sample1_joints.npy": "3ea31951ee7ca0503bd3d7aece1f466d1a8e9e4f2dbab07fc27d3ca6aa182f23",
+      "gt_joints.npy": "81b550131145db8611decb52f2f96d7c39c6cb3bf704c660c4ab1f40564123d7",
+      "sample2_joints.npy": "34b97aa05e3866333efc6117ac5e2f30c34ef90ce93f156414000c867d224e10",
+      "sample5_joints.npy": "a8a9d13a464202466787d2216e594e40e04b560b48105b322b3418e220fc4b28",
+      "sample0_joints.npy": "970124100cbcc2d116ce1bd70659c21ea382c295b128d916c61c166ee215824b",
+      "sample6_joints.npy": "964cc6bc0601d5ea8f706497b313c3ffbb27dac0f3eef17c48a7d2ce016eb3fb",
+      "sample4_joints.npy": "dd9b86485600702a4386fcf2e6c9760c849fe8119cfe4105edc8643e7de65e5f",
+      "sample7_joints.npy": "f9d2112131a94264cef50d54ab4a985267dd24b3e686af880c253c3b527a5a7d",
+      "ego.npy": "e70c0be8a2bdfa073edc16af931fc31d3a88a6055af043c5ba70e073f5ca79cf"
+    }
+  },
+  {
+    "condition": "nuScenes M005_1",
+    "pack": {
+      "folder": "08_correct_walk_nuscenes_M005_1",
+      "mirror": false,
+      "hero": 2,
+      "paths": [
+        11.99,
+        11.8,
+        11.97,
+        12.13,
+        11.94,
+        11.84,
+        10.96,
+        12.03
+      ],
+      "L": 153,
+      "hero_rule": "medoid of the 8 root paths (mean pointwise distance)"
+    },
+    "recorded_stops": false,
+    "generated_stops": [
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "min_synchronized_gt_root_to_car_center_m": 2.0896661281585693,
+    "closest_frame": 61,
+    "final_displacements_m": [
+      11.989374160766602,
+      11.79073429107666,
+      11.958475112915039,
+      12.127120018005371,
+      11.9175386428833,
+      11.826172828674316,
+      10.953359603881836,
+      12.024914741516113
+    ],
+    "sha256": {
+      "sample3_joints.npy": "82c2aa5a0d5a2eebe91d0cb572f268923cb48b7e0254ae4f55107c21d78392b1",
+      "sample1_joints.npy": "0848d0e8e58cf7e5ec7a5607665a611132be7738a1a05fcf2c3d9b11e61805b4",
+      "gt_joints.npy": "18ff845facb4318806b1397ecf7991e5638816dd75a3b5834d3fd2ba3779a1fc",
+      "sample2_joints.npy": "c3015b8e5c1cefd00c2326720044d274a31b18d5c1c81bdb5791b27e3752adc8",
+      "sample5_joints.npy": "75757e8e554601e4c9db22cc589dfcc83aa3d7a6f53f8e2f05c78d1154e58437",
+      "sample0_joints.npy": "712b12fb90e4bee944839053cd192bfb003ceaba465390bc1360fed2d77bfed9",
+      "sample6_joints.npy": "94dc3f1800e923601b6f0a1e106150c5f7ddabfd95e8a96b79f428fe28e14b89",
+      "sample4_joints.npy": "2fefeed3c4d415d11f799c67ab2328fb5d0b5a1f7e389bf18230f80037915bd5",
+      "sample7_joints.npy": "db4b46b54959a8511c4345c3aea015134d213435ca925450cbc9fa698c7d29da",
+      "ego.npy": "b1bfe2c02e0d3dfb32fe6d16a9cc133861dd9982e72fede8e7b058175e8bd4b7"
+    }
+  },
+  {
+    "condition": "Staged 0008_37",
+    "pack": {
+      "folder": "02_ava_M0008_37",
+      "mirror": true,
+      "hero": 7,
+      "paths": [
+        1.98,
+        1.77,
+        1.43,
+        1.09,
+        2.56,
+        1.65,
+        1.79,
+        1.19
+      ],
+      "L": 171,
+      "hero_rule": "medoid of the 8 root paths (mean pointwise distance)"
+    },
+    "recorded_stops": false,
+    "generated_stops": [
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true
+    ],
+    "min_synchronized_gt_root_to_car_center_m": 7.374499320983887,
+    "closest_frame": 167,
+    "final_displacements_m": [
+      0.9810643196105957,
+      1.2139915227890015,
+      0.8081193566322327,
+      0.8267855048179626,
+      2.2746124267578125,
+      1.0536009073257446,
+      1.7040252685546875,
+      0.9719956517219543
+    ],
+    "sha256": {
+      "sample3_joints.npy": "b45bb20f60e6db3a859fa64b8076541cfb175fdc3c90fccbfd63376023f9032b",
+      "sample1_joints.npy": "9aa56a8811fb16fcb3ac23131da6c9b34bd1c379d2a5f51cff8638e80d153c1b",
+      "gt_joints.npy": "295805414ca3c4b4a0abcf5a9ffdd7e90130364b61d6684533deb5e7da61e3a5",
+      "sample2_joints.npy": "d0a3bf8961771e312be76e5def49826acb69cf122c15bdceb9695f5e541437c3",
+      "sample5_joints.npy": "f8ae9a66ed2e7a298edb0d7ac634b5d9278193d54f59f05fdbde8117678f22b8",
+      "sample0_joints.npy": "e9cfce0e0216df22b987ed0807febc66973a52a4851313ff3fa8193fe87afbb0",
+      "sample6_joints.npy": "455abe95af360abcfcf709e0e23c2f5b53df04bc684bfab54ced6dbe774932e8",
+      "sample4_joints.npy": "0aa1bbeed8d9ef89831488ae681ea9d7a06cb481114c82176451934d5a2f714a",
+      "sample7_joints.npy": "6c79c5784363fd536b4f760d90e44a9baa31001c2a734f14d100cdaa6503a33d",
+      "ego.npy": "557b54b7825d7b56dcc77ec267ff275dc53a901d47569a102e99d2c54b4d5a60"
+    }
+  }
+]

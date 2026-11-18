@@ -14,15 +14,15 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
   (it shows the vehicle name, the university name, a QR code and the licence plate), "AVA" is now "staged" or "our
   research vehicle", and Munich is not named.
 - No biographies.
-- Abstract field in PaperCept: at most 1,200 characters, no TeX. The abstract below matches the paper (1,196).
+- Abstract field in PaperCept: at most 1,200 characters, no TeX. The abstract below matches the paper (1,193).
 - Keywords: 2-5, the first two from the RA-L list. Used: Human and Humanoid Motion Analysis and Synthesis;
   Intelligent Transportation Systems; Deep Learning Methods; Modeling and Simulating Humans; Performance
   Evaluation and Benchmarking.
-- PDF at most 5 MB (current 2.6 MB), fonts embedded, no author in the PDF metadata.
+- PDF at most 5 MB (current 4.4 MB with both of Mohan's figures), fonts embedded, no author in the PDF metadata.
 
 ## What changed against the OJ-ITS text
 
-- Related work condensed; 39 references instead of 67; author lists of four or more names print as "et al."
+- Related work condensed; 39 references instead of 67 (40 since 2026-11-18); author lists of four or more names print as "et al."
   (`ral_ctl.bib`).
 - The pose-audit, guidance and PedGen tables are folded into the text with their numbers.
 - Shorter captions, discussion and limitations; the broader-impact paragraph is dropped.
@@ -117,19 +117,35 @@ Overleaf as a new project. Build: `latexmk -pdf main.tex`.
   - 8 pages, no overfull box, 39 references, about two lines free on page 8. The abstract has 1,193
     characters.
 
+- 2026-11-18, Mohan's figures and text integrated (`CHANGES_2026-11-18.md`, against the Overleaf version of
+  that day):
+  - Fig. 4 is Mohan's CARLA figure (`figures/carla_main_20261117/`), three test conditions rendered from the
+    export of 2026-11-13, one of them a failure on a staged crossing. Fig. 5 is new, his MotionBricks
+    realization of one sample (`figures/motionbricks_20261117/`), with a paragraph in Section VI-G and one
+    reference more (40). `main.tex` reads the captions and the two paragraphs from files in those folders.
+  - His version shortens Sections VI-C to VIII and the captions of Tables IV and V by about 40 lines to pay
+    for the second figure. The shortening is kept. 25 sentences are corrected where it had made a statement
+    wrong, contradictory or unclear, and three clauses of reasoning are restored.
+  - The MotionBricks PDF did not embed its fonts. The paper uses a copy with the fonts embedded
+    (`FINAL_MOTIONBRICKS_CARLA_embedded.pdf`, images untouched).
+  - His captions and paragraphs follow the language rules now (no colon or semicolon, full sentences).
+  - 8 pages, no overfull box, 40 references, all fonts embedded, 4.4 MB. One more line fits, a second does
+    not. The abstract is unchanged (1,193 characters).
+
 ## Still to do
 
-- The paper is full, so anything added needs a cut of the same length.
-  Only changes from Section VI-C on move the end of the paper. The column breaks before the headings of VI-B
-  and VI-C absorb anything cut earlier, and Section VI-B must not gain a line.
-- Overleaf needs `refs.bib` and `ral_ctl.bib` from this folder. The reviewed copy printed "[?]" for some
-  citations, which this build does not.
-
-- Copy Mohan's qualitative figure and CARLA paragraph from the OJ-ITS Overleaf (red TODOs in Section VI-G and
-  the caption of Fig. 4). For the review version the figure must not show the vehicle's name, lab logos or
-  faces, and the staged row must not be labelled "AVA". Keep it at most the height of the current placeholder,
-  or the paper goes to 9 pages. No colons or semicolons in the caption, paragraph or figure text, American
-  spelling, and full sentences only.
+- The paper is full, so anything added needs a cut of the same length. Pages 6 to 8 are one flow and the
+  references quantize its end. One more line fits at present, a second gives 9 pages.
+- Overleaf needs `refs.bib` and `ral_ctl.bib` from this folder, both figure folders and the font-embedded
+  MotionBricks PDF. `main.tex` there must keep the three `\input` lines for Mohan's files.
+- To settle with Mohan before submission (details in `CHANGES_2026-11-18.md`):
+  - His `model_provenance.json` marks the MotionBricks material `"publication_approved": false`, and his
+    README says the figure is deliberately not in the live `main.tex`, yet it is. Confirm that it is meant to
+    be in the paper and that the MotionBricks license allows it.
+  - Which control sets the head pose in Fig. 5. The paragraph credits retiming and root projection.
+  - The footer inside Fig. 5 has two semicolons and a sequence name, and the script should embed the fonts.
+- The audit files in the two figure folders hold names and machine paths. They are not in the PDF and must
+  not go into supplementary material unchanged.
 - The dataset still has no name (Flohr's comment). It needs a neutral one that names neither the lab, the
   city nor the vehicle, and the web page goes up with the camera-ready only.
 

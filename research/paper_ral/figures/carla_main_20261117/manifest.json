@@ -1,0 +1,26 @@
+[
+  {
+    "label": "Waymo M441_65",
+    "dir": "supp/fig2_fix_20261117/16M",
+    "file": "16M",
+    "header": "\\textbf{Waymo, stopping example.} The recorded pedestrian and all eight generated samples stop.",
+    "car_min_sep": 5.0,
+    "ped_min_move": 0.65
+  },
+  {
+    "label": "nuScenes M005_1",
+    "dir": "supp/fig2_fix_20261117/08",
+    "file": "08",
+    "header": "\\textbf{nuScenes, walking example.} The recorded pedestrian and all eight generated samples keep walking.",
+    "car_min_sep": 5.0,
+    "ped_min_move": 0.35
+  },
+  {
+    "label": "Staged 0008_37",
+    "dir": "supp/fig2_fix_20261117/02M",
+    "file": "02M",
+    "header": "\\textbf{Staged, failure case.} The recorded pedestrian crosses. All eight generated samples stop before completing the crossing.",
+    "car_min_sep": 3.0,
+    "ped_min_move": 0.65
+  }
+]

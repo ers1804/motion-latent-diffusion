@@ -1,0 +1,32 @@
+{
+  "source": {
+    "frames": 229,
+    "bone_readback_max_m": 6.655105356823843e-06,
+    "body_outside_camera": [],
+    "sensor_frame_matches": true
+  },
+  "refined": {
+    "frames": 229,
+    "bone_readback_max_m": 6.277143475129809e-06,
+    "body_outside_camera": [],
+    "sensor_frame_matches": true
+  },
+  "glance": {
+    "frames": 229,
+    "bone_readback_max_m": 6.376582615893454e-06,
+    "body_outside_camera": [],
+    "sensor_frame_matches": true
+  },
+  "pause": {
+    "frames": 229,
+    "bone_readback_max_m": 6.546720530806148e-06,
+    "body_outside_camera": [],
+    "sensor_frame_matches": true
+  },
+  "wider": {
+    "frames": 229,
+    "bone_readback_max_m": 6.260421902889259e-06,
+    "body_outside_camera": [],
+    "sensor_frame_matches": true
+  }
+}

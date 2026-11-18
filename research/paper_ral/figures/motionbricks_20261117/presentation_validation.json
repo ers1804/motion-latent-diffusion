@@ -1,0 +1,32 @@
+{
+  "motion_controls_unchanged": true,
+  "motion_sha256": "96329a4779dbb4e3887b6b7b6d4d6981d31fe20c78eb2e4689c654eef6de2e22",
+  "samples_per_trace": 229,
+  "source_refinement_matched_crop_and_time": true,
+  "head_label_corrected_to_pose": true,
+  "new_camera_readback": [
+    {
+      "view": "head_renders/refined",
+      "frames": [
+        90
+      ],
+      "max_bone_residual_m": 6.037801695074614e-06
+    },
+    {
+      "view": "head_renders/glance",
+      "frames": [
+        90,
+        150
+      ],
+      "max_bone_residual_m": 6.00806124322766e-06
+    },
+    {
+      "view": "path_renders/wider",
+      "frames": [
+        70
+      ],
+      "max_bone_residual_m": 5.4131412730512455e-06
+    }
+  ],
+  "visual_review": "Every final image window, projected path and full composite inspected; page-size review follows compilation."
+}

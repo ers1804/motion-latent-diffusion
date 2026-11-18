@@ -1,0 +1,17 @@
+{
+  "host": "beast",
+  "repository": "/home/ivlab/Documents/motionbricks_demo_2026-11-15/repo",
+  "git_commit": "54fc563aeaaf819a753d72cc9fdc6713989cdd43",
+  "model": "motionbricks/assets/onnx/soma/mmm_v6_soma_fp32.onnx",
+  "model_sha256": "856419dc72aeb14e591eebf4dd0ea05734a2506ddb00bcd39dd6dac2ad60f4fb",
+  "skeleton": "motionbricks/assets/human/soma_base_skel_minimal_no_root.usd",
+  "skeleton_sha256": "4ab93d78a0f1c06d3bcbedee5ceebb5d9d5b002fd0a88638e9399ed80b61871d",
+  "repository_state": "Existing modified skeleton and idle BVH were preserved. The pilot uses the existing skeleton, not a pristine checkout assumption.",
+  "inference_only": true,
+  "source": "08_correct_walk_nuscenes_M005_1/sample2",
+  "source_fps": 20,
+  "runtime_fps": 30,
+  "duration_control": "Fixed allowed token count for each segment, followed by explicitly saved quaternion/translation retiming to source timestamps.",
+  "root_projection_after_generation": false,
+  "publication_approved": false
+}

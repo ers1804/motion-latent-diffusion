@@ -1,0 +1,408 @@
+{
+  "source_export": "/home/mohan/nas_drive/methods/diffusion_gen/qualitatives/egoped_scene_test_2026-11-13_frame_fixed",
+  "checks": [
+    {
+      "condition": "Waymo M441_65",
+      "mirror_all_inputs": true,
+      "hero": 7,
+      "source_sha256": {
+        "ego.npy": "4146bf6ae273a2acf9698d56fd79a2d8689b88b493f57ec2b101b0d319bf4db6",
+        "gt_joints.npy": "1387fa02d37e6213051af9ec95c779c9bdb84159769d67a7052bf9f324439d57",
+        "sample0_joints.npy": "3b1a2ac7609adb4ca5107bc9529e8bcef8c1096857bf6d24d6469a31301418cc",
+        "sample1_joints.npy": "3a9f946184516ea03fe72b146c5d65ce68f692c6da8e8672e67061b68c58848f",
+        "sample2_joints.npy": "a9b67f9e96155bfa1753e1652044d99787b47a6b8484263037670e9c5fd900dd",
+        "sample3_joints.npy": "346b6a1f3875cfa0489922fcfbd9d94a11f29f5e30268ce945ea27dcf8b58242",
+        "sample4_joints.npy": "c39ca66d1ee034aad86ae6f8d44385f594ac67777fdb499efe5f3be4b0ed91f5",
+        "sample5_joints.npy": "0de0430e76dd29a18f00be022c6919d2b0324833ce35d79e7c4599de041e20b6",
+        "sample6_joints.npy": "d33d25726ad81aa201170b465c85dabd7e231be09be982615b2940ad6b3a8cb2",
+        "sample7_joints.npy": "fa4fc4e038e2e4df63fe6969736ce9b60fd62f003791c00606988ebdf68457ec"
+      },
+      "views": {
+        "ego": {
+          "exposures": {
+            "ped": [
+              {
+                "seconds": 8.7,
+                "pixel_bounds": [
+                  1726,
+                  265,
+                  1804,
+                  565
+                ]
+              }
+            ],
+            "car": []
+          },
+          "camera": {
+            "loc": [
+              -41.91716384887695,
+              -23.28822898864746,
+              1.2300000190734863
+            ],
+            "rot": [
+              -6.0,
+              -87.91466522216797,
+              0.0
+            ],
+            "fov": 68.0,
+            "w": 1920,
+            "h": 1080
+          },
+          "anchor_frame": 124,
+          "local_to_bev": null
+        },
+        "elevated": {
+          "exposures": {
+            "ped": [
+              {
+                "seconds": 6.0,
+                "pixel_bounds": [
+                  745,
+                  357,
+                  788,
+                  539
+                ]
+              },
+              {
+                "seconds": 8.7,
+                "pixel_bounds": [
+                  813,
+                  357,
+                  890,
+                  533
+                ]
+              }
+            ],
+            "car": [
+              {
+                "seconds": 3.0,
+                "pixel_bounds": [
+                  1743,
+                  179,
+                  1873,
+                  272
+                ]
+              },
+              {
+                "seconds": 6.0,
+                "pixel_bounds": [
+                  1531,
+                  277,
+                  1751,
+                  431
+                ]
+              },
+              {
+                "seconds": 8.7,
+                "pixel_bounds": [
+                  1097,
+                  444,
+                  1495,
+                  733
+                ]
+              }
+            ]
+          },
+          "camera": {
+            "loc": [
+              -46.39634704589844,
+              -44.48786163330078,
+              5.5
+            ],
+            "rot": [
+              -18.782804489135742,
+              56.61193084716797,
+              0.0
+            ],
+            "fov": 60.0,
+            "w": 1920,
+            "h": 1080
+          },
+          "anchor_frame": 0,
+          "local_to_bev": [
+            [
+              0.07431406901626553,
+              0.9972348866471958
+            ],
+            [
+              0.9972348866471958,
+              -0.07431406901626551
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "condition": "nuScenes M005_1",
+      "mirror_all_inputs": false,
+      "hero": 2,
+      "source_sha256": {
+        "ego.npy": "b1bfe2c02e0d3dfb32fe6d16a9cc133861dd9982e72fede8e7b058175e8bd4b7",
+        "gt_joints.npy": "18ff845facb4318806b1397ecf7991e5638816dd75a3b5834d3fd2ba3779a1fc",
+        "sample0_joints.npy": "712b12fb90e4bee944839053cd192bfb003ceaba465390bc1360fed2d77bfed9",
+        "sample1_joints.npy": "0848d0e8e58cf7e5ec7a5607665a611132be7738a1a05fcf2c3d9b11e61805b4",
+        "sample2_joints.npy": "c3015b8e5c1cefd00c2326720044d274a31b18d5c1c81bdb5791b27e3752adc8",
+        "sample3_joints.npy": "82c2aa5a0d5a2eebe91d0cb572f268923cb48b7e0254ae4f55107c21d78392b1",
+        "sample4_joints.npy": "2fefeed3c4d415d11f799c67ab2328fb5d0b5a1f7e389bf18230f80037915bd5",
+        "sample5_joints.npy": "75757e8e554601e4c9db22cc589dfcc83aa3d7a6f53f8e2f05c78d1154e58437",
+        "sample6_joints.npy": "94dc3f1800e923601b6f0a1e106150c5f7ddabfd95e8a96b79f428fe28e14b89",
+        "sample7_joints.npy": "db4b46b54959a8511c4345c3aea015134d213435ca925450cbc9fa698c7d29da"
+      },
+      "views": {
+        "ego": {
+          "exposures": {
+            "ped": [
+              {
+                "seconds": 0.0,
+                "pixel_bounds": [
+                  1503,
+                  164,
+                  1766,
+                  812
+                ]
+              },
+              {
+                "seconds": 3.0,
+                "pixel_bounds": [
+                  1255,
+                  286,
+                  1370,
+                  589
+                ]
+              },
+              {
+                "seconds": 7.6,
+                "pixel_bounds": [
+                  1145,
+                  335,
+                  1196,
+                  498
+                ]
+              }
+            ],
+            "car": []
+          },
+          "camera": {
+            "loc": [
+              -41.75307846069336,
+              6.594237804412842,
+              1.2300000190734863
+            ],
+            "rot": [
+              -6.0,
+              -90.25872039794922,
+              0.0
+            ],
+            "fov": 68.0,
+            "w": 1920,
+            "h": 1080
+          },
+          "anchor_frame": 36,
+          "local_to_bev": null
+        },
+        "elevated": {
+          "exposures": {
+            "ped": [
+              {
+                "seconds": 0.0,
+                "pixel_bounds": [
+                  1196,
+                  544,
+                  1273,
+                  758
+                ]
+              },
+              {
+                "seconds": 3.0,
+                "pixel_bounds": [
+                  1300,
+                  366,
+                  1368,
+                  546
+                ]
+              },
+              {
+                "seconds": 7.6,
+                "pixel_bounds": [
+                  1388,
+                  194,
+                  1438,
+                  332
+                ]
+              }
+            ],
+            "car": [
+              {
+                "seconds": 3.0,
+                "pixel_bounds": [
+                  969,
+                  385,
+                  1236,
+                  603
+                ]
+              },
+              {
+                "seconds": 6.0,
+                "pixel_bounds": [
+                  1273,
+                  50,
+                  1398,
+                  148
+                ]
+              }
+            ]
+          },
+          "camera": {
+            "loc": [
+              -38.0,
+              17.0,
+              8.0
+            ],
+            "rot": [
+              -23.0,
+              -106.0,
+              0.0
+            ],
+            "fov": 50.0,
+            "w": 1920,
+            "h": 1080
+          },
+          "anchor_frame": 0,
+          "local_to_bev": [
+            [
+              -0.9668611855789808,
+              0.25530265925134316
+            ],
+            [
+              0.25530265925134316,
+              0.9668611855789808
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "condition": "Staged 0008_37",
+      "mirror_all_inputs": true,
+      "hero": 7,
+      "source_sha256": {
+        "ego.npy": "4a2396aae7549f861a6506cba46e01145137bfe42e02053d8f842a86dea4fb17",
+        "gt_joints.npy": "c2963c7060cb0be958fe53a298cfbaf50a3b7ab63999f545eb752fd211864460",
+        "sample0_joints.npy": "93a22060df3356708e7a284899570d95369caec4b64bf7138d2a40b11581622e",
+        "sample1_joints.npy": "66b20f46be21adf9613e2bd91946c71b0d8c688a4501ad71da7ba8ff45275ed4",
+        "sample2_joints.npy": "38c92b82bdd7456154ddb8fb76a4d94b83da1bf2f4c9cd2d1d465f5b5c5eebe5",
+        "sample3_joints.npy": "f26cd06e09e07da014e1464b5432ed278ba3ebc6c3bb9f4417dbeab1f706b9b7",
+        "sample4_joints.npy": "d729aa2ba7c6d9ed1b1cb41477ccbe01baefaf127f8cfd093bb03224294fc3b6",
+        "sample5_joints.npy": "e10cf7c267ccc786f09eea03924d960ff0acf91fbe664bdb495715c89e6ed17a",
+        "sample6_joints.npy": "35e8aa6e2066488abf054876cdee232cfbd9745afb5acd4c88de07035e1f79e5",
+        "sample7_joints.npy": "02f3ce48461a1d0652c152372a6895e23375ad1d14694853187c99f613726bb6"
+      },
+      "views": {
+        "ego": {
+          "exposures": {
+            "ped": [
+              {
+                "seconds": 3.0,
+                "pixel_bounds": [
+                  399,
+                  305,
+                  468,
+                  559
+                ]
+              },
+              {
+                "seconds": 8.5,
+                "pixel_bounds": [
+                  473,
+                  311,
+                  549,
+                  543
+                ]
+              }
+            ],
+            "car": []
+          },
+          "camera": {
+            "loc": [
+              -41.606754302978516,
+              -38.127891540527344,
+              1.2300000190734863
+            ],
+            "rot": [
+              -6.0,
+              -89.7548828125,
+              0.0
+            ],
+            "fov": 68.0,
+            "w": 1920,
+            "h": 1080
+          },
+          "anchor_frame": 60,
+          "local_to_bev": null
+        },
+        "elevated": {
+          "exposures": {
+            "ped": [
+              {
+                "seconds": 3.0,
+                "pixel_bounds": [
+                  514,
+                  652,
+                  605,
+                  928
+                ]
+              },
+              {
+                "seconds": 8.5,
+                "pixel_bounds": [
+                  388,
+                  635,
+                  475,
+                  884
+                ]
+              }
+            ],
+            "car": [
+              {
+                "seconds": 8.5,
+                "pixel_bounds": [
+                  1109,
+                  448,
+                  1708,
+                  686
+                ]
+              }
+            ]
+          },
+          "camera": {
+            "loc": [
+              -53.0,
+              -46.0,
+              6.0
+            ],
+            "rot": [
+              -24.0,
+              0.0,
+              0.0
+            ],
+            "fov": 65.0,
+            "w": 1920,
+            "h": 1080
+          },
+          "anchor_frame": 0,
+          "local_to_bev": [
+            [
+              -0.9783171905085675,
+              0.20711222744063953
+            ],
+            [
+              0.20711222744063953,
+              0.9783171905085675
+            ]
+          ]
+        }
+      }
+    }
+  ],
+  "result": "passed"
+}

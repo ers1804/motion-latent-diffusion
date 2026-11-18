@@ -1,0 +1,134 @@
+[
+  {
+    "label": "Waymo M441_65",
+    "hero": 7,
+    "pack": {
+      "folder": "16_correct_stop_waymo_M441_65",
+      "mirror": true,
+      "hero": 7,
+      "paths": [
+        2.53,
+        1.1,
+        0.94,
+        0.7,
+        1.43,
+        1.06,
+        1.5,
+        1.62
+      ],
+      "L": 175,
+      "hero_rule": "medoid of the 8 root paths (mean pointwise distance)"
+    },
+    "elevated_camera_yaw": 56.61193084716797,
+    "local_to_bev": [
+      [
+        0.07431406901626553,
+        0.9972348866471958
+      ],
+      [
+        0.9972348866471958,
+        -0.07431406901626551
+      ]
+    ],
+    "instants_s": [
+      0,
+      3,
+      6,
+      8.7
+    ],
+    "frame_indices": [
+      0,
+      60,
+      120,
+      174
+    ]
+  },
+  {
+    "label": "nuScenes M005_1",
+    "hero": 2,
+    "pack": {
+      "folder": "08_correct_walk_nuscenes_M005_1",
+      "mirror": false,
+      "hero": 2,
+      "paths": [
+        11.99,
+        11.8,
+        11.97,
+        12.13,
+        11.94,
+        11.84,
+        10.96,
+        12.03
+      ],
+      "L": 153,
+      "hero_rule": "medoid of the 8 root paths (mean pointwise distance)"
+    },
+    "elevated_camera_yaw": -106.0,
+    "local_to_bev": [
+      [
+        -0.9668611855789808,
+        0.25530265925134316
+      ],
+      [
+        0.25530265925134316,
+        0.9668611855789808
+      ]
+    ],
+    "instants_s": [
+      0,
+      3,
+      6,
+      7.6
+    ],
+    "frame_indices": [
+      0,
+      60,
+      120,
+      152
+    ]
+  },
+  {
+    "label": "Staged 0008_37",
+    "hero": 7,
+    "pack": {
+      "folder": "02_ava_M0008_37",
+      "mirror": true,
+      "hero": 7,
+      "paths": [
+        1.98,
+        1.77,
+        1.43,
+        1.09,
+        2.56,
+        1.65,
+        1.79,
+        1.19
+      ],
+      "L": 171,
+      "hero_rule": "medoid of the 8 root paths (mean pointwise distance)"
+    },
+    "elevated_camera_yaw": 0.0,
+    "local_to_bev": [
+      [
+        -0.9783171905085675,
+        0.20711222744063953
+      ],
+      [
+        0.20711222744063953,
+        0.9783171905085675
+      ]
+    ],
+    "instants_s": [
+      0,
+      3,
+      6,
+      8.5
+    ],
+    "frame_indices": [
+      0,
+      60,
+      120,
+      170
+    ]
+  }
+]

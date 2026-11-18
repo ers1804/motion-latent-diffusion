@@ -1,0 +1,71 @@
+{
+  "scope": "Engineering verification of one source clip and its authored realizations; not a benchmark or a motion-quality ground truth.",
+  "fps": 30,
+  "frames_each": 229,
+  "results": {
+    "source": {
+      "root_deviation_from_source_max_m": 0.0,
+      "closest_vehicle_center_m": 2.1845542552475514,
+      "root_step_max_m": 0.05543342593471712,
+      "largest_bone_rotation_step_deg": 5.808871893622258,
+      "largest_rotation_step_frame": 162,
+      "finite": true
+    },
+    "refined": {
+      "root_deviation_from_source_max_m": 0.0,
+      "closest_vehicle_center_m": 2.1845542552475514,
+      "root_step_max_m": 0.05543342593471712,
+      "largest_bone_rotation_step_deg": 22.26657250614602,
+      "largest_rotation_step_frame": 160,
+      "finite": true,
+      "pre_projection_path_mean_m": 0.029956553131341934,
+      "pre_projection_path_max_m": 0.1519847810268402
+    },
+    "glance": {
+      "root_deviation_from_source_max_m": 0.0,
+      "closest_vehicle_center_m": 2.1845542552475514,
+      "root_step_max_m": 0.05543342593471712,
+      "largest_bone_rotation_step_deg": 22.25596962587726,
+      "largest_rotation_step_frame": 190,
+      "finite": true,
+      "pre_projection_path_mean_m": 0.03045683167874813,
+      "pre_projection_path_max_m": 0.15384310483932495
+    },
+    "pause": {
+      "root_deviation_from_source_max_m": 2.4325611454375395,
+      "closest_vehicle_center_m": 2.191045575627133,
+      "root_step_max_m": 0.05543342593471712,
+      "largest_bone_rotation_step_deg": 20.797822852791892,
+      "largest_rotation_step_frame": 190,
+      "finite": true,
+      "zero_speed_hold_s": [
+        3.0,
+        4.0
+      ],
+      "hold_root_drift_m": 0.0,
+      "pre_projection_path_mean_m": 0.027785906568169594,
+      "pre_projection_path_max_m": 0.16101260483264923
+    },
+    "wider": {
+      "root_deviation_from_source_max_m": 0.40000002086162567,
+      "closest_vehicle_center_m": 2.5844466046303975,
+      "root_step_max_m": 0.05776923320509748,
+      "largest_bone_rotation_step_deg": 20.833464403205202,
+      "largest_rotation_step_frame": 99,
+      "finite": true,
+      "pre_projection_path_mean_m": 0.031757477670907974,
+      "pre_projection_path_max_m": 0.1522578001022339
+    }
+  },
+  "head_edit_max_rotation_deg": 33.61588849126753,
+  "hashes": {
+    "generated.npz": "b620dc6e4a7da6db7d02555dc3a25f51c6307c33b5983184415618a3af36df80",
+    "contacts.npz": "eebfb2d4af95155da3ae7ac357e640214371a3e835881a29e9480e704101a256",
+    "native.npz": "e18bf2c6e0265cffac0aced252ac04e27b6e4081a56ed25114bbb0a710a8ff6d",
+    "targets.npz": "d81f5fe4c060d68bfdd8c584e2fd356e00e5fbc449b729b7ddbdfa73dc836099",
+    "carla_final.npz": "96329a4779dbb4e3887b6b7b6d4d6981d31fe20c78eb2e4689c654eef6de2e22",
+    "carla_before_contact.npz": "b9869fe853994c075533f0616ed1a83faf89907927360552b74219e6e34946fc",
+    "retarget_final.py": "ff3b5180aa83b6411cc9ea2114bd69928955069c4876a70146f59805fcae8fa5",
+    "render_final.py": "b1b2fa77754f9f12c4a00daabb108519569ad05ec41d09170ff851ff2fb75921"
+  }
+}
