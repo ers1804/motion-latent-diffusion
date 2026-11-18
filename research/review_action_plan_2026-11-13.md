@@ -652,6 +652,82 @@ dump of a cell is missing instead of comparing on fewer seeds, and the grid of i
   number next to their own, and without them its minADE is 1.06 instead of 1.05. The nearest vehicle path is a
   median 1.8 m away.
 
+### Test pass at the reported setting (1,182 conditions, 91 scenes, `research/data/energy_retrieval_scene_test.txt`)
+
+Run once on 2026-11-18, after commit dc1782f had fixed the protocol. Retrieval bank 9,038 training rows, the
+nearest vehicle path is a median 2.3 m away and the fifth 3.5 m.
+
+| Model | ADE | minADE | Spread | Energy | ECS | Brier (corr.) |
+|---|---|---|---|---|---|---|
+| EgoPed, guidance 15 (reported) | 2.434 | 1.649 | 1.334 | 1.767 | 0.308 | 0.180 |
+| Full-seq, guidance 15 (reported) | 2.693 | 1.537 | 2.039 | 1.673 | 0.270 | 0.162 |
+| EgoPed + IA | 2.930 | 2.038 | 1.459 | 2.200 | 0.214 | 0.186 |
+| Full-seq + IA | 3.006 | 2.071 | 1.578 | 2.217 | 0.101 | 0.202 |
+| Trained prior | 3.028 | 1.305 | 3.031 | 1.513 | 0.023 | 0.177 |
+| Trained prior + IA | 3.003 | 1.523 | 2.878 | 1.564 | 0.008 | 0.205 |
+| Regressor | 1.969 | 1.969 | 0 | 1.969 | 0.079 | 0.224 |
+| Retrieval, 5 nearest vehicle paths | 2.772 | 1.246 | 2.644 | 1.450 | 0.161 | 0.153 |
+
+Differences below are written so that a positive value favors the first model. A star marks the rule.
+
+- **The prior has the better energy score than EgoPed, under the rule** (-0.254 [-0.396, -0.109], seed pairs
+  -0.348 to -0.194, star). The same holds against Full-seq (-0.160 [-0.303, -0.014], star) and, by a wider
+  margin, for both models with IA against their prior (-0.636 and -0.653, both star). On validation the sign
+  was the same and the interval included zero. At guidance 15 EgoPed's five samples lie 1.3 m apart and miss
+  the recording by 2.4 m, so they are too close together for how wrong they are. The prior's spread equals its
+  error (3.0 m).
+- EgoPed stays ahead of the prior on what the paper claims: ADE (+0.594, star) and ECS (+0.285, star). It is
+  behind on minADE (-0.344, star). The paper reports that in Table II and says that minADE alone is no test of
+  conditioning. The energy score is the proper score that combines the two readings the paper asks for (mean
+  ADE for concentration, best-of-five for coverage), and at the reported guidance it sides with the prior.
+- **Retrieval against EgoPed is split, each side under the rule.** EgoPed is closer on average (ADE +0.338,
+  star) and couples the stop decision more strongly (ECS 0.308 against 0.161, +0.147, star). Retrieval has the
+  better best-of-five (minADE -0.403, star) and the better energy score (-0.317 [-0.428, -0.208], star). The
+  corrected Brier score is level (-0.027 [-0.055, +0.002]).
+- **Retrieval against the prior.** Better ADE (+0.256, star) and ECS (0.161 against 0.023, +0.138, star), level
+  on minADE, corrected Brier and energy score (+0.062 [-0.045, +0.165]). On validation retrieval had beaten the
+  prior on every metric, so the full sweep does not replicate, the ADE and ECS gains do.
+- The regressor has the best ADE (1.97) and the worst energy score (1.97). EgoPed (+0.202, star), the prior
+  (+0.456, star) and retrieval (+0.519, star) all beat it on the energy score.
+- EgoPed against Full-seq on the energy score: -0.094 [-0.159, -0.034], seed pairs -0.247 to +0.012, so not
+  under the rule.
+
+**Reading.** A search over vehicle paths alone, with no model, moves ADE and ECS past the vehicle-blind prior.
+That is evidence from the data that the vehicle path carries information about the pedestrian's path. EgoPed
+uses that information more strongly than the search does (ADE, ECS). As a set of five outcomes, EgoPed at
+guidance 15 is worse than both the search and the prior. Guidance 15 was selected by validation FID, and the
+energy score on validation falls monotonically as the guidance falls, so the secondary setting of item 4
+decides whether this is a property of the guidance or of the model.
+
+### Secondary setting, selected on validation (2026-11-18, `research/data/resplit_selection_energy.json`)
+
+All 36 validation dumps exist (jobs 1379351 to 1379368 for the scales 1 to 3). `energy_score.py --select`
+chooses **guidance 1 for both models**, in every seed. Guidance 1 is sampling from the conditional model
+without classifier-free guidance, so it is the natural lower end of the grid and not an arbitrary edge.
+
+Validation, seed means, EgoPed (Full-seq in brackets):
+
+| Guidance | ADE | minADE | Spread | Energy | ECS | Brier (corr.) |
+|---|---|---|---|---|---|---|
+| 1 | 2.409 (2.585) | 1.034 (1.102) | 2.470 (2.690) | 1.174 (1.240) | 0.248 (0.195) | 0.127 (0.133) |
+| 2 | 2.276 (2.463) | 1.075 (1.137) | 2.131 (2.409) | 1.211 (1.259) | 0.326 (0.252) | 0.126 (0.135) |
+| 3 | 2.245 (2.440) | 1.135 (1.171) | 1.958 (2.270) | 1.266 (1.305) | 0.351 (0.277) | 0.130 (0.140) |
+| 5 | 2.237 (2.455) | 1.223 (1.229) | 1.763 (2.157) | 1.356 (1.377) | 0.365 (0.296) | 0.138 (0.145) |
+| 10 | 2.249 (2.550) | 1.358 (1.333) | 1.511 (2.089) | 1.493 (1.505) | 0.374 (0.297) | 0.148 (0.153) |
+| 15 (reported) | 2.270 (2.639) | 1.431 (1.382) | 1.399 (2.115) | 1.570 (1.582) | 0.363 (0.298) | 0.156 (0.157) |
+
+- The energy score, minADE and the corrected Brier score improve all the way down to guidance 1. The spread
+  of EgoPed's samples grows from 1.4 m to 2.5 m.
+- **Guidance does change coupling below 5.** ECS is 0.25 at guidance 1, 0.33 at 2 and 0.36 from 5 on. The
+  paper's sentence that guidance trades coverage for FID "without changing coupling" rests on the scales 5 to
+  15 and holds only there.
+- At guidance 1 on validation EgoPed beats the prior on every metric under the rule (ADE +0.571, minADE
+  +0.167, ECS +0.218, corrected Brier +0.041, energy +0.282). Against retrieval it is better on ADE under the
+  rule (+0.116) and level on the rest (energy +0.054 [-0.008, +0.113]). Against its own guidance 15 it is
+  better on energy, minADE and corrected Brier and worse on ECS (0.25 against 0.36), all under the rule.
+- Guidance 2 or 3 would keep most of the coupling at nearly the same energy score. The rule of item 4 selects
+  1, so 1 is what is scored on test. No other scale is scored on test.
+
 ## Next steps, in order
 
 1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.
