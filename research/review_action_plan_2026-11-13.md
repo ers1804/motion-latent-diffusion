@@ -577,6 +577,81 @@ contrasts, so it is a hint that the training distribution is the lever and no mo
   1,000 needs about 2,000 scenes. Worth asking the group to label drives that the parser preselects for
   pedestrians near the path, and to fix the 90 degree heading in the converter before more is exported.
 
+## Energy score and retrieval baseline, protocol fixed 2026-11-18 before any test number
+
+Mohan proposed four experiments on 2026-11-18. Erik's decision the same day: do the retrieval baseline and the
+energy score, do not rescore the 60 interactive pedestrians of the everyday drives with 20 samples, and keep the
+transfer to an indoor robot dataset with motion capture for after the submission.
+
+**Why not the 20-sample test on the everyday drives.** That set was scored once under the protocol frozen in
+commit 26f7e4e, and the paper says so. Its result is known (EgoPed does not beat the prior on the 60). A new
+outcome ("does the set of 20 contain the recorded behavior") would be chosen after that result, on 11 recorded
+stops, and it rewards the widest sampler, which is the prior. The everyday drives are not scored again, neither
+with the energy score nor with retrieval.
+
+### What is fixed
+
+1. **Energy score** (`research/src/energy_score.py`). Per condition, with d the mean root distance of two paths
+   over the true length, ES = mean_k d(x_k, y) - 1/2 mean_{k != l} d(x_k, x_l) over the K=5 samples of the
+   existing dumps. Lower is better. A deterministic model has ES = ADE. Reported as the mean over conditions,
+   seeds averaged.
+2. **Retrieval baseline** (`research/src/retrieval_baseline.py`). For a held-out condition, the 5 training
+   sequences whose vehicle path (as the models receive it, in metres) has the smallest mean distance to the
+   condition's over the condition's length, among training sequences at least that long. Their recorded root
+   paths, cut to that length, are the 5 samples. Bank: the training partition, one fixed window per sequence,
+   9,038 rows. Nothing is tuned, K=5 is the K of the evaluation.
+3. **Reported setting.** Checkpoints and guidance as selected by validation FID stay the setting of every
+   table. The energy score is computed there first.
+4. **Secondary setting.** For EgoPed and Full-seq, the two models whose guidance selected by FID is 15: the
+   guidance in {1, 2, 3, 5, 10, 15} with the lowest validation energy score, seeds averaged, at the same
+   checkpoints. `energy_score.py --select` computes it and refuses to run until all 36 validation dumps exist,
+   so the choice cannot depend on which jobs happened to finish. On the first sweep {5, 10, 15} the score falls
+   monotonically down to 5 for both models, so 5 would only be the edge of the grid. The scales 1 to 3 are a
+   validation sweep added for that reason (18 short jobs). The setting is named for what it is in the paper, a
+   setting chosen after the first test pass. The models with IA are left at their reported guidance (EgoPed+IA
+   is at 5 already, and Full-seq+IA is flat across 5, 10 and 15).
+5. **Rule.** As everywhere: the 95% scene-bootstrap interval excludes zero and all seed pairs agree.
+6. **Contrasts that are read** (all are printed): EgoPed against the prior on the energy score at both
+   settings, EgoPed against retrieval on ADE, minADE, ECS, corrected Brier and energy score at both settings,
+   retrieval against the prior, and each against the regressor.
+7. **Test passes this allows, each once.** The energy score from the test dumps that exist. Retrieval on test.
+   Generation at the secondary guidance for the six runs of EgoPed and Full-seq, with `slurm/resplit/eval.sh`
+   as for the first pass, once item 4 has fixed the value. The report (`energy_score.py --split scene_test`)
+   is deterministic and is printed a second time when those six dumps exist. The numbers of the first printing
+   do not change then.
+8. **Reporting.** Whatever the test report shows goes into the paper or into this file, including a result
+   against EgoPed.
+
+The code was read by an independent reviewer before this commit. No number changed. The report now stops if a
+dump of a cell is missing instead of comparing on fewer seeds, and the grid of item 4 was widened.
+
+### What validation showed (1,194 conditions, 107 scenes, `research/data/energy_retrieval_scene_val.txt`)
+
+| Model | ADE | minADE | Spread | Energy | ECS | Brier (corr.) |
+|---|---|---|---|---|---|---|
+| EgoPed, guidance 15 (reported) | 2.270 | 1.431 | 1.399 | 1.570 | 0.363 | 0.156 |
+| EgoPed, guidance 5 | 2.237 | 1.223 | 1.763 | 1.356 | 0.365 | 0.138 |
+| Full-seq, guidance 15 (reported) | 2.639 | 1.382 | 2.115 | 1.582 | 0.298 | 0.157 |
+| Full-seq, guidance 5 | 2.455 | 1.229 | 2.157 | 1.377 | 0.296 | 0.145 |
+| Trained prior | 2.980 | 1.201 | 3.047 | 1.456 | 0.031 | 0.168 |
+| Regressor | 1.785 | 1.785 | 0 | 1.785 | 0.054 | 0.223 |
+| Retrieval, 5 nearest vehicle paths | 2.525 | 1.049 | 2.592 | 1.229 | 0.236 | 0.133 |
+
+- At the reported guidance EgoPed's samples lie 1.4 m apart and miss the recording by 2.3 m. The prior's spread
+  equals its error. The prior has the better energy score in every seed pair, the interval includes zero
+  (-0.114 [-0.256, +0.027]).
+- At guidance 5 EgoPed has the better energy score than the prior in every seed pair, the interval includes
+  zero as well (+0.100 [-0.030, +0.232]). Against its own guidance 15 it is better under the rule on energy
+  score, minADE and corrected Brier, and level on ADE and ECS.
+- The regressor has the best ADE and the worst energy score.
+- Retrieval beats the prior on every metric under the rule. Against EgoPed it loses on ADE (by 0.26 m) and on
+  ECS (0.24 against 0.36) under the rule and wins on minADE and energy score under the rule, at both guidance
+  values. So a search of the training data forecasts the set of outcomes better, and EgoPed couples the stop
+  decision more strongly and is closer on average.
+- Retrieval is not an artifact of neighboring scenes. 19 of 1,194 conditions have a neighbor from a scene
+  number next to their own, and without them its minADE is 1.06 instead of 1.05. The nearest vehicle path is a
+  median 1.8 m away.
+
 ## Next steps, in order
 
 1. Done. Regressor (C2), braking (C3) and body statistics (C4) are scored on test and in the paper.

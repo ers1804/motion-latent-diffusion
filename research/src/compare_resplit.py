@@ -76,29 +76,35 @@ def metrics(m, idx):
                 ECS=p[s == 1].mean() - p[s == 0].mean(), Brier=brier, BrierC=brier - noise)
 
 
-def cell_metrics(runs, idx):
-    rows = [metrics(r, idx) for r in runs]
-    return {k: float(np.mean([r[k] for r in rows])) for k in SIGN}
+def cell_metrics(runs, idx, metrics_fn=None, sign=None):
+    metrics_fn, sign = metrics_fn or metrics, sign or SIGN
+    rows = [metrics_fn(r, idx) for r in runs]
+    return {k: float(np.mean([r[k] for r in rows])) for k in sign}
 
 
-def compare(a, b, clusters, n=2000, seed=0):
-    """{metric: (delta, CI low, CI high, p, lowest seed-pair delta, highest seed-pair delta)}."""
+def compare(a, b, clusters, n=2000, seed=0, metrics_fn=None, sign=None):
+    """{metric: (delta, CI low, CI high, p, lowest seed-pair delta, highest seed-pair delta)}.
+
+    metrics_fn and sign let a caller add metrics (energy_score.py) without changing the draws: the scenes of a
+    bootstrap draw depend on the seed only, so the metrics above keep their intervals.
+    """
+    metrics_fn, sign = metrics_fn or metrics, sign or SIGN
     rng = np.random.default_rng(seed)
     keys = sorted(clusters)
     every = np.concatenate([clusters[k] for k in keys])
-    obs_a, obs_b = cell_metrics(a, every), cell_metrics(b, every)
-    pairs = [(metrics(x, every), metrics(y, every)) for x in a for y in b]
-    boot = {k: [] for k in SIGN}
+    obs_a, obs_b = cell_metrics(a, every, metrics_fn, sign), cell_metrics(b, every, metrics_fn, sign)
+    pairs = [(metrics_fn(x, every), metrics_fn(y, every)) for x in a for y in b]
+    boot = {k: [] for k in sign}
     for _ in range(n):
         idx = np.concatenate([clusters[keys[i]] for i in rng.integers(0, len(keys), len(keys))])
-        ma, mb = cell_metrics(a, idx), cell_metrics(b, idx)
-        for k in SIGN:
-            boot[k].append(SIGN[k] * (ma[k] - mb[k]))
+        ma, mb = cell_metrics(a, idx, metrics_fn, sign), cell_metrics(b, idx, metrics_fn, sign)
+        for k in sign:
+            boot[k].append(sign[k] * (ma[k] - mb[k]))
     out = {}
-    for k in SIGN:
+    for k in sign:
         v = np.array(boot[k])
-        per_pair = [SIGN[k] * (x[k] - y[k]) for x, y in pairs]
-        out[k] = (SIGN[k] * (obs_a[k] - obs_b[k]), *np.percentile(v, [2.5, 97.5]),
+        per_pair = [sign[k] * (x[k] - y[k]) for x, y in pairs]
+        out[k] = (sign[k] * (obs_a[k] - obs_b[k]), *np.percentile(v, [2.5, 97.5]),
                   min(1.0, 2 * min((v <= 0).mean(), (v >= 0).mean())), min(per_pair), max(per_pair))
     return out
 

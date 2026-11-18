@@ -237,6 +237,7 @@ graphify-out/
 # Per-condition evaluation dumps of the scene-split runs (1.4 GB). Kept on the NAS:
 # /home/erik/NAS/methods/diffusion_gen/evaluation/diffusion/quantitative/scene_split_v1_dumps/
 research/data/ade_fde_rs[0-9]_*.npz
+research/data/ade_fde_retrieval_*.npz
 research/data/teaser_rs1_pooled_qual_scene_test.npz
 
 # Munich external test set: paths derived from the group's labels. The manifest with their hashes is tracked.
