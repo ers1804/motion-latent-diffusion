@@ -766,13 +766,25 @@ data shows (ECS 0.31 against 0.16) exists only with guidance, and there the samp
 paper's sentence that guidance trades coverage for FID "without changing coupling" is true for the scales 5
 to 15 and false below 5.
 
-### Not in the paper yet, measured cost (2026-11-18)
+### In the paper since 2026-11-24
 
-Nothing of this section is in `main.tex`. The paper has 25 pt to the 8-page limit, one spare line in practice. Measured in a
-scratch build: the definition with one reference (Gneiting and Raftery 2007), a retrieval paragraph in VI-A
-and the guidance paragraph of VI-B rewritten cost 240 pt, which is 215 pt (18 lines) over. Without the
-retrieval paragraph it is 107 pt (9 lines) over. Fig. 5 with its paragraph occupies 484 pt. With Fig. 5 out and
-all three additions in, 321 pt (27 lines) are free. Erik decides what is cut.
+Erik chose the text-only cut on 2026-11-24. `main.tex` now has the definition of the energy score with its
+reference (Gneiting and Raftery 2007, checked against the DOI) and one sentence on when the score, the
+retrieval baseline and the second guidance scale were added (Section V), a retrieval paragraph (VI-A), the
+guidance paragraph rewritten (VI-B) and one sentence in the Metrics limitation. They are paid for by four
+trims in related work that drop seven references (34 remain). No figure, table or result was cut. The build
+has 8 pages with 43 pt (three lines) to the limit. Fig. 4 and Fig. 5 now share page 7. Details and the port
+to Overleaf are in `research/paper_ral/CHANGES_2026-11-24.md`.
+
+The guidance paragraph no longer says that guidance leaves coupling unchanged. It says that guidance buys
+coupling only up to 5 (validation ECS 0.25 at 1, 0.36 to 0.37 from 5 to 15), that FID still falls from 5 to
+15 while minADE rises, that the prior has the better test energy score at 15, and that at 1 EgoPed is level
+with the prior and with retrieval while its ECS and ADE are worse, still beat the prior and its ECS no
+longer beats retrieval.
+
+`research/data/energy_retrieval_scene_val.txt` was regenerated on 2026-11-24 and now holds the cells at
+guidance 1 (`pooled@E`, `egoped@E`). Every other number in it is unchanged. The validation FID at guidance 1
+(5.10) has no record in `research/data` and is not used in the paper.
 
 ## Next steps, in order
 
