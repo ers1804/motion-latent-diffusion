@@ -31,7 +31,7 @@
 
 % Custom macros
 \newcommand{\method}{EgoPed\xspace}
-\newcommand{\fullseq}{Full-seq\xspace}
+\newcommand{\fullseq}{Full sequence\xspace}
 \xspaceaddexceptions{+} % \method+IA, not \method +IA
 \newcommand{\eg}{e.g.,\xspace}
 \newcommand{\ie}{i.e.,\xspace}
@@ -111,7 +111,7 @@ We make three contributions.
 \begin{enumerate}
 \item \textbf{Ego-conditioned body motion.} To our knowledge, \method is the first model to generate 3D pedestrian body motion directly from the ego-vehicle trajectory. It lowers the root trajectory error of a trained unconditional prior from 3.03 to 2.43\,m and raises the Ego-Coupling Score from 0.02 to 0.31, against 1.97\,m and 0.08 for a deterministic regressor.
 \item \textbf{Conditioning-aware evaluation.} We propose per-condition trajectory error and the Ego-Coupling Score, with scene-clustered statistics across seeds, and show that FID cannot see the conditioning. An ego-blind prior has the best FID, and FID prefers two design choices that raise mean trajectory error.
-\item \textbf{Data and its limits.} We provide 5{,}668 paired ego--pedestrian sequences, 11{,}336 with their mirrored copies, from nuScenes~\cite{caesar2020nuscenes}, Waymo~\cite{sun2020waymo} and staged recordings of our research vehicle, split by scene. A reference-free audit shows that the body poses are a canonical template sliding along the root path.
+\item \textbf{Data and its limits.} We build 5{,}668 paired ego--pedestrian sequences, 11{,}336 with their mirrored copies, from nuScenes~\cite{caesar2020nuscenes}, Waymo~\cite{sun2020waymo} and staged recordings of our research vehicle, split by scene. A reference-free audit shows that the body poses are a canonical template sliding along the root path.
 \end{enumerate}
 
 %----------------------------------------------------------------------
@@ -133,7 +133,7 @@ Trace and Pace~\cite{rempe2023tracepace} combines a trajectory diffusion model, 
 
 \subsection{Evaluating Conditional Generative Models}
 
-Fréchet distances compare generated and real samples through the statistics of a pretrained feature extractor~\cite{heusel2017fid}, here a motion encoder~\cite{guo2022humanml3d}. Their known failure modes, such as estimator bias~\cite{chong2020unbiasedfid}, concern how faithfully they measure the \emph{marginal}. The problem we document is orthogonal. A score can measure the marginal well and say nothing about whether the condition was used.
+Fréchet distances compare generated and real samples through the statistics of a pretrained feature extractor~\cite{heusel2017fid}, in this case a motion encoder~\cite{guo2022humanml3d}. Their known failure modes, such as estimator bias~\cite{chong2020unbiasedfid}, concern how faithfully they measure the \emph{marginal}. The problem we document is orthogonal. A score can measure the marginal well and say nothing about whether the condition was used.
 
 %----------------------------------------------------------------------
 \section{METHOD}
@@ -143,7 +143,7 @@ Fréchet distances compare generated and real samples through the statistics of 
 \begin{figure*}[t]
   \centering
   \resizebox{\linewidth}{!}{\input{figures/architecture.tex}}
-  \caption{The \method architecture has two parts. \textbf{(a) Ego-encoder pretraining.} The ego encoder (1) is trained so that its mean-pooled, projected output $\bar{\mathbf{c}}$ matches the mean-pooled posterior mean $\bar{\mathbf{z}}$ of the frozen motion VAE for the paired motion. \textbf{(b) Latent diffusion.} The ego encoder is \emph{frozen} and produces the single pooled token $\bar{\mathbf{c}}$. At every denoising step the $L=4$ noisy latent tokens $\mathbf{z}_t$, the timestep embedding and $\bar{\mathbf{c}}$ form one 6-token sequence for a self-attention transformer denoiser (2), whose first four output tokens predict the noise. The \fullseq ablation skips the pooling and passes all 196 encoder tokens.}
+  \caption{The \method architecture has two parts. \textbf{(a) Ego-encoder pretraining.} The ego encoder (1) is trained so that its mean-pooled, projected output $\bar{\mathbf{c}}$ matches the mean-pooled posterior mean $\bar{\mathbf{z}}$ of the frozen motion VAE for the paired motion. \textbf{(b) Latent diffusion.} The ego encoder is \emph{frozen} and produces the single pooled token $\bar{\mathbf{c}}$. At every denoising step the $L=4$ noisy latent tokens $\mathbf{z}_t$, the timestep embedding and $\bar{\mathbf{c}}$ form one 6-token sequence for a self-attention transformer denoiser (2), whose first four output tokens predict the noise. The full-sequence ablation skips the pooling and passes all 196 encoder tokens.}
   \label{fig:architecture}
 \end{figure*}
 
@@ -169,7 +169,7 @@ Before diffusion training, the encoder is trained to regress the paired motion's
   \mathcal{L}_{\mathrm{pre}} = \|\bar{\mathbf{c}} - \bar{\mathbf{z}}\|^2 + \lambda\bigl(1 - \cos(\bar{\mathbf{c}}, \bar{\mathbf{z}})\bigr), \quad \lambda = 0.1 .
 \end{equation}
 The encoder is then \emph{frozen} during diffusion training.
-Section~\ref{sec:design} tests both choices, together with a \fullseq variant that skips the pooling and lets the denoiser attend to all 196 tokens.
+Section~\ref{sec:design} tests both choices, together with a full-sequence variant that skips the pooling and lets the denoiser attend to all 196 tokens.
 
 \subsection{Denoiser and Guidance}
 
@@ -191,10 +191,10 @@ For classifier-free guidance~\cite{ho2022cfg}, the ego input is zeroed for 10\% 
 \subsection{Sources and Processing}
 
 No dataset pairs vehicle trajectories with pedestrian body motion, so we built one from two complementary parts. The public driving datasets nuScenes~\cite{caesar2020nuscenes} and Waymo~\cite{sun2020waymo} supply scale and behavioral diversity. A small set of deliberately \emph{staged} high-interaction scenes recorded with our research vehicle (LiDAR, surround cameras and GNSS) targets close-range encounters that are rare in public data.
-The set starts with 17 scenarios on public roads, such as crossing in front of the vehicle, stopping at the curb or hesitating while it approaches, brakes or turns. It can grow with further behaviors. The pedestrian in these scenes is one of the authors, who consented to the recording and its release.
+The set starts with 17 scenarios on public roads, such as crossing in front of the vehicle, stopping at the curb or hesitating while it approaches, brakes or turns. It can grow with further behaviors. %The pedestrian in these scenes is one of the authors, who consented to the recording and its release.
 The recordings are converted to the nuScenes format and annotated with 3D boxes and orientations using MS3D~\cite{tsai2024ms3d++,tsai2023ms3d}.
 
-For every annotated pedestrian in all three sources we estimate SMPL~\cite{SMPL:2015} poses with an adapted OmniRe~\cite{chen2025omnire}, localizing the person in every camera through the projected 3D box and stitching the per-camera estimates into one sequence with the rig calibration. The fit supplies the body pose only. Root position and heading are those of the annotated box.
+For every annotated pedestrian in all three sources we estimate SMPL~\cite{SMPL:2015} poses with an adapted OmniRe~\cite{chen2025omnire}, localizing the person in every camera through the projected 3D box and stitching the per-camera estimates into one sequence with the sensor calibration. The fit supplies the body pose only. Root position and heading are those of the annotated box.
 The poses are converted to the 263-dimensional HumanML3D representation~\cite{guo2022humanml3d}, which retargets every sequence onto one canonical skeleton, so body shape is not represented.
 One pipeline resamples body motion and ego odometry to 20\,fps and expresses both in a pedestrian-centric frame, translated and yaw-normalized to the pedestrian's first pose.
 Every sequence is also stored mirrored left to right.
@@ -203,13 +203,13 @@ Sequences over 196 frames are windowed (about 40\%) and shorter ones are padded 
 \subsection{Scene-Level Split}
 
 All partitions are split by scene, so a scene, every pedestrian in it and every mirrored copy stay on one side (Table~\ref{tab:dataset}).
-In a file-level split of the same data, the mirrored copy of 83\% of the held-out sequences was in the training set.
+%In a file-level split of the same data, the mirrored copy of 83\% of the held-out sequences was in the training set.
 We selected models on the validation partition and evaluated the test partition once, after all selection was fixed.
-The staged scenes contribute only six sequences to each held-out partition, so held-out results speak for nuScenes and Waymo.
+The staged scenes contribute only six sequences to each held-out partition, so held-out results speak mostly for nuScenes and Waymo.
 
 \begin{table}[t]
   \centering
-  \caption{Counts include mirrored copies (5{,}668 recorded sequences, each mirrored once). Each sequence pairs an ego trajectory ($196\times2$) with pedestrian body motion ($196\times263$). Partitions share no scene.}
+  \caption{Counts include mirrored copies (5{,}668 recorded sequences, each mirrored once) and leave out tracks under 2\,s, one of them staged. Each sequence pairs an ego trajectory ($196\times2$) with pedestrian body motion ($196\times263$). Partitions share no scene.}
   \label{tab:dataset}
   \vspace{4pt}
   \small
@@ -258,7 +258,7 @@ For each test condition we draw $K{=}5$ samples, take the root ground-plane path
 A pedestrian \emph{stops} if the root speed stays below 0.2\,m/s for at least 1\,s. For condition $\mathbf{e}$, $\hat{p}(\mathrm{stop}\mid\mathbf{e})$ is the fraction of the $K$ samples that stop. ECS is the mean of $\hat{p}$ over conditions whose recorded pedestrian stops minus its mean over conditions whose pedestrian walks. It is 0 for a model that ignores the vehicle and 1 for perfect coupling. A predictor that stops too often can also score high, so we always report the Brier score of $\hat{p}$ against the recorded label with it. From that score we subtract the sampling noise of the $K$ draws, $\hat{p}(1-\hat{p})/(K-1)$ per condition, which otherwise penalizes a model for spreading its samples. We adopted this correction after the test pass (uncorrected, \method scores 0.191 and the prior 0.211). Stopping occurs in 24\% of test conditions. Crossing the vehicle's path occurs in about 2\%, which is too rare to score.
 
 \paragraph{Seeds, statistics and selection.}
-The four main models, the two encoder ablations and the two priors have three seeds each and the trainable \fullseq run has one. Each seed's checkpoint is the one with the lowest validation FID among 50 saved every 100 epochs, and each model's guidance scale $w$ is the one in $\{5, 10, 15\}$ with the lowest validation FID averaged over its seeds. The priors see the real ego trajectory during training-time validation, so their checkpoints are chosen by an offline validation pass with the ego zeroed.
+The four main models, the two encoder ablations and the two priors have three seeds each and the trainable full-sequence run has one. Each seed's checkpoint is the one with the lowest validation FID among 50 saved every 100 epochs, and each model's guidance scale $w$ is the one in $\{5, 10, 15\}$ with the lowest validation FID averaged over its seeds. The priors see the real ego trajectory during training-time validation, so their checkpoints are chosen by an offline validation pass with the ego zeroed.
 Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered bootstrap draws), because pedestrians of one scene are not independent. Before using the test partition we fixed one rule. A model beats another only if the 95\% interval excludes zero \emph{and} all seed pairs agree in sign, nine between two three-seed models and three against a single run. The primary contrast is \method against \fullseq on mean ADE.
 
 %----------------------------------------------------------------------
@@ -281,7 +281,7 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
     \fullseq & 4.16\ci{2.96}{4.91} & 5.78 & 3.92 & 2.69\ci{2.52}{2.98} & 5.67 & \textbf{1.54}\ci{1.49}{1.57} & \textbf{3.18} & 0.27\ci{0.24}{0.29} & \textbf{0.162} \\
     \method+IA & 4.84\ci{4.69}{5.04} & 5.83 & 3.22 & 2.93\ci{2.86}{3.03} & 6.23 & 2.04\ci{1.98}{2.13} & 4.29 & 0.21\ci{0.18}{0.25} & 0.186 \\
     \fullseq+IA & \textbf{3.24}\ci{2.73}{4.14} & 5.89 & 3.21 & 3.01\ci{2.82}{3.14} & 6.50 & 2.07\ci{1.72}{2.31} & 4.42 & 0.10\ci{0.06}{0.12} & 0.202 \\
-    \fullseq, encoder trainable (1 seed) & 6.54 & 5.32 & 4.66 & 2.67 & 5.55 & 1.39 & 2.79 & 0.04 & 0.195 \\
+    \fullseq, trainable (1 seed) & 6.54 & 5.32 & 4.66 & 2.67 & 5.55 & 1.39 & 2.79 & 0.04 & 0.195 \\
     \midrule
     Trained prior (no ego) & 4.64\ci{4.56}{4.69} & 5.76 & 5.18 & 3.03\ci{2.97}{3.11} & 6.21 & 1.30\ci{1.28}{1.33} & 2.64 & 0.02\ci{0.02}{0.03} & 0.177 \\
     Trained prior+IA & 2.88\ci{2.51}{3.29} & 5.53 & 4.81 & 3.00\ci{2.99}{3.02} & 6.31 & 1.52\ci{1.51}{1.54} & 3.07 & 0.01\ci{0.01}{0.01} & 0.205 \\
@@ -293,7 +293,7 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
 
 \begin{table*}[t]
   \centering
-  \caption{Contrasts on the test partition are differences of seed means, positive when the first model is better, with 95\% scene-bootstrap intervals. $^\ast$ meets the rule fixed before the test pass (interval excludes 0, all seed pairs agree in sign).}
+  \caption{Contrasts on the test partition are differences of unrounded seed means, signed so that positive favors the first model (lower ADE and minADE, higher ECS), with 95\% scene-bootstrap intervals. $^\ast$ meets the rule fixed before the test pass (interval excludes 0, all seed pairs agree in sign).}
   \label{tab:contrasts}
   \vspace{4pt}
   \small
@@ -302,14 +302,14 @@ Contrasts average a model's seeds and resample scenes (2{,}000 scene-clustered b
     \toprule
     Contrast & ADE (m) & minADE (m) & ECS \\
     \midrule
-    \method vs.\ \fullseq & $+0.26^\ast$\ci{0.17}{0.33} & $-0.11^\ast$\ci{-0.18}{-0.05} & $+0.04$\ci{0.00}{0.08} \\
-    \method+IA vs.\ \fullseq+IA & $+0.08$\ci{-0.04}{0.20} & $+0.03$\ci{-0.08}{0.15} & $+0.11^\ast$\ci{0.05}{0.18} \\
+    \method vs.\ \fullseq & $+0.26^\ast$\ci{0.17}{0.33} & $-0.11^\ast$\ci{$-$0.18}{$-$0.05} & $+0.04$\ci{0.00}{0.08} \\
+    \method+IA vs.\ \fullseq+IA & $+0.08$\ci{$-$0.04}{0.20} & $+0.03$\ci{$-$0.08}{0.15} & $+0.11^\ast$\ci{0.05}{0.18} \\
     \method vs.\ \method+IA & $+0.50^\ast$\ci{0.30}{0.70} & $+0.39^\ast$\ci{0.20}{0.57} & $+0.09^\ast$\ci{0.02}{0.16} \\
     \fullseq vs.\ \fullseq+IA & $+0.31$\ci{0.11}{0.55} & $+0.53^\ast$\ci{0.34}{0.74} & $+0.17^\ast$\ci{0.09}{0.25} \\
-    \method vs.\ prior & $+0.59^\ast$\ci{0.42}{0.77} & $-0.34^\ast$\ci{-0.46}{-0.23} & $+0.29^\ast$\ci{0.18}{0.38} \\
-    \fullseq vs.\ prior & $+0.34$\ci{0.14}{0.54} & $-0.23^\ast$\ci{-0.34}{-0.13} & $+0.25^\ast$\ci{0.15}{0.34} \\
-    \method+IA vs.\ prior+IA & $+0.07$\ci{-0.23}{0.35} & $-0.52^\ast$\ci{-0.77}{-0.27} & $+0.21^\ast$\ci{0.13}{0.30} \\
-    \fullseq+IA vs.\ prior+IA & $-0.00$\ci{-0.29}{0.26} & $-0.55^\ast$\ci{-0.80}{-0.32} & $+0.09^\ast$\ci{0.04}{0.15} \\
+    \method vs.\ prior & $+0.59^\ast$\ci{0.42}{0.77} & $-0.34^\ast$\ci{$-$0.46}{$-$0.23} & $+0.29^\ast$\ci{0.18}{0.38} \\
+    \fullseq vs.\ prior & $+0.34$\ci{0.14}{0.54} & $-0.23^\ast$\ci{$-$0.34}{$-$0.13} & $+0.25^\ast$\ci{0.15}{0.34} \\
+    \method+IA vs.\ prior+IA & $+0.07$\ci{$-$0.23}{0.35} & $-0.52^\ast$\ci{$-$0.77}{$-$0.27} & $+0.21^\ast$\ci{0.13}{0.30} \\
+    \fullseq+IA vs.\ prior+IA & $-0.00$\ci{$-$0.29}{0.26} & $-0.55^\ast$\ci{$-$0.80}{$-$0.32} & $+0.09^\ast$\ci{0.04}{0.15} \\
     \bottomrule
   \end{tabular}
 \end{table*}
@@ -347,7 +347,7 @@ Guidance buys coupling only up to $w{=}5$. On validation, \method's ECS is 0.25 
 Attending to 196 encoder tokens instead of one pooled token worsens mean ADE by 0.26\,m on test and 0.37\,m on validation, our pre-specified primary contrast. \fullseq improves coverage (MM 3.92 versus 3.10, minADE lower by 0.11\,m), FID and test Brier (0.162 versus 0.180, level on validation). It processes 201 rather than 6 tokens per denoising step. Without IA, the ECS gap (0.31 versus 0.27) meets our rule on validation only. With IA, \method couples better (0.21 versus 0.10). A likely cause is that pretraining aligns only the pooled token.
 
 \paragraph{Freezing and pretraining.}
-Table~\ref{tab:design} compares frozen, trainable and from-scratch encoders under identical selection. Freezing improves test ADE, minADE and ECS over pretrained trainable encoders by 0.09\,m, 0.25\,m and 0.07 before rounding, meeting our rule. On validation only the latter two do. FID is level (5.67 versus 5.65). Trainable pretrained and scratch encoders are indistinguishable on every metric in both partitions, so pretraining helps only while the encoder stays frozen. The pre-specified last-checkpoint comparison retains this pattern with worse FID, but the ADE gap to the frozen encoder (0.07\,m) fails the rule. A single-seed trainable \fullseq run barely couples (ECS 0.04 versus 0.27).
+Table~\ref{tab:design} compares frozen, trainable and from-scratch encoders under identical selection. Freezing improves test ADE, minADE and ECS over pretrained trainable encoders by 0.09\,m, 0.25\,m and 0.07 before rounding, meeting our rule. On validation only the latter two do. FID is level (5.67 versus 5.65). Trainable pretrained and scratch encoders are indistinguishable on every metric in both partitions, so pretraining helps only while the encoder stays frozen. The pre-specified last-checkpoint comparison retains this pattern with worse FID, but the ADE gap to the frozen encoder (0.07\,m) fails the rule. A single-seed trainable full-sequence run barely couples (ECS 0.04 versus 0.27).
 
 \begin{table}[t]
   \centering
@@ -444,7 +444,7 @@ FID favors full-sequence attention with interaction-aware data, the most weakly 
 \section{CONCLUSION}
 %----------------------------------------------------------------------
 
-\method generates full-body pedestrian motion from a vehicle trajectory through a frozen, pretrained pooled encoder and latent diffusion. It lowers the prior's ADE from 3.03 to 2.43\,m and raises ECS from 0.02 to 0.31, versus 1.97\,m and 0.08 for a deterministic regressor. Coupling remains observational, dominated by standing pedestrians, and responses to edited plans are unvalidated. FID favors designs with larger ADE and ranks an ego-blind prior first. We recommend per-condition trajectory error and ECS with scene-clustered statistics across seeds. Code, trained models and the paired dataset will be released, but not the everyday drives.
+\method generates full-body pedestrian motion from a vehicle trajectory through a frozen, pretrained pooled encoder and latent diffusion. It lowers the prior's ADE from 3.03 to 2.43\,m and raises ECS from 0.02 to 0.31, versus 1.97\,m and 0.08 for a deterministic regressor. Coupling remains observational, dominated by standing pedestrians, and responses to edited plans are unvalidated. FID favors designs with larger ADE and ranks an ego-blind prior first. We recommend per-condition trajectory error and ECS with scene-clustered statistics across seeds. Code, trained models and the nuScenes and staged parts of the paired dataset will be released with this paper, but not the Waymo part or the everyday drives.
 
 %----------------------------------------------------------------------
 \ifanonymous\else

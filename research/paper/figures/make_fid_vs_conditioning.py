@@ -25,14 +25,14 @@ DATA = ROOT / "research" / "data"
 OUT = Path(__file__).resolve().parent / "fid_vs_conditioning.pdf"
 
 mpl.rcParams.update({
-    "font.family": "serif", "font.size": 7.5, "axes.labelsize": 7.5, "legend.fontsize": 6.5,
+    "pdf.fonttype": 42, "font.family": "serif", "font.size": 7.5, "axes.labelsize": 7.5, "legend.fontsize": 6.5,
     "xtick.labelsize": 6.5, "ytick.labelsize": 6.5, "axes.linewidth": 0.5, "xtick.major.width": 0.5,
     "ytick.major.width": 0.5, "savefig.bbox": "tight", "savefig.pad_inches": 0.02,
 })
 INK, MUTED, GRID = "#1f2a37", "#6b7280", "#e5e7eb"
 # Validated categorical slots 1-3 (dataviz palette); the ego-blind priors are a neutral reference, not a series.
-FAMILY = {"egoped": ("EgoPed", "#2a78d6"), "fullseq": ("Full-seq", "#eb6834"),
-          "unfrozen": ("Full-seq, trainable encoder", "#1baf7a"), "prior": ("Trained prior (no ego)", "#8c8c8c")}
+FAMILY = {"egoped": ("EgoPed", "#2a78d6"), "fullseq": ("Full sequence", "#eb6834"),
+          "unfrozen": ("Full sequence, trainable", "#1baf7a"), "prior": ("Trained prior (no ego)", "#8c8c8c")}
 CELL = {"pooled": "egoped", "pooled_ia": "egoped", "egoped": "fullseq", "egoped_ia": "fullseq",
         "unfrozen": "unfrozen", "uncond": "prior", "uncond_ia": "prior"}
 
