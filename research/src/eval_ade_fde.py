@@ -133,6 +133,45 @@ def body_stats(joints):
     return float(np.median(foot[walking] / (root[walking] + 1e-8))), float((foot[walking] < PLANTED).mean()), articulation
 
 
+def shifted_egos(dataset, table, metres, sources):
+    """(rows, max length, 2) ego input of every row, with the tracked point of the vehicle moved along its heading.
+
+    table: headings of ego_reference_point.py, unit vectors per frame of the stored track. Only tracks of `sources`
+    move. The stored track is edited in metres before normalisation and cropping, so window, length and padding
+    of a row are those of the unedited row. A track without a heading stays as it is and is counted.
+    """
+    from ego_reference_point import load_headings
+
+    heading = load_headings(table)
+    own = [p for p in dataset.sample_paths if Path(p).parts[-3] in sources]
+    key = lambda p: "/".join(Path(p).parts[-3:])
+    missing = [key(p) for p in own if key(p) not in heading]
+    if missing:  # checked here: an exception inside __getitem__ would be answered with the next sample
+        raise KeyError(f"{len(missing)} tracks are not in {table}, e.g. {missing[:3]}")
+    load, problems = dataset._load_sample, []
+
+    def shifted(path):
+        sample = load(path)
+        h = heading.get(key(path)) if Path(path).parts[-3] in sources else None
+        if h is not None and len(h) != len(sample["ego"]):
+            problems.append(key(path))
+        elif h is not None:
+            sample["ego"] = (sample["ego"] + metres * h).astype(sample["ego"].dtype)
+        return sample
+
+    dataset._load_sample = shifted
+    try:
+        egos = np.stack([dataset[i]["ego"] for i in range(len(dataset))]).astype("float32")
+    finally:
+        del dataset._load_sample  # back to the method of the class
+    if problems:
+        raise ValueError(f"heading and stored track differ in length for {sorted(set(problems))[:3]}")
+    without = sum(heading[key(p)] is None for p in own)
+    print(f"ego shift {metres:+.2f} m for {sorted(sources)}: {len(own) - without} of {len(dataset.sample_paths)} tracks "
+          f"move, {without} have no heading")
+    return egos
+
+
 def ego_editor(args, dataset):
     """f(ego, first row of the batch, ego lengths) -> the edited ego input of the two ego controls.
 
@@ -141,9 +180,14 @@ def ego_editor(args, dataset):
     velocity of the last 0.5 s (S=0: the vehicle stands at its start). Edited in metres, then normalised again.
     --ego-brake A (with --ego-horizon S > 0): after S seconds the vehicle keeps that direction but brakes at
     A m/s^2 until it stands. Against the same horizon without braking, only the speed profile differs.
+    --ego-shift D: the tracked point of the vehicle lies D metres further ahead along its heading (shifted_egos).
     """
     sys.path.insert(0, str(Path(__file__).resolve().parent))
     from make_scene_split import scene_of
+
+    if getattr(args, "ego_shift", None) is not None:
+        egos = shifted_egos(dataset, args.ego_headings, args.ego_shift, args.ego_shift_source)
+        return lambda ego, start, ego_len: torch.as_tensor(egos[start:start + len(ego)], device=ego.device)
 
     items = [dataset[i] for i in range(len(dataset))]
     if args.ego_swap:
@@ -201,6 +245,10 @@ def main():
     ap.add_argument("--ego-swap", action="store_true", help="wrong-vehicle control, see ego_editor")
     ap.add_argument("--ego-horizon", type=float, help="seconds of ego trajectory shown, see ego_editor")
     ap.add_argument("--ego-brake", type=float, help="m/s^2 of braking after the horizon, see ego_editor")
+    ap.add_argument("--ego-shift", type=float, help="metres the tracked point of the vehicle moves ahead, see ego_editor")
+    ap.add_argument("--ego-shift-source", nargs="+", default=["nuscenes"], choices=["nuscenes", "waymo"],
+                    help="sources whose tracks move")
+    ap.add_argument("--ego-headings", default="research/data/ego_heading_scene_val.npz")
     ap.add_argument("--window-frame", action="store_true",
                     help="ego of a windowed track in the frame of the window start, for models trained that way (rs2_*)")
     ap.add_argument("--save-skate", action="store_true",
@@ -213,6 +261,10 @@ def main():
     args = ap.parse_args()
     if args.ego_brake is not None and not args.ego_horizon:
         ap.error("--ego-brake needs --ego-horizon > 0")
+    if args.ego_shift is not None and args.split != "scene_val":
+        ap.error("--ego-shift is a check on validation, its headings exist for scene_val only")
+    if args.ego_shift is not None and (args.zero_ego or MODELS.get(args.model, {}).get("zero_ego")):
+        ap.error("--ego-shift would hand the shifted ego to a model that is evaluated without one")
     if args.ckpt:
         spec = dict(cfg=args.cfg, ckpt=args.ckpt, guidance=args.guidance, zero_ego=args.zero_ego)
     else:
@@ -265,7 +317,8 @@ def main():
 
     datamodule.setup(stage="test")
     loader = datamodule.test_dataloader()
-    edit = ego_editor(args, datamodule.test_dataset) if args.ego_swap or args.ego_horizon is not None else None
+    edited = args.ego_swap or args.ego_horizon is not None or args.ego_shift is not None
+    edit = ego_editor(args, datamodule.test_dataset) if edited else None
 
     ade_all, fde_all = [], []           # per condition, per k
     roots_gen, roots_gt, lens_all = [], [], []   # optional dumps (--save-roots)
